@@ -83,8 +83,6 @@ var grammar = {
         ["( expression )", "$$ = $2;"]
     ],
     
-
-
     literal: [
         ["NULL"],
         ["BOOLEAN"],
@@ -114,6 +112,7 @@ var grammar = {
     ],
     
     foreach: [
+        ["FOREACH ( member )", "$$ = new ForeachStatement(null, null, $3);"],
         ["FOREACH ( identifier IN range )", "$$ = new ForeachStatement($3, null, $5);"],
         ["FOREACH ( identifier IN expression )", "$$ = new ForeachStatement($3, null, $5);"],
         ["FOREACH ( identifier , identifier IN expression )", "$$ = new ForeachStatement($3, $5, $7);"]

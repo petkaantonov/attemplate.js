@@ -397,7 +397,18 @@ var ForeachStatement = (function(){
         var id = randomId();
         var body = this.body.join("");
         
-        if( this.collection instanceof Range ) {
+        if( !this.key && !this.value ) {
+            var key = "___key" + randomId();
+            return "    (function(___collection"+id+"){" +
+            " ___collection"+id+" = ___isObject(___collection"+id+") ? ___collection"+id+" : {}; " +
+            "for( var "+key+" in ___collection"+id+" ) { if( ___hasown.call(___collection"+id+", "+key+") ) { " +
+            "    with( ___collection"+id+"["+key+"] ) { " +
+                    body +
+            "    }" +
+            "} } " +
+            "    }).call(this, "+this.collection+");";
+        }
+        else if( this.collection instanceof Range ) {
             var range = this.collection;
             if( this.value ) {
                 this.key = this.value;
