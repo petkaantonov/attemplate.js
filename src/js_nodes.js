@@ -34,7 +34,7 @@ var CallExpression = (function() {
     }
 
     method.toString = function() {
-        return '___null((' +this.fn.toString() + ')['+this.member.toString()+'])';
+        return '___propAccess(' +this.fn.toString() + ', ['+this.member.toString()+'])';
     };
         
     return CallExpression;
