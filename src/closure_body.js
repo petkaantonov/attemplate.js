@@ -40,6 +40,10 @@
     var ___range = function( min, max ) {
         var ret = [];
     };
+    
+    var ___null = function( n) {
+        return n == null ? null : n;
+    };
 
     var ___method = function( obj, methodName, args ) {
         var method;

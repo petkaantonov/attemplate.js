@@ -32,11 +32,11 @@ var CallExpression = (function() {
         this.fn = fn;
         this.member = mem;
     }
-    
+
     method.toString = function() {
-        return '___propAccess(' +this.fn.toString() + ', ['+this.member.toString()+'])';
+        return '___null((' +this.fn.toString() + ')['+this.member.toString()+'])';
     };
-    
+        
     return CallExpression;
 })();
 
@@ -162,6 +162,10 @@ var FunctionCall = (function() {
         if( this.expr.getLast && this.expr.getLast() ) {
             return null;
         }
+        else if( this.expr instanceof CallExpression ) {
+            return null;
+        }
+
         return this.expr.identifier.toString();
         
     };
@@ -197,6 +201,15 @@ var FunctionCall = (function() {
     method.toString = function() {
         var ret = this.convertArgs(),
             context = 'this';
+        
+        if( this.expr instanceof CallExpression ) {
+            if( ret.length ) {
+                return '___method('+this.expr.fn+', '+this.expr.member+', ['+ret.join(", ") + '])';
+            }
+            else {
+                return '___method('+this.expr.fn+', '+this.expr.member+')';
+            } 
+        }
         
         if( this.expr.getLast ) {
             var last = this.expr.getLast();
