@@ -845,19 +845,18 @@ function parse( inp ) {
         else if( type === STRING ) {
             htmlContextParser.write( value, i - value.length );
             
-            if( keywordBlockStack.length ) {
-                if( isWhiteSpace( value ) ) {
-                    continue;
-                }
-                else if( lookahead(1) === "}" ) {
-                    value = trimRight(value);
-                }
-            }
-            else if( isBlockAheadForWhiteSpaceTrim() ){
+            if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
                 value = trimRight(value);
             }
-            
-            if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
+            else if( keywordBlockStack.length ) {
+                    if( isWhiteSpace( value ) ) {
+                        continue;
+                    }
+                    else if( lookahead(1) === "}" ) { //Trim whitespace before closing block
+                        value = trimRight(value);
+                    }
+            }
+            else if( isBlockAheadForWhiteSpaceTrim() ) {
                 value = trimRight(value);
             }
             
