@@ -98,6 +98,12 @@
     };
     
     var ___inOp = function( obj, str ) {
+        var needleIsString = typeof str === STRING;
+        
+        if( needleIsString && typeof obj === STRING ) {
+            return obj.indexOf(str) > -1;
+        }
+    
         if( Object(obj) !== obj ) {
             return false;
         }
@@ -106,7 +112,7 @@
             return obj.indexOf(str) > -1;
         }
 
-        if( typeof str !== STRING ) {
+        if( needleIsString ) {
             return false;
         }
 
