@@ -50,7 +50,7 @@ var MemberExpression = (function() {
     //Should be used for helper names too
     var rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/;
     var rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/;
-    
+    var rfalsetrue = /^(?:false|true)$/;
     var rtripleunderscore = /^___/;
     var rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/;
     
@@ -73,7 +73,12 @@ var MemberExpression = (function() {
                 MemberExpression.identifiers[this.identifier] = true;
             }
         }
+
     }
+    
+    method.isBooleanOp = function() {
+        return rfalsetrue.test(this.identifier);
+    };
     
     //Pure reference, no member operators
     method.isPureReference = function() {
@@ -229,29 +234,45 @@ var FunctionCall = (function() {
 var Operation = (function() {
     var method = Operation.prototype;
     
+    var rrelational = /^(?:<|>|>=|<=)$/;
+
+    
+    function isBooleanOp( obj ) {
+        return obj.isBooleanOp && obj.isBooleanOp() || false;
+    }
+    
     function Operation( opStr, op1, op2, isTernary) {
         this.isTernary = !!isTernary;
         this.isUnary = op2 == null;
         this.opStr = opStr;
         this.op1 = op1;
         this.op2 = op2;
-
+        this.madeRelational = false;
     }
+    
+    method.isBooleanOp = function() {
+        return this.opStr === "in" || this.opStr === "!" ;
+    };
+
+    method.isRelational = function() {
+        return rrelational.test( this.opStr );
+    };
         
     method.toString = function() {
         var ret;
+      
         if( this.isTernary ) {
-            var condition = this.opStr.opStr === '!' ? this.opStr.toString() : '___boolOp('+this.opStr.toString()+')'
+            var condition = isBooleanOp(this.opStr) ? this.opStr.toString() : '___boolOp('+this.opStr.toString()+')'
             ret = condition + " ? " + this.op1.toString() + " : " + this.op2.toString();
         }
         else if( this.isUnary ) {
-            if( this.opStr === '!' && 
-                this.op1.opStr !== '!' &&
-                this.op1 !== 'true' &&
-                this.op1 !== 'false'
-            
-            ) {
-                ret = '!___boolOp('+this.op1.toString()+')';
+            if( this.opStr === '!' ) {
+                if( isBooleanOp( this.op1 ) ) { //Don't call ___boolOp if not necessary
+                    ret = '!' + this.op1.toString();
+                }
+                else {
+                    ret = '!___boolOp('+this.op1.toString()+')';
+                }
             }
             else {
                 ret = this.opStr.toString() + " " + this.op1.toString();
@@ -261,10 +282,30 @@ var Operation = (function() {
             ret = '___inOperator(' + this.op2.toString() + ', '+ this.op1.toString()+')';
         }
         else {
-            ret = '___binOp("'+this.opStr.toString()+'",'+this.op1.toString()+','+this.op2.toString()+')';
+            //Magic to make a < b < c work properly
+            if( this.madeRelational ) {
+                if( this.op1.op1 && this.op1.isRelational() ) {
+                    this.op1.madeRelational = true;
+                    ret = '___binOp("&&", '+this.op1.toString()+', ___binOp("'+ this.opStr.toString() + '",'+ this.op1.op2.toString() +', '+ this.op2.toString() + '))';
+                }
+                else {
+                    ret = '___binOp("'+this.opStr.toString()+'",'+this.op1.toString()+','+this.op2.toString()+')';
+
+                }
+
+            }
+            else if( this.isRelational() &&
+                this.op1.op1 &&
+                this.op1.isRelational() ) {
+                this.op1.madeRelational = true;
+                ret = '___binOp("&&", '+this.op1.toString()+', ___binOp("'+ this.opStr.toString() + '",'+ this.op1.op2.toString() +', '+ this.op2.toString() + '))';
+            }
+            else {
+                ret = '___binOp("'+this.opStr.toString()+'",'+this.op1.toString()+','+this.op2.toString()+')';
+            }
         }
         
-        return "(" + ret + ")";
+        return ret;
     };
     
     
@@ -370,6 +411,7 @@ var ForeachStatement = (function(){
             " ___collection"+id+" = ___isArray(___collection"+id+") ? ___collection"+id+" : ___ensureArrayLike(___collection"+id+"); " +
             "            var count = ___collection"+id+".length;" +
             "            for( var ___i"+id+" = 0, ___len"+id+" = count; ___i"+id+" < ___len"+id+"; ++___i"+id+" ) {" +
+            "                var index = ___i"+id+";" +
             "    with( ___collection"+id+"[___i"+id+"] ) { " +
                     body +
             "    }" +

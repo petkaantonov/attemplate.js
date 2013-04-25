@@ -20,7 +20,6 @@ var grammar = {
         ["member"],
         ["functionCall"],
         ["operation"],
-        ["newExpression"],
         ["template"]
     ],
     
@@ -68,8 +67,7 @@ var grammar = {
     ],
     
     member: [
-        ["memberExpression", "$$ = new MemberExpression($1);"],
-        ["NEW memberExpression args", "$$ = new NewExpression($1, $2);"]
+        ["memberExpression", "$$ = new MemberExpression($1);"]
     ],
     
     memberExpression: [
@@ -77,7 +75,7 @@ var grammar = {
         ["memberExpression . identifier", "$$ = $1.concat('\"' + $3 + '\"');"],
         ["memberExpression [ expression ]", "$$ = $1.concat($3);"]
     ],
-        
+            
     primary: [
         ["literal"],
         ["array"],
@@ -232,7 +230,6 @@ var lex = {
 
     rules: [
         ["in\\b", "return 'IN';"],
-        ["new\\b", "return 'NEW';"],
         ["(?:foreach|for)\\b", "return 'FOREACH';"],
         ["0+\\b", "return 'ZERO';"],
         ["\\.[0-9]+\\b", "return 'AFTER';"],
@@ -248,7 +245,7 @@ var lex = {
         ["(?:true|false)\\b", "return 'BOOLEAN';"],
         ["(?:[a-zA-Z_$][a-zA-Z$_0-9]*)", "return 'IDENTIFIER';"],
         ["&&", "return '&&';"],
-        ["<|<=|>|>=", "return 'RELATION';"],
+        [">=|<=|>|<", "return 'RELATION';"],
         ["\\|\\|", "return '||';"],
         ["==|!=", "return 'EQUALITY';"],
         ["\\|", "return '|';"],
