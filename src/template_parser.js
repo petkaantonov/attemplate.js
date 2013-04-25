@@ -93,7 +93,7 @@ var input,
 
 
     rescapekeyword = /^(attr|raw|js|uri|uriparam|json|html|css):/,
-    rlineterminator = /[\n\r\u2028\u2029]/,
+    rlineterminator = /[\n\r\u2028\u2029]+/g,
     rwhitespace = /\s/,
     rwscollapse = /\s+/g,
     rnltonewline = /\n\s*/g,
@@ -104,7 +104,29 @@ var input,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
 
-    
+    //TODO Share with htmlcontext
+    lineterminatorReplacer = function(m) {
+        var len;
+        
+        if( ( len = m.length ) === 1 ) {
+            switch( m ) {
+                case "\n": return "\\n";
+                case "\r": return "\\r";
+                case "\u2028": return "\\u2028";
+                case "\u2029": return "\\u2029";
+            }
+        }
+        var ret = "";
+        for( var i = 0; i < len; ++i ) {
+            switch( m.charAt(i) ) {
+                case "\n": ret += "\\n"; break;
+                case "\r": ret += "\\r"; break;
+                case "\u2028": ret += "\\u2028"; break;
+                case "\u2029": ret += "\\u2029"; break;
+            }
+        }
+        return ret;
+    },
 
     specials = {
         "@": true,
@@ -169,6 +191,16 @@ function skipWhiteSpace() {
             i--;
             break;
         }
+    }
+}
+//Bugs here     
+function skipNewLineAndIndentation() {
+    var ahead = lookahead(1), wsCount = 0;
+    
+    if( ahead === "\n" ) {
+        i++;
+        skipWhiteSpace();
+        i--;
     }
 }
 
@@ -515,10 +547,12 @@ function consumeTemplateExpression() {
             }
 
             if( keywords[identifier] !== true ) { // @someidentifier or @somefunctoion() etc
+                skipNewLineAndIndentation()
                 return [EXPRESSION, identifier, SHORT_EXPRESSION, escapeFn];
             }
 
             if( inlineKeywords[identifier] === true ) {
+                skipNewLineAndIndentation()
                 return [KEYWORD_EXPRESSION, identifier, SHORT_EXPRESSION];
             }
 
@@ -777,11 +811,12 @@ function parse( inp ) {
         else if( type === KEYWORD_BLOCK_CLOSE ) {
             blockType = keywordBlockStack.pop();
             htmlContextParser = htmlContextParser.popStack();
+            
             if( !blockType ) {
                 output.push( "___html.push('}');" );
                 continue;
             }
-
+            skipWhiteSpace(); //Skip whitespace after block
             if( blockType === "foreach" ) {
                 if( scope === TEMPLATE_SCOPE ) {
                     output.push( output.pop().toString() );
@@ -821,7 +856,20 @@ function parse( inp ) {
             else if( isBlockAheadForWhiteSpaceTrim() ){
                 value = trimRight(value);
             }
-            output.push( "___html.push('" + value.replace( rescapequote, "\\$1" ).replace( rnltonewline, "\\n") +"');" );
+            
+            if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
+                value = trimRight(value);
+            }
+            
+            if( !value.length ) { //See if there is anything after possible trims
+                continue;
+            }
+            //Make it safe to embed in a javascript string literal
+            value = value.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
+            
+
+            output.push( "___html.push('" + value +"');" );
+            
         }
         else if( type === EXPRESSION ) {
             var exprTree = parser.parse(value);
@@ -865,7 +913,7 @@ function parse( inp ) {
                 ( possibleGlobal ? "____"+key : 'null') + ")");
         }
     }
-    
+
     var preReturn = "; function "+idName+"( ___model ) { var ___html = []; ___model = typeof ___model == \"object\" ? (___model || {}) : {};" +
         (scopeDeclarations.length ? (("var " + scopeDeclarations.join(", \n") + ";")) : "");
         

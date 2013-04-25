@@ -29,8 +29,7 @@ var HtmlContextParser = (function() {
     var uriAttr = /src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data/;
     var selfClosing = /doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr/;
     var charData = /script|style|textarea|title|--/;
-
-
+    
     function HtmlContextParser() {
         this.context = CONTEXT.HTML;
         this.tagStack = [];
