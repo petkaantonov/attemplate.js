@@ -314,45 +314,11 @@ var Range = (function() {
         return v === "+" || v === "-";
     }
     
-    function Range( minSign, min, maxSign, max, step ) {
-        if( sign(minSign) ) min = minSign + min;
-        if( sign(maxSign) ) max = maxSign + max;
-        min = +min;
-        max = +max;
-        
-        if( step && (step = +step) && isFinite(step) && step > 0) {
-            this.step = step;
-        }
-        else {
-            this.step = 1;
-        }
-        
-        this.direction = true;
-        
-        if( min > max ) {
-            this.direction = false;
-        }
-        
-        this.min = +min;
-        this.max = max;  
+    function Range( minExpr, maxExpr, stepExpr ) {
+        this.minExpr = minExpr;
+        this.maxExpr = maxExpr;
+        this.stepExpr = stepExpr || "1";
     }
-    
-    method.toString = function() {
-        var ret = [];
-        
-        if( this.direction ) {
-            for( var i = this.min; i <= this.max; i+=this.step ) {
-                ret.push(i);
-            }
-        }
-        else {
-            for( var i = this.min; i >= this.max; i-=this.step) {
-                ret.push(i);
-            }
-        }
-        
-        return '[' + ret.join(",") + ']';
-    };
     
     return Range;
 })();
@@ -397,30 +363,45 @@ var ForeachStatement = (function(){
         var id = randomId();
         var body = this.body.join("");
         
+        //Short array iteration for @for( items ) <div>@name</div>
         if( !this.key && !this.value ) {
             var key = "___key" + randomId();
             return "    (function(___collection"+id+"){" +
-            " ___collection"+id+" = ___isObject(___collection"+id+") ? ___collection"+id+" : {}; " +
-            "for( var "+key+" in ___collection"+id+" ) { if( ___hasown.call(___collection"+id+", "+key+") ) { " +
-            "    with( ___collection"+id+"["+key+"] ) { " +
+            " ___collection"+id+" = ___isArray(___collection"+id+") ? ___collection"+id+" : ___ensureArrayLike(___collection"+id+"); " +
+            "            var count = ___collection"+id+".length;" +
+            "            for( var ___i"+id+" = 0, ___len"+id+" = count; ___i"+id+" < ___len"+id+"; ++___i"+id+" ) {" +
+            "    with( ___collection"+id+"[___i"+id+"] ) { " +
                     body +
             "    }" +
-            "} } " +
+            "}" +
             "    }).call(this, "+this.collection+");";
         }
+        //Range iteration @for( item in | 5 -> 10| 5)
         else if( this.collection instanceof Range ) {
             var range = this.collection;
             if( this.value ) {
                 this.key = this.value;
             }
             
-            return  "    (function(){" +
-                    "            var count = "+range.max+";" +
-                    "            for( var "+this.key+" = "+range.min+"; "+this.key+" "+
-                        (range.direction?"<=":">=")+ " "+range.max+"; " + this.key+" "+(range.direction?"+=":"-=")+ range.step +
-                        ") {" +
-                            body +
-                    "            }" +
+            return "    (function(){" +
+                    "var ___min"+id+" = ___ensureNumeric("+range.minExpr+"); " +
+                    "var ___max"+id+" = ___ensureNumeric("+range.maxExpr+"); " +
+                    "var ___step"+id+" = ___ensureNumeric("+range.stepExpr+") || 1; " +
+                    
+                    "if( ___min"+id+" === ___max"+id+" ) { return; }" +
+                    
+                    "if( ___min"+id+" > ___max"+id+" ) { " +
+                    "    var count = ___min"+id+" - ___max"+id+"; " +
+                    "    for( var "+this.key+" = ___min"+id+"; "+this.key+" >= ___max"+id+"; "+this.key+" -= ___step"+id+" ) { " +
+                            body  +
+                    "    } " +
+                    "} " +
+                    "else { " +
+                    "    var count = ___max"+id+" - ___min"+id+"; " +
+                    "    for( var "+this.key+" = ___min"+id+"; "+this.key+" <= ___max"+id+"; "+this.key+" += ___step"+id+" ) { " +
+                            body  +
+                    "    } " +
+                    "} " +
                     "    }).call(this);";
         } 
         else if( !this.value ) { //Array iteration

@@ -721,6 +721,7 @@ function parse( inp ) {
         }
         else if( type === KEYWORD_BLOCK_OPEN ) {
             keywordBlockStack.push( blockType );
+            htmlContextParser = htmlContextParser.pushStack();
             if( blockType === "helper" ) {
 
                 if( keywordBlockStack.length > 1 ) {
@@ -746,7 +747,6 @@ function parse( inp ) {
                 helperNames[helperName] = true;
 
                 output.push( "function " + helperHeader + " { var ___html = [];" );
-                htmlContextParser.reset();
             }
             else if( blockType === "foreach" ) {
                 var exprTree = parser.parse( "foreach " + value);
@@ -776,7 +776,7 @@ function parse( inp ) {
         }
         else if( type === KEYWORD_BLOCK_CLOSE ) {
             blockType = keywordBlockStack.pop();
-
+            htmlContextParser = htmlContextParser.popStack();
             if( !blockType ) {
                 output.push( "___html.push('}');" );
                 continue;
@@ -801,7 +801,6 @@ function parse( inp ) {
             if( blockType === "helper" ) {
                 output.push( "return ___html.join('');}");
                 scope = TEMPLATE_SCOPE;
-                htmlContextParser.reset();
             }
             else {
                 output.push( "}" );

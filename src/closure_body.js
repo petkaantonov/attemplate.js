@@ -30,8 +30,11 @@
         }
     })();
     
-    var ___identity = function( obj ) {
-        return obj;
+    var ___ensureNumeric = function( obj ) {
+        if( isFinite( obj ) ) {
+            return +obj;
+        }
+        return 0;
     };
     
     var ___range = function( min, max ) {

@@ -49,12 +49,25 @@ var HtmlContextParser = (function() {
         
         this.currentIndex = 0;
         this.lastLength = 0;
+        
+        //For stack
+        this.prev = null;
     };
     
-    method.reset = function() {
-        this.constructor.call(this);
+    method.pushStack = function() {
+        var ret = new HtmlContextParser();
+        ret.prev = this;
+        return ret;
     };
-
+    
+    method.popStack = function() {
+        this.close();
+        if( !this.prev ) {
+            return this;
+        }
+        return this.prev;
+    };
+    
     method.currentTagName = function() {
         return this.tagStack[this.tagStack.length-1] || null;
     };
@@ -68,6 +81,8 @@ var HtmlContextParser = (function() {
     };
 
         //If attribute name starts with "on" it's javascript
+        //Custom attributes should start with data-
+        //eg data-online
     method.isScriptAttr = function( attrName ) {
         return attrName.charAt(0) === "o" &&
             attrName.charAt(1) === "n";

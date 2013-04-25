@@ -119,8 +119,8 @@ var grammar = {
     ],
     
     range: [
-        ["| optSign number ARROW optSign number |", "$$ = new Range($2, $3, $5, $6);" ],
-        ["| optSign number ARROW optSign number | number", "$$ = new Range($2, $3, $5, $6, $8);" ]
+        ["| expression ARROW expression |", "$$ = new Range($2, $4);" ],
+        ["| expression ARROW expression | expression", "$$ = new Range($2, $4, $5);" ]
     ],
     
     array: [

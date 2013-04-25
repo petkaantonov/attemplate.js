@@ -8,6 +8,23 @@
         <script src="../attemplate.js" type="text/javascript"></script>
     </head>
     <body>
+        <script type="asd">
+            <select>
+            @foreach( options ) {
+                <option value="@value" @if( selected ) { selected }>
+                    
+                </option>
+            }
+            </select>
+        </script>
+        
+        <script>
+            var tem = [].map.call( document.querySelectorAll("[type=asd]"), function(t){
+                return t.innerHTML;
+            });
+        </script>
+    
+    
         <script type="text/html" id="export-test">
         @export as recipeTemplate
         
