@@ -65,7 +65,7 @@ var Program = (function() {
         
         ret.push( "return new ___Safe(___html.join(''), 'HTML'); }" );
         
-        ret.push( "return function( data ) { return "+idName+".call(___self, data); }; })();");
+        ret.push( "return function( data ) { return "+idName+".call(___self, data || {}); }; })();");
         this.isBeingImported = false;
         return ret.join("");
     };
@@ -138,7 +138,7 @@ var Program = (function() {
         
         ret.push( "return ___html.join(''); }" );
         
-        ret.push( "return function( data ) { return "+idName+".call(data); }; ");
+        ret.push( "return function( data ) { return "+idName+".call(data || {}); }; ");
         
         return ret.join("");
     };

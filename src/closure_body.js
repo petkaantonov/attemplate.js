@@ -139,21 +139,21 @@
         }
         
         switch( op ) {
-            case '/': return falsy ? 0: obj2 == 0 ? null : obj1 / obj2;
-            case '%': return falsy ? 0: obj1 % obj2;
-            case '*': return falsy ? 0: obj1 * obj2;
-            case '+': return falsy ? 0: obj1 + obj2;
-            case '-': return falsy ? 0: obj1 - obj2;
-            case '==': return falsy ? false: obj1 == obj2;
-            case '!=': return falsy ? false: obj1 != obj2;
-            case '&&': return falsy ? null: obj1 && obj2;
-            case '||': return falsy ? null: obj1 || obj2;
-            case '<': return falsy ? false: obj1 < obj2;
-            case '<=': return falsy ? false: obj1 <= obj2;
-            case '>': return falsy ? false: obj1 > obj2;
-            case '>=': return falsy ? false: obj1 >= obj2;
+            case 1: return falsy ? 0: obj2 == 0 ? null : obj1 / obj2;
+            case 2: return falsy ? 0: obj1 % obj2;
+            case 4: return falsy ? 0: obj1 * obj2;
+            case 8: return falsy ? 0: obj1 + obj2;
+            case 16: return falsy ? 0: obj1 - obj2;
+            case 32: return falsy ? false: obj1 == obj2;
+            case 64: return falsy ? false: obj1 != obj2;
+            case 128: return falsy ? null: obj1 && obj2;
+            case 256: return falsy ? null: obj1 || obj2;
+            case 512: return falsy ? false: obj1 < obj2;
+            case 1024: return falsy ? false: obj1 <= obj2;
+            case 2048: return falsy ? false: obj1 > obj2;
+            case 4096: return falsy ? false: obj1 >= obj2;
         }
-        return null;
+        throw new Error("Invalid operation");
     };
     
     var ___hasown = Object.prototype.hasOwnProperty;
