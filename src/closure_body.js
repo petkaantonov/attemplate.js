@@ -6,8 +6,11 @@
         OBJECT_ARRAY = "[object Array]",
         
         
-        toString = Object.prototype.toString;
         
+        toString = Object.prototype.toString;
+    
+    var ___self;
+    
     var ___global = Function("return this")();
 
     var ___trim = (function() {
@@ -125,7 +128,7 @@
         if( obj && obj.length ) {
             return obj.length > 0;
         }
-        return !!obj;
+        return typeof obj === FUNCTION ? false : !!obj;
     };
     
     var ___binOp = function( op, obj1, obj2 ) {
@@ -133,6 +136,11 @@
         if( obj1 == null || obj2 == null ) {
             falsy = true;
         }
+        
+        if( typeof obj1 === FUNCTION || typeof obj2 === FUNCTION ) {
+            falsy = true;
+        }
+        
         switch( op ) {
             case '/': return falsy ? 0: obj2 === 0 ? null : obj1 / obj2;
             case '%': return falsy ? 0: obj1 % obj2;
@@ -325,15 +333,10 @@
             if( escapeFn !== "SCRIPT" &&
                 escapeFn !== "SCRIPT_IN_ATTR" ) {
                 
-                if( typeof string === STRING ) {
-                    return escapes[escapeFn](string);
-                }
-                else if( (string == null || typeof string === FUNCTION) ) {
-                    console.log(string);
+                if( (string == null || typeof string === FUNCTION) ) {
                     return escapeFn === "URI" ? "#" : "";
                 }
                 else if( string instanceof ___Safe ) { /*wat*/
-                    console.log("giving safe");
                     if( string.safeFor === escapeFn ) {
                         return string;
                     }
@@ -347,9 +350,6 @@
                         ret.push(___safeString__(string[i], escapeFn));
                     }
                     return ret.join("");
-                }
-                else {
-                    console.log("else");
                 }
             }
 

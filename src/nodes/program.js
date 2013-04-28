@@ -8,37 +8,46 @@ var Program = (function() {
     
     function Program() {
         _super.constructor.apply(this, arguments);
-        this.helperName = null;
+        this.importName = null;
+        this.aliasedImportName = null;
+        this.isBeingImported = false;
     }
     
     method.getName = function() {
-        return this.helperName;
+        return this.aliasedImportName || this.importName;
+    };
+    
+    method.getAliasedImportName = function() {
+        return this.aliasedImportName;
     };
     
     method.shouldCheckDataArgument = function() {
-        return !!this.helperName;
+        return this.isBeingImported;
     };
     
-    method.asHelper = function( name ) {
+    method.asHelper = function( importName, aliasedImportName ) {
         var ret = new Program();
         for( var key in this ) {
             if( this.hasOwnProperty( key ) ) {
                 ret[key] = this[key];
             }
         }
-        ret.helperName = name;
+        ret.aliasedImportName = aliasedImportName || null;
+        ret.importName = name;
+        ret.isBeingImported = true;
         return ret;
     };
     
 
     method.toHelperString = function() {
+        this.isBeingImported = true;
         var ret = [],
             scopedReferences = [],
             globalReferences = [];
         
         this.establishReferences( globalReferences, scopedReferences );
 
-        ret.push( "var "+this.helperName+" = (function() {" );
+        ret.push( "(function() {" );
         
         if( globalReferences.length ) {
             ret.push( "var " + globalReferences.join(", \n") + ";");
@@ -57,15 +66,18 @@ var Program = (function() {
         
         ret.push( "return new ___Safe(___html.join(''), 'HTML'); }" );
         
-        ret.push( "return function( data ) { return "+idName+".call(this, data); }; })();");
-        
+        ret.push( "return function( data ) { return "+idName+".call(___self, data); }; })();");
+        this.isBeingImported = false;
         return ret.join("");
     };
     
     method.getHelperCode = function() {
-        var ret = [];
+        var ret = [], helper;
         for( var i = 0; i < this.helpers.length; ++i ) {
-            ret.push( this.helpers[i].toString() );
+            helper = this.helpers[i];
+            if( helper instanceof HelperBlock ) {
+                ret.push( this.helpers[i].toString() );
+            }
         }
         return ret.join("");
     };
@@ -78,13 +90,14 @@ var Program = (function() {
         return ret.join("");
     };
     
-    method.toString = function() {
-        if( this.helperName ) {
-            return this.toHelperString();            
+    method.toString = function( imports, exported ) {
+        if( this.isBeingImported ) {
+            return "";
         }
         
         var ret = [],
             scopedReferences = [],
+            importCodes = [],
             globalReferences = [];
                 
         this.establishReferences( globalReferences, scopedReferences );
@@ -97,7 +110,27 @@ var Program = (function() {
         
         ret.push( this.getHelperCode() );
         
-        ret.push( "function "+idName+"() { var ___html = [];" );
+        for( var primaryName in imports ) {
+            if( imports.hasOwnProperty( primaryName ) ) {
+                var program = exported[primaryName];
+                
+                if( !program ) {
+                    continue;
+                }
+                
+                var aliases = imports[primaryName],
+                    code = program.toHelperString(),
+                    
+                    vars = "var "+ primaryName + (aliases.length ? ",\n" + aliases.join(",\n")+";" : ";"),
+                    assignment = primaryName + (aliases.length ? " = " + aliases.join(" = ")+ " = " + code : " = " + code);
+                
+                importCodes.push( vars, assignment );
+            }
+        }
+        
+        ret.push( importCodes.join("") );
+        
+        ret.push( "function "+idName+"() { ___self = this; var ___html = [];" );
         
         if( scopedReferences.length )  {
             ret.push( "var " + scopedReferences.join(", \n") + ";");

@@ -724,11 +724,56 @@ function merge(src, dst) {
     }}
 }
 
+function isImported( imports, helperName ) {
+    for( var key in imports ) {
+        if( imports.hasOwnProperty(key) ) {
+            
+            if( key === helperName ) {
+                return true;
+            }
+            else if( imports[key].indexOf(helperName) > -1 ) {
+                return true;
+            }
+            
+        }
+    }
+    return false;
+}
+
+function getImports( importProgram, imports ) {    
+    var helpers = importProgram.getHelpers(),
+        helper,
+        alias,
+        name;
+    
+    for( var i = 0; i < helpers.length; ++i ) {
+        helper = helpers[i];
+        
+        if( helper instanceof Program ) {
+            name = helper.getName();
+            
+            if( imports.hasOwnProperty(name) ) {
+                alias = helper.getAliasedImportName();
+                if( alias ) {
+                    imports[name].push( alias );
+                }
+            }
+            else {
+                imports[name] = [];
+                getImports( helper, imports );
+            }
+        }
+    }
+    
+    return imports;
+    
+}
+
 function parse( inp ) {
     var r, matchExport, matchImport, block,
         stackTop, stackLen,
         helpers = [], program, statements,  name, output,
-        helperNames = {},
+        imports = {},
         statement,
         startIndex;
 
@@ -739,7 +784,7 @@ function parse( inp ) {
     
     program = blockStack[blockStack.length-1];
 
-    matchExport = input.match( rexport ) || [];
+    
 
 
 
@@ -748,16 +793,34 @@ function parse( inp ) {
         if( !exported.hasOwnProperty( matchImport[1] ) ) {
             doError( "Cannot import '" + matchImport[1] + "' , no template has been exported with that name.", rimport.lastIndex - matchImport[0].length );
         }
+        var alias = matchImport[2],
+            importedProgram,
+            name = matchImport[1];
 
-        name = matchImport[2] || matchImport[1];
-
-        if( helperNames[name] === true ) {
-            doError( "Cannot import as '"+name+"' - a helper with that name already exists.");
+        if( imports.hasOwnProperty( name ) ) {
+            doError( "Cannot import the template '"+name+"' more than once in a single template" );
         }
-
-        helpers.push( exported[matchImport[1]].asHelper( name ) );
-        helperNames[name] = true;
+        else {
+            imports[name] = [];
+            
+            if( alias ) {
+                imports[name].push( alias );
+            }
+        }
+        
+        importedProgram = exported[name].asHelper( name, alias );
+        
+        helpers.push( importedProgram );
+        
     }
+    
+    for( var j = 0; j < helpers.length; ++j ) {
+        getImports( helpers[j], imports );
+    }
+    
+    matchExport = input.match( rexport ) || [];
+    
+    
 
     if( matchExport[1] && !exported.hasOwnProperty( matchExport[1] ) ) {
         exported[matchExport[1]] = program;
@@ -804,11 +867,11 @@ function parse( inp ) {
                     helperArgs = parsedHeader.args,
                     helperName = parsedHeader.name;
 
-                if( helperNames[helperName] === true ) {
-                    doError( "Cannot use '"+helperName+"', for a helper name - a helper with that name already exists.");
+                if( isImported( imports, helperName ) ) {
+                    doError( "Cannot use '"+helperName+"', for a helper name - a helper or an import with that name already exists.");
                 }
 
-                helperNames[helperName] = true;
+                imports[helperName] = [];
                 stackTop = new HelperBlock( helperName, helperArgs ) ;
                 blockStack.push( stackTop );
                 setScopeBlock();
@@ -933,8 +996,7 @@ function parse( inp ) {
     }
     //This is why in the above loop we don't need to check for instanceof Program
     program.setHelpers( helpers );
-    
-    output = program.toString();
+    output = program.toString( imports, exported );
     
     try {
         r = new Function( output )();

@@ -9,6 +9,7 @@
     </head>
     <body>
         <script type="asd">
+            @export as test
             <select>
             @foreach( options ) {
                 <option value="@value" @if( selected ) { selected }>
@@ -17,10 +18,44 @@
             }
             </select>
         </script>
+        <script type="asd">
+            @export as common
+            dasd
+        </script>
+        
+        <script type="asd">
+            @helper amIhere( arg1, arg2 ) {
+                <div>@arg2</div>
+            }
+            @export as computer
+            @import common as notsocommon
+            
+            @common @notsocommon()
+            daa
+        </script>
+        
+        <script type="asd">
+            @export as computer2
+            @import common as notsocommon
+            
+            
+            
+            @morecommon daa @notsocommon()
+        </script>
+        <script type="asd">
+            
+            @import common as iAmUsingIttoo
+            @import computer
+            @import computer2
+            
+            @computer() @computer2() @iAmUsingIttoo()
+       </script>
+        
+        
         
         <script>
             var tem = [].map.call( document.querySelectorAll("[type=asd]"), function(t){
-                return t.innerHTML;
+                return template.compileStandaloneFromString(t.innerHTML);
             });
         </script>
     
