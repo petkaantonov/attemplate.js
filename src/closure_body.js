@@ -57,7 +57,7 @@
                 return null;
             }
 
-            //Calling these functions on array screws up auto escaping for them
+            /*Calling these functions on array screws up auto escaping for them*/
             if( ___isArray( obj ) && rnocallforarray.test( methodName ) ) {
                 return obj;
             }
@@ -98,24 +98,7 @@
         }
         return null;
     };
-                
-    var ___propAccess = function( obj, args ) {
-        var cur = obj;
-
-        if( cur == null ) {
-            return null;
-        }
-
-        for( var i = 0; i < args.length; ++i ) {
-            cur = cur[args[i]];
-            if( !cur ) {
-                return null;
-            }
-        }
-        
-        return cur;
-    };
-    
+                    
     var ___inOp = function( obj, str ) {
         var needleIsString = typeof str === STRING;
         
@@ -217,10 +200,10 @@
 
     var ___safeString__ = (function(){
     
-        var uriAttr = /src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data/;
+        var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
         
         var getAttrEscapeFunction = function( value, attrName ) {
-            attrName = ATTR_NAME((attrName + "").toLowerCase());
+            attrName = ATTR_NAME(attrName).toLowerCase();
             
             if( uriAttr.test( attrName ) ) {
                 if( value.length ) {
@@ -260,7 +243,7 @@
         
             rattrname = /[^a-zA-Z0-9_:-]+/g,
         
-            rattrencode = /[&'"]/g,
+            rattrencode = /['"]/g,
             
             rjsencode = /[\u0000-\u001F\u007f-\u00A0\u2028\u2029&<>'"\\\/]+/g,
             
@@ -274,8 +257,7 @@
             
             attrEncodeTable = {
                 '"': "&quot;",
-                "'": "&#39;",
-                "&": "&amp;"
+                "'": "&#39;"
             },
 
             replacerHtmlEncode = function( m ) {
@@ -318,6 +300,9 @@
             },
             
             ATTR_NAME = function( str ) {
+                if( str !== 0 && !str || typeof str === FUNCTION ) {
+                    str = "";
+                }
                 str = (str + "").replace( rattrname, "");
                 if( !str ) {
                     return "data-empty-attribute";
@@ -358,6 +343,7 @@
                 if( obj == null || typeof obj == FUNCTION) {
                     obj = null;
                 }
+                
                 return "JSON.parse('" +JSON.stringify(obj).replace(rjsencode, replacerJsEncode) + "')";
             },
 
@@ -378,7 +364,7 @@
         };
 
         return function( string, escapeFn, attrName ) {
-            var passAsIs = escapeFn === "SCRIPT" || escapeFn === "SCRIPT_IN_ATTR";
+            var passAsIs = escapeFn === "SCRIPT" || escapeFn === "SCRIPT_IN_ATTR" || escapeFn === "ATTR_NAME";
         
             if( !passAsIs && ___isArray( string ) ) {
                 if( string.length ) {
@@ -404,20 +390,18 @@
                 escapeFn = getAttrEscapeFunction( string, attrName );
                 return ___safeString__( string, escapeFn );                
             }
+            
+            if( string instanceof ___Safe ) { /*wat*/
+                if( string.safeFor !== escapeFn ) {
+                    string.string = escapes[escapeFn](string.string);
+                    string.safeFor = escapeFn;
+                    return string;
+                }        
+                return string.string;
+            }
         
-            if( !passAsIs ) {
-                
-                if( (string == null || typeof string === FUNCTION) ) {
-                    return escapeFn === "URI" ? "#" : "";
-                }
-                else if( string instanceof ___Safe ) { /*wat*/
-                    if( string.safeFor === escapeFn ) {
-                        return string;
-                    }
-                    else {
-                        return escapes[escapeFn](string.string);
-                    }
-                }
+            if( !passAsIs && (string == null || typeof string === FUNCTION) ) {
+                return escapeFn === "URI" ? "#" : "";
             }
 
             return escapes[escapeFn](string);

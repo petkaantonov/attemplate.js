@@ -52,10 +52,25 @@
        </script>
        
        <script type="asd">
-       
-        <form @test='@tese2'>
         
-        </form>
+        @helper help4() {
+            <div id="asd"></div>
+        }
+        
+        @helper help3() {
+            <div id="@help4()"></div>
+        }
+        
+        @helper help2() {
+            <div id="@help3()"></div>
+        }
+        
+        @helper help() {
+            <div id="@help2()"></div>
+        }
+        
+       
+        <form @test='@tese2' caseval="@help()"></form>
        
        </script>
         

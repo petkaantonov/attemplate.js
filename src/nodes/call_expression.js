@@ -7,7 +7,7 @@ var CallExpression = (function() {
     }
 
     method.toString = function() {
-        return '___propAccess(' +this.fn.toString() + ', ['+this.member.toString()+'])';
+        return '('+this.fn.toString()+' || {})['+this.member.toString()+']';
     };
         
     return CallExpression;

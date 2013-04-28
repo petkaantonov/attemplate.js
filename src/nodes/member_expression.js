@@ -55,23 +55,33 @@ var MemberExpression = (function() {
             return this.identifier.toString();
         }
         else {
-            var ret = [];
-            for( var i = 0; i < this.members.length - 1; ++i ) {
-
-                ret.push( this.members[i].toString());    
+            var ret = ["("];
+            for( var i = 0; i < this.members.length - 2; ++i ) {
+                ret.push("(");
             }
-            return '___propAccess('+this.identifier+', ['+ret.join(", ")+'])';
+            ret.push(this.identifier + "|| {})");
+            for( var i = 0; i < this.members.length - 2; ++i ) {
+
+                ret.push( "[" + this.members[i].toString() + "] || {})" );
+            }
+            ret.push( "[" + this.members[i].toString() + "]" );
+            return ret.join("");
         }
     };
     
     method.toString = function() {
         if( this.members.length ) {
-            var ret = [];
-            for( var i = 0; i < this.members.length; ++i ) {
-                
-                ret.push( this.members[i].toString());    
+            var ret = ["("];
+            for( var i = 0; i < this.members.length - 1; ++i ) {
+                ret.push("(");
             }
-            return '___propAccess('+this.identifier+', ['+ret.join(", ")+'])';
+            ret.push(this.identifier + "|| {})");
+            for( var i = 0; i < this.members.length - 1; ++i ) {
+                
+                ret.push( "[" + this.members[i].toString() + "] || {})" );
+            }
+            ret.push( "[" + this.members[i].toString() + "]" );
+            return ret.join("");
         }
         else {
             return this.identifier + "";

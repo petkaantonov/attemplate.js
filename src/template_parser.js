@@ -304,6 +304,11 @@ var parseHelperHeader = (function() {
         
             for( var i = 0; i < len; ++i ) {
                 var arg = args[i].trim();
+                
+                if( !arg ) {
+                    continue;
+                }
+                
                 if( !rjsident.test( arg ) ) {
                     doError( "Parameter name must be a valid Javascript identifier.");
                 }
