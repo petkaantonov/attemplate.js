@@ -2,7 +2,7 @@ var fs = require("fs");
 var parsergen = require("./src/parsergen.js");
 function stringifyClosureBody( code ) {
     code = eval(code).replace(/[\r\n]/g, "").replace( /\\/g, "\\\\").replace(/"/g, '\\"');
-    return 'var fnBody = "' + code + '";\n';
+    return 'var programInitBody = "' + code + '";\n';
 }
 
 module.exports = function( grunt ) {
@@ -14,6 +14,8 @@ module.exports = function( grunt ) {
         build: {
 
             src: [
+            
+                "./src/js_nodes.js",
                 "./src/html_context_parser.js",
                 "./src/closure_body.js",
                 "./src/template_parser.js",
@@ -35,11 +37,10 @@ module.exports = function( grunt ) {
         
         
         var compiled = [];
-    
-        compiled.push(parsergen("./js_template_expression_grammar.js"));
-        compiled.push(fs.readFileSync("./src/js_nodes.js", "utf-8"));
         compiled.push(fs.readFileSync("./src/begin.js", "utf-8"));
-          
+        compiled.push(parsergen("./js_template_expression_grammar.js"));
+        
+        
     
         files.forEach( function( filepath) {
 

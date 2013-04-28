@@ -4,13 +4,13 @@ var grammar = {
 
     snippet: [
         ["", "return $$ = new Snippet();"],
-        ["EOF", "return $$ = $1;"],
+        ["EOF", "return $$ = new Snippet();"],
         ["body EOF", "return $$ = $1;"]
         
     ],
     
     body: [
-        ["foreach"],
+        ["foreach", "$$ = new Snippet($1);"],
         ["expression", "$$ = new Snippet($1);"],
         
         
@@ -112,10 +112,10 @@ var grammar = {
     ],
     
     foreach: [
-        ["FOREACH ( member )", "$$ = new ForeachStatement(null, null, $3);"],
-        ["FOREACH ( identifier IN range )", "$$ = new ForeachStatement($3, null, $5);"],
-        ["FOREACH ( identifier IN expression )", "$$ = new ForeachStatement($3, null, $5);"],
-        ["FOREACH ( identifier , identifier IN expression )", "$$ = new ForeachStatement($3, $5, $7);"]
+        ["FOREACH ( member )", "$$ = new ForeachBlock(null, null, $3);"],
+        ["FOREACH ( identifier IN range )", "$$ = new ForeachBlock($3, null, $5);"],
+        ["FOREACH ( identifier IN expression )", "$$ = new ForeachBlock($3, null, $5);"],
+        ["FOREACH ( identifier , identifier IN expression )", "$$ = new ForeachBlock($3, $5, $7);"]
     ],
     
     range: [

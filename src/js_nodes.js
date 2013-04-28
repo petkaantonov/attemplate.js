@@ -7,6 +7,10 @@ var Snippet = (function() {
 
     }
     
+    method.getExpression = function() {
+        return this.expr;
+    };
+    
     method.toString = function() {
         return this.expr ? this.expr.toString() : "";
     };
@@ -46,14 +50,7 @@ var MemberExpression = (function() {
     var method = MemberExpression.prototype;
     
     MemberExpression.identifiers = {};
-    
-    //Should be used for helper names too
-    var rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/;
-    var rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/;
-    var rfalsetrue = /^(?:false|true)$/;
-    var rtripleunderscore = /^___/;
-    var rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/;
-    
+        
     function MemberExpression( members ) {
         this.members = members.slice(1) || [];
         this.identifier = members[0];
@@ -200,6 +197,7 @@ var FunctionCall = (function() {
     
     method.toString = function() {
         var ret = this.convertArgs(),
+            last;
             context = 'this';
         
         if( this.expr instanceof CallExpression ) {
@@ -210,12 +208,8 @@ var FunctionCall = (function() {
                 return '___method('+this.expr.fn+', '+this.expr.member+')';
             } 
         }
-        
-        if( this.expr.getLast ) {
-            var last = this.expr.getLast();
-        }
-        
-        if( last ) {
+
+        if( (last = ( this.expr.getLast && this.expr.getLast() ) ) ) {
             if( ret.length ) {
                 return '___method('+this.expr.toStringNoLast()+', '+last.toString()+', ['+ret.join(", ") + '])';
             }
@@ -393,10 +387,158 @@ var ArrayLiteral = (function() {
     return ArrayLiteral;
 })();
 
-var ForeachStatement = (function(){
 
-    var method = ForeachStatement.prototype;
+
+
+
+
+var Block = (function() {
+    var method = Block.prototype;
     
+    function Block() {
+        this.statements = [];
+    }
+    
+    method.push = function( statement ) {
+        this.statements.push( statement );
+    };
+    
+    method.toString = function() {
+        var ret = [];
+        for( var i = 0; i < this.statements.length; ++i ) {
+            ret.push( this.statements[i].toString() );
+        }
+        return ret.join("");
+    };
+    
+    method.getStatements = function() {
+        return this.statements;
+    };
+    
+    return Block;
+})();
+
+//A block that has a header like @if( header ) { blockCode }
+var HeaderBlock = (function() {
+    var _super = Block.prototype,
+        method = HeaderBlock.prototype = Object.create(_super);
+    
+    method.constructor = HeaderBlock;
+    
+    function HeaderBlock( header ) {
+        _super.constructor.apply(this, arguments);
+        this.header = header;
+    }
+    
+    method.toString = function() {
+        return this.getName() + " ( " + this.header + " )  { " + _super.toString.call(this) + "}";
+    };
+        
+    return HeaderBlock;
+})();
+
+//A block that has its own variable scope
+var ScopedBlock = (function() {
+    var _super = Block.prototype,
+        method = ScopedBlock.prototype = Object.create(_super);
+    
+    method.constructor = ScopedBlock;
+    
+    function ScopedBlock() {
+        _super.constructor.apply(this, arguments);
+        this.helpers = [];
+        this.variables = {};
+    }
+
+    method.setHelpers = function( helpers ) {
+        this.helpers = helpers;  
+    };
+
+    method.getHelpers = function() {
+        return this.helpers;
+    };
+    
+    method.getName = function() {
+        return null;
+    };
+    
+    method.mergeVariables = function( varsSet ) {
+        for( var key in varsSet ) { 
+            if( varsSet.hasOwnProperty( key ) ) {
+                this.variables[key] = true;
+            } 
+        }
+    };
+    
+    method.shouldCheckDataArgument = function() {
+        return false;
+    };
+    
+    method.shouldDeclareGlobalsSeparately = function() {
+        return true;
+    };
+    
+    method.getVariables = function() {
+        return this.variables;
+    };
+    
+    method.establishReferences = function( globalReferences, scopedReferences ) {
+        var helperNames = {},
+            helpers = this.helpers,
+            vars = this.getVariables(),
+            possibleGlobal,
+            shouldCheckDataArgument = this.shouldCheckDataArgument(),
+            shouldDeclareGlobalsSeparately = this.shouldDeclareGlobalsSeparately();
+            hLen = helpers.length;
+
+        for( var i = 0; i < hLen; ++i ) {
+            helperNames[helpers[i].getName()] = true;
+        }
+
+        for( var key in vars ) {
+            if( vars.hasOwnProperty( key ) && //Don't override helpers
+                !helperNames.hasOwnProperty( key ) ) {
+                
+                
+                if( ( possibleGlobal = globalsAvailable.hasOwnProperty(key) ) ) {
+                    if( !shouldDeclareGlobalsSeparately ) {
+                        if( shouldCheckDataArgument ) {
+                            scopedReferences.push(key + " = (___hasown.call(___data, '"+key+"' ) ? ___data."+key+":"+
+                                    "___hasown.call(this, '"+key+"' ) ? this."+key+" : ___global." + key);
+                        }
+                        else {
+                            scopedReferences.push(key + " = this."+key+" || (___hasown.call(this, '"+key+"' ) ? this."+key+" : ___global." + key + ")");
+                        }
+                        continue;
+                    }
+                    else {
+                        globalReferences.push("____"+key + " = ___global." + key);
+                    }
+                }
+                
+                if( shouldCheckDataArgument ) {
+                    scopedReferences.push(key + " = (___hasown.call(___data, '"+key+"' ) ? ___data."+key+":"+
+                                    "___hasown.call(this, '"+key+"' ) ? this."+key+":"+
+                    ( possibleGlobal ? "____"+key : 'null') + ")");
+                }
+                else {
+                    scopedReferences.push(key + " = this."+key+" || (___hasown.call(this, '"+key+"' ) ? this."+key+" :"+
+                    ( possibleGlobal ? "____"+key : 'null') + ")");
+                
+                }              
+             }
+        }
+
+    };
+    
+    return ScopedBlock;
+})();
+
+
+var ForeachBlock = (function() {
+    var _super = Block.prototype,
+        method = ForeachBlock.prototype = Object.create(_super);
+
     var randomId = (function() {
         var id = 0;
 
@@ -404,18 +546,19 @@ var ForeachStatement = (function(){
             return "" + (++id);
         };
     })();
+   
+    method.constructor = ForeachBlock;
     
-    function ForeachStatement( key, value, collection ) {
+    function ForeachBlock( key, value, collection ) {
+        _super.constructor.apply(this, arguments);
         this.key = key;
         this.value = value;
         this.collection = collection;
-        this.body = [];
     }
-    
 
     method.toString = function() {
         var id = randomId();
-        var body = this.body.join("");
+        var body = _super.toString.call( this );
         
         //Short array iteration for @for( items ) <div>@name</div>
         if( !this.key && !this.value ) {
@@ -480,11 +623,315 @@ var ForeachStatement = (function(){
                     "    }).call(this, "+this.collection+");";
         }
     };
+   
+    return ForeachBlock;
+})();
+
+
+var HelperBlock = (function() {
+    var _super = ScopedBlock.prototype,
+        method = HelperBlock.prototype = Object.create(_super);
     
-    method.push = function() {
-        this.body.push.apply( this.body, arguments );
+    method.constructor = HelperBlock;
+    
+    function HelperBlock( name, parameterNames ) {
+        _super.constructor.apply(this, arguments);
+        this.name = name;
+        this.parameterNames = parameterNames;
+        
+    }
+  
+    method.shouldCheckDataArgument = function() {
+        return false;
+    };
+
+    method.shouldDeclareGlobalsSeparately = function() {
+        return false;
     };
     
+    //No need to merge the variabls that are declared in parameters
+    //Globals and other helper names cannot be known at this time
+    method.mergeVariables = function( varsSet ) {
+        var vars = this.getVariables();
+        
+        for( var key in varsSet ) {
+            if( varsSet.hasOwnProperty( key ) &&
+                this.parameterNames.indexOf( key ) < 0 ) {
+                vars[key] = true;
+            }
+        }
+    };
     
-    return ForeachStatement;
+    method.toString = function() {
+        var ret = [],
+            scopedReferences = [],
+            globalReferences = [];
+        
+      
+        this.establishReferences( globalReferences, scopedReferences );
+        
+        ret.push( "var " + this.name + " = function("+this.parameterNames.join(", ")+"){ " );
+        
+                
+        if( globalReferences.length ) {
+            ret.push( "var " + globalReferences.join(", \n") + ";");
+        }
+
+        if( scopedReferences.length )  {
+            ret.push( "var " + scopedReferences.join(", \n") + ";");
+        }
+        
+        ret.push( "var ___html = [];" );
+        
+        for( var i = 0; i < this.statements.length; ++i ) {
+            ret.push( this.statements[i].toString() );
+        }
+        
+        ret.push( "return new ___Safe(___html.join(''), 'HTML'); };" );
+        
+        return ret.join( "" );
+    };
+    
+    method.getParameterNames = function() {
+        return this.parameterNames;
+    };
+    
+    method.getName = function() {
+        return this.name;
+    };
+    
+    return HelperBlock;
 })();
+
+var IfElseBlock = (function() {
+    var _super = HeaderBlock.prototype,
+        method = IfElseBlock.prototype = Object.create(_super);
+    
+    method.constructor = IfElseBlock;
+    
+    function IfElseBlock() {
+        _super.constructor.apply(this, arguments);
+    }
+    
+    method.getName = function() {
+        return "else if";
+    }
+    
+    return IfElseBlock;
+})();
+
+var IfBlock = (function() {
+    var _super = HeaderBlock.prototype,
+        method = IfBlock.prototype = Object.create(_super);
+    
+    method.constructor = IfBlock;
+    
+    function IfBlock() {
+        _super.constructor.apply(this, arguments);
+    }
+
+    method.getName = function() {
+        return "if";
+    }
+    
+    return IfBlock;
+})();
+
+var ElseBlock = (function() {
+    var _super = Block.prototype,
+        method = ElseBlock.prototype = Object.create(_super);
+    
+    method.constructor = ElseBlock;
+    
+    function ElseBlock() {
+        _super.constructor.apply(this, arguments);
+    }
+    
+    method.toString = function() {
+        return "else { " + _super.toString.call( this ) + " } ";
+    };
+    
+    return ElseBlock;
+})();
+
+var TemplateExpression = (function() {
+    var method = TemplateExpression.prototype;
+    
+    function TemplateExpression( expression, contextEscapeFn, escapeFn ) {
+        this.expression = expression;
+        this.contextEscapeFn = contextEscapeFn; //The escape function as inferred from html context for this expression
+        this.escapeFn = escapeFn; //The custom escape function
+    }
+    
+    method.toString = function() {
+        var escapeFn = this.escapeFn ? this.escapeFn : this.contextEscapeFn;
+        return "___html.push(___safeString__((" + this.expression.toString()+"), '"+escapeFn+"'));";
+    };
+    
+    return TemplateExpression;
+})();
+
+var LiteralExpression = (function() {
+    var method = LiteralExpression.prototype;
+    
+    function LiteralExpression( literal ) {
+        this.literal = literal;
+    }
+    
+    method.toString = function() {
+                //Make it safe to embed in a javascript string literal
+       var ret = this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
+       return "___html.push('" + ret +"');"
+    };
+    
+    return LiteralExpression;
+})();
+
+
+var LiteralJavascriptBlock = (function() {
+    var method = LiteralJavascriptBlock.prototype;
+    
+    function LiteralJavascriptBlock( code ) {
+        this.code = code;
+    }
+    
+    method.toString = function() {
+        return this.code.toString();
+    };
+    
+    return LiteralJavascriptBlock;
+})();
+
+
+var Program = (function() {
+    var _super = ScopedBlock.prototype,
+        method = Program.prototype = Object.create(_super);
+    
+    method.constructor = Program;
+    
+    var idName = "___template___";
+    
+    function Program() {
+        _super.constructor.apply(this, arguments);
+        this.helperName = null;
+    }
+    
+    method.getName = function() {
+        return this.helperName;
+    };
+    
+    method.shouldCheckDataArgument = function() {
+        return !!this.helperName;
+    };
+    
+    method.asHelper = function( name ) {
+        var ret = new Program();
+        for( var key in this ) {
+            if( this.hasOwnProperty( key ) ) {
+                ret[key] = this[key];
+            }
+        }
+        ret.helperName = name;
+        return ret;
+    };
+    
+
+    method.toHelperString = function() {
+        var ret = [],
+            scopedReferences = [],
+            globalReferences = [];
+        
+        this.establishReferences( globalReferences, scopedReferences );
+
+        ret.push( "var "+this.helperName+" = (function() {" );
+        
+        if( globalReferences.length ) {
+            ret.push( "var " + globalReferences.join(", \n") + ";");
+        }
+
+        
+        ret.push( this.getHelperCode() );
+        
+        ret.push( "function "+idName+"( ___data ) { ___data = ___data || {}; var ___html = [];" );
+        
+        if( scopedReferences.length )  {
+            ret.push( "var " + scopedReferences.join(", \n") + ";");
+        }
+        
+        ret.push( this.getCode() );
+        
+        ret.push( "return new ___Safe(___html.join(''), 'HTML'); }" );
+        
+        ret.push( "return function( data ) { return "+idName+".call(this, data); }; })();");
+        
+        return ret.join("");
+    };
+    
+    method.getHelperCode = function() {
+        var ret = [];
+        for( var i = 0; i < this.helpers.length; ++i ) {
+            ret.push( this.helpers[i].toString() );
+        }
+        return ret.join("");
+    };
+    
+    method.getCode = function() {
+        var ret = [];
+        for( var i = 0; i < this.statements.length; ++i ) {
+            ret.push( this.statements[i].toString() );
+        }
+        return ret.join("");
+    };
+    
+    method.toString = function() {
+        if( this.helperName ) {
+            return this.toHelperString();            
+        }
+        
+        var ret = [],
+            scopedReferences = [],
+            globalReferences = [];
+                
+        this.establishReferences( globalReferences, scopedReferences );
+        
+        ret.push( programInitBody );
+                
+        if( globalReferences.length ) {
+            ret.push( "var " + globalReferences.join(", \n") + ";");
+        }
+        
+        ret.push( this.getHelperCode() );
+        
+        ret.push( "function "+idName+"() { var ___html = [];" );
+        
+        if( scopedReferences.length )  {
+            ret.push( "var " + scopedReferences.join(", \n") + ";");
+        }
+        
+        ret.push( this.getCode() );
+        
+        ret.push( "return ___html.join(''); }" );
+        
+        ret.push( "return function( data ) { return "+idName+".call(data); }; ");
+        
+        return ret.join("");
+    };
+    
+    return Program;
+})();
+
+var LoopStatement = (function() {
+    var method = LoopStatement.prototype;
+    
+    function LoopStatement( statement ) {
+        this.statement = statement;
+    }
+    
+    method.toString = function() {
+        return this.statement + ";";
+    };
+    
+    return LoopStatement;
+})();
+
+

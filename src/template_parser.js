@@ -27,15 +27,13 @@ function getEscapeFnByName( name ) {
 var input,
     character,
     i,
-    output,
-    keywordBlockStack,
+    blockStack,
     token,
     type,
     value,
     blockType,
-    helpers,
     auxI,
-    scope,
+    scopeBlock,
     parsed,
     endReturn,
     escapingNext = false,
@@ -98,11 +96,20 @@ var input,
     rwscollapse = /\s+/g,
     rnltonewline = /\n\s*/g,
     rescapequote = /([\\'])/g,
-    rjsident = /[0-9A-Za-z$_]/,
     rwhitespaceonly = /^\s+$/,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
+    
+    rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,
+    
+    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,
+    
+    rliteralid = /^(?:null|this|false|true)$/,
+    
+    rfalsetrue = /^(?:false|true)$/,
+    rtripleunderscore = /^___/,
+    rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/,
 
     //TODO Share with htmlcontext
     lineterminatorReplacer = function(m) {
@@ -270,6 +277,59 @@ function doError( msg, currentIndex ) {
 
     throw new Error( msg + " On line " + lineno  + ", column " + (column + 1) );
 }
+
+var parseHelperHeader = (function() {
+
+    var rhelpername = /\s*([A-Za-z$_][0-9A-Za-z$_]*)/,
+        rargssplit = /\s*,\s*/,
+        rhelperargs = /\(([^)]*)\)/g;
+
+    return function ( header ) {
+        var name = rhelpername.exec( header ) || doError("Helper name must be a valid Javascript identifier."),
+            argString,
+            len,
+            args = [],
+            uniqueArgs = {};
+
+        name = name[1];
+
+        if( rkeyword.test( name ) || rillegal.test( name ) || rliteralid.test( name ) ) {
+            doError( "Helper name must not be a reserved word: '"+name+"'.");
+        }
+
+        rhelperargs.lastIndex = 0;
+        argString = rhelperargs.exec( header ) || doError("Invalid helper syntax for arguments.");
+
+        args = argString[1].split( rargssplit );
+
+        if( ( len = args.length ) ) {
+        
+            for( var i = 0; i < len; ++i ) {
+                var arg = args[i].trim();
+                if( !rjsident.test( arg ) ) {
+                    doError( "Parameter name must be a valid Javascript identifier.");
+                }
+                
+                if( rkeyword.test( arg ) || rillegal.test( arg ) || rliteralid.test( arg ) ) {
+                    doError( "Parameter name must not be a reserved word: '"+arg+"'.");
+                }
+                                
+                if( uniqueArgs.hasOwnProperty( args ) ) {
+                    doError( "Duplicate helper parameter name, '"+arg+"' was already declared.");
+                }
+                uniqueArgs[arg] = true;
+                args[i] = arg;
+            }            
+        }
+        
+        return {
+            args: args,
+            name: name
+        };
+
+    };
+
+})();
 
 function createDelimitParser( OPEN, CLOSE ) {
     return function() {
@@ -630,12 +690,9 @@ function getNextToken() {
 
 function init( inp ) {   
     i = 0;
-    output = [];
-    helpers = [];
-    keywordBlockStack = [];
+    blockStack = [new Program()];
     blockType = null;
     character = "";
-    scope = TEMPLATE_SCOPE;
     auxI = 0;
     token = null;
     type = null;
@@ -644,37 +701,21 @@ function init( inp ) {
     escapingNext = false;
     nextCharForced = null;
     htmlContextParser = new HtmlContextParser();
+    setScopeBlock();
+}
 
-    var foreachStatement = function(last) {                
-        return last && typeof last !== "string" && last instanceof ForeachStatement && last || null;
-    };
-
-    output.push = function( arg ) {
-        var obj = this;
-
-        if( scope !== TEMPLATE_SCOPE ) {
-            obj = helpers;
+function setScopeBlock() {
+    for( var l = blockStack.length-1; l >= 0; l-- ) {
+        if( blockStack[l] instanceof ScopedBlock ) {
+            scopeBlock = blockStack[l];
+            break;
         }
-
-        var last = foreachStatement(obj[obj.length-1]);
-
-        if( last ) {
-            arg = foreachStatement(arg);
-            if( arg ) {
-                __push.call( obj, arg );
-                return;
-            }
-            last.push.apply( last, arguments );
-        }
-        else {
-            __push.apply( obj, arguments );
-        }
-    };    
+    }
 }
 
 function inLoopingConstruct() {
-    for( var i = 0; i < keywordBlockStack.length; ++i ) {
-        if( loopKeywords[keywordBlockStack[i]] === true ) {
+    for( var i = 0; i < blockStack.length; ++i ) {
+        if( blockStack[i] instanceof ForeachBlock ) {
             return true;
         }
     }
@@ -688,24 +729,23 @@ function merge(src, dst) {
 }
 
 function parse( inp ) {
-    var r, matchExport, exportsAs, matchImport, 
-        idName = "___template___", helperNames = {}, declaredVars = {},
-        startIndex, booleanBlock = false;
+    var r, matchExport, matchImport, block,
+        stackTop, stackLen,
+        helpers = [], program, statements,  name, output,
+        helperNames = {},
+        statement,
+        startIndex;
 
     rimport.lastIndex = 0;
     rexport.lastIndex = 0;
 
     init( inp );
+    
+    program = blockStack[blockStack.length-1];
 
     matchExport = input.match( rexport ) || [];
 
-    if( matchExport[1] && !exported.hasOwnProperty( matchExport[1] ) ) {
-        exportsAs = matchExport[1];
-        matchExport = true;
-    }
-    else {
-        exportsAs = "CompiledTemplate";
-    }
+
 
     while( ( matchImport = rimport.exec( input ) ) ) {
 
@@ -713,27 +753,32 @@ function parse( inp ) {
             doError( "Cannot import '" + matchImport[1] + "' , no template has been exported with that name.", rimport.lastIndex - matchImport[0].length );
         }
 
-        var exportObj = exported[matchImport[1]],
-            code = exportObj.code,
-            helperCode = exportObj.helperCode || "",
-            name = matchImport[2] || matchImport[1];
+        name = matchImport[2] || matchImport[1];
 
         if( helperNames[name] === true ) {
             doError( "Cannot import as '"+name+"' - a helper with that name already exists.");
         }
 
-        helpers.push( "var "+ name + " = (function(){ " + helperCode + "; " + code + "})();" );
+        helpers.push( exported[matchImport[1]].asHelper( name ) );
         helperNames[name] = true;
     }
 
+    if( matchExport[1] && !exported.hasOwnProperty( matchExport[1] ) ) {
+        exported[matchExport[1]] = program;
+    }
+
     rimport.lastIndex = 0;
+    rexport.lastIndex = 0;
 
     input = input.replace( rimport, "" ).replace( rexport, "" );
 
-    endReturn = " return ___html.join('');}; return function "+exportsAs+"(___model) { return "+idName+".call((this == ___global ? ___model : this), ___model); };";
 
     skipWhiteSpace();
+    
+    
     while( true ) {
+        stackLen = blockStack.length;
+        stackTop = blockStack[stackLen-1];
         startIndex = i;
         token = getNextToken();
 
@@ -742,7 +787,7 @@ function parse( inp ) {
         blockType = token[2] || null;
         escapeFn = token[3] || null;
 
-
+        console.log( value, blockType );
         if( type === END_OF_INPUT ) {
             break;
         }
@@ -751,96 +796,75 @@ function parse( inp ) {
             if( !inLoopingConstruct() ) {
                 doError( "Cannot use continue or break while not in a loop.");
             }
-            output.push( value + ";" );
+            stackTop.push( new LoopStatement( value ) );
         }
         else if( type === KEYWORD_BLOCK_OPEN ) {
-            keywordBlockStack.push( blockType );
-            htmlContextParser = htmlContextParser.pushStack();
-            if( blockType === "helper" ) {
 
-                if( keywordBlockStack.length > 1 ) {
+            if( blockType === "helper" ) {
+                if( stackLen > 1 ) {
                     doError( "Cannot define helper inside another block." );
                 }
 
-                if( scope !== TEMPLATE_SCOPE ) {
-                    doError( "Nested helper functions are not supported.");
-                }
-
-                scope = HELPER_SCOPE;
-                var helperHeader = value.trim().replace( "helper", "" ),
-                    helperName = helperHeader.substring(0, helperHeader.indexOf("("));
-
-                if( !helperName ) {//TODO JSIDENT
-                    doError( "No name given for helper." );
-                }
+                var parsedHeader = parseHelperHeader(value),
+                    helperArgs = parsedHeader.args,
+                    helperName = parsedHeader.name;
 
                 if( helperNames[helperName] === true ) {
                     doError( "Cannot use '"+helperName+"', for a helper name - a helper with that name already exists.");
                 }
 
                 helperNames[helperName] = true;
-
-                output.push( "function " + helperHeader + " { var ___html = [];" );
+                stackTop = new HelperBlock( helperName, helperArgs ) ;
+                blockStack.push( stackTop );
+                setScopeBlock();
+                htmlContextParser = htmlContextParser.pushStack();
             }
             else if( blockType === "foreach" ) {
-                var exprTree = parser.parse( "foreach " + value);
-                output.push( exprTree );
+                var snippet = parser.parse( "foreach " + value );
+                scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+                stackTop = snippet.getExpression();
+                blockStack.push( stackTop );
             }
             else if( blockType === "else" ) {
-                    output.push( "else {"+ value );
+                stackTop = new ElseBlock();
+                blockStack.push( stackTop );
             }
             else {
-                if( blockType === "if" || 
-                    blockType === "else if" ) {
-                    booleanBlock = true;
+                var snippet = parser.parse(value);
+                    
+                switch( blockType ) {
+                    case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
+                    case "else if": stackTop = new IfElseBlock( snippet.getExpression() ); break;
                 }
-                else {
-                    booleanBlock = false;
-                }
-
-                var exprTree = parser.parse(value);
-                merge( exprTree.getNakedVarReferences(), declaredVars );
-
-                value = booleanBlock ? '___boolOp(' + exprTree.toString() + ')' : exprTree.toString();
-
-
-                output.push( blockType + "(" + value + ") {"  );
+                
+                scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+                blockStack.push( stackTop );
                 
             }
         }
         else if( type === KEYWORD_BLOCK_CLOSE ) {
-            blockType = keywordBlockStack.pop();
-            htmlContextParser = htmlContextParser.popStack();
+            if( stackTop instanceof Program ) {
+                //No block is open so just output } as literal
+                stackTop.push( new LiteralExpression( "}" ) );
+                continue;
+            }
             
-            if( !blockType ) {
-                output.push( "___html.push('}');" );
-                continue;
-            }
+            block = blockStack.pop();
+            stackLen = blockStack.length;
+            stackTop = blockStack[stackLen-1];
+            stackTop.push(block);
+            
+            setScopeBlock();
             skipWhiteSpace(); //Skip whitespace after block
-            if( blockType === "foreach" ) {
-                if( scope === TEMPLATE_SCOPE ) {
-                    output.push( output.pop().toString() );
-                }
-                else {
-                    output.push( helpers.pop().toString() );
-                }
-                continue;
-            }
 
                                             //When closing a if|else if block, the next word could be another without @ prefix
-            if( ( blockType === "if" || blockType === "else if" ) && isNextWord( "else" ) ) {
+            if( ( block instanceof IfBlock || block instanceof IfElseBlock ) && isNextWord( "else" ) ) {
                 i = input.indexOf( "else", i-1 ); //fast forward to the part where else begins
                 forceNextChar( "@" ); //insert @ at that part
             }
-
-            if( blockType === "helper" ) {
-                output.push( "return ___html.join('');}");
-                scope = TEMPLATE_SCOPE;
+            else if( block instanceof ScopedBlock ) {
+                htmlContextParser = htmlContextParser.popStack();
             }
-            else {
-                output.push( "}" );
-            }
-
         }
         else if( type === STRING ) {
             htmlContextParser.write( value, i - value.length );
@@ -848,7 +872,7 @@ function parse( inp ) {
             if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
                 value = trimRight(value);
             }
-            else if( keywordBlockStack.length ) {
+            else if( blockStack.length > 1 ) {
                     if( isWhiteSpace( value ) ) {
                         continue;
                     }
@@ -863,73 +887,60 @@ function parse( inp ) {
             if( !value.length ) { //See if there is anything after possible trims
                 continue;
             }
-            //Make it safe to embed in a javascript string literal
-            value = value.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
             
-
-            output.push( "___html.push('" + value +"');" );
-            
+            stackTop.push( new LiteralExpression( value ) );            
         }
         else if( type === EXPRESSION ) {
-            var exprTree = parser.parse(value);
-            merge( exprTree.getNakedVarReferences(), declaredVars );
-            
-            if( exprTree.expr instanceof FunctionCall && 
-                helperNames.hasOwnProperty(exprTree.expr.getDirectRefName())
-            ) {
-                escapeFn = "NO_ESCAPE";
-            }
-            
-            output.push( 
-                "___html.push(___safeString__(("+exprTree.toString()+"), '"+
-                (   escapeFn === "NO_ESCAPE" ? escapeFn : htmlContextParser.getEscapeFunction() )
-                +"'));"
+            var snippet = parser.parse(value);
+            scopeBlock.mergeVariables( snippet.getNakedVarReferences() );            
+            stackTop.push(
+                new TemplateExpression(
+                    snippet.getExpression(),
+                    htmlContextParser.getEscapeFunction(),
+                    escapeFn
+                )
             );
         }
         else if( type === BLOCK ) {
-            output.push( value ); //literal javascript block of code
+            stackTop.push( new LiteralJavascriptBlock( value ) ); //literal javascript block of code
         }
     }
     htmlContextParser.close();
 
-    if( keywordBlockStack.length ) {
-        doError( "Unclosed '"+keywordBlockStack.pop()+"'-block. ");
+    if( stackLen > 1 ) { //Todo improve line num and block name
+        doError( "Unclosed block. ");
     }
     
-    var globalDeclarations = [],
-        globalDeclarationCode,
-        possibleGlobal,
-        scopeDeclarations = [];
-    
-    for( var key in declaredVars ) { 
-        if( declaredVars.hasOwnProperty(key) && !helperNames.hasOwnProperty(key) ) {
-            if( ( possibleGlobal = globalsAvailable.hasOwnProperty(key) ) ) {
-                globalDeclarations.push("____"+key + " = ___global." + key);
-            }
 
-            scopeDeclarations.push(key + " = (___hasown.call(___model, '"+key+"' ) ? ___model."+key+":"+
-                "___hasown.call(this, '"+key+"' ) ? this."+key+":"+
-                ( possibleGlobal ? "____"+key : 'null') + ")");
+    program = stackTop;
+    statements = program.getStatements();
+        
+    
+    for( var j = 0; j < statements.length; ++j ) {
+        statement = statements[j];
+        
+        if( statement instanceof HelperBlock || 
+            statement instanceof Program ) {
+            
+            helpers.push( statement );
+            statements.splice(j--, 1);
         }
     }
-
-    var preReturn = "; function "+idName+"( ___model ) { var ___html = []; ___model = typeof ___model == \"object\" ? (___model || {}) : {};" +
-        (scopeDeclarations.length ? (("var " + scopeDeclarations.join(", \n") + ";")) : "");
-        
-    globalDeclarationCode = 'var ___global = Function("return this")(); ' + (globalDeclarations.length ? ("var " + globalDeclarations.join(", \n") + ";") : "");
-
-    helpers = helpers.join("");
-    output = output.join("");
     
-    if( matchExport === true ) {
-        exported[exportsAs] = {
-            code: preReturn + output + endReturn,
-            helperCode: globalDeclarationCode + helpers
-        };
+    for( var j = 0; j < helpers.length; ++j ) {
+        var helper = helpers[j];
+        //Helpers need to know about other helpers as well
+        //So that they don't declare variables that refer to helpers
 
+        if( helper instanceof HelperBlock ) {
+            helper.setHelpers(helpers);
+        }
     }
+    //This is why in the above loop we don't need to check for instanceof Program
+    program.setHelpers( helpers );
     
-    output = globalDeclarationCode + fnBody + helpers + preReturn + output + endReturn;
+    output = program.toString();
+    
     try {
         r = new Function( output )();
     }

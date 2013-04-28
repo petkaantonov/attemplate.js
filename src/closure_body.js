@@ -7,6 +7,8 @@
         
         
         toString = Object.prototype.toString;
+        
+    var ___global = Function("return this")();
 
     var ___trim = (function() {
         /*From es5-shim*/
@@ -174,6 +176,22 @@
 
         return [];
     };
+    
+    var ___Safe = (function() {
+        var method = ___Safe.prototype;
+        
+        function ___Safe(string, safeFor) {
+            this.string = string;
+            this.safeFor = safeFor;
+        }
+        
+        method.toString = function() {
+            return this.string;
+        };
+        
+        return ___Safe;
+    })();
+
 
     var ___safeString__ = (function(){
         
@@ -303,12 +321,39 @@
         };
 
         return function( string, escapeFn ) {
+        
             if( escapeFn !== "SCRIPT" &&
-                escapeFn !== "SCRIPT_IN_ATTR" &&
-                (string == null || typeof string === FUNCTION) ) {
-                return escapeFn === "URI" ? "#" : "";
+                escapeFn !== "SCRIPT_IN_ATTR" ) {
+                
+                if( typeof string === STRING ) {
+                    return escapes[escapeFn](string);
+                }
+                else if( (string == null || typeof string === FUNCTION) ) {
+                    console.log(string);
+                    return escapeFn === "URI" ? "#" : "";
+                }
+                else if( string instanceof ___Safe ) { /*wat*/
+                    console.log("giving safe");
+                    if( string.safeFor === escapeFn ) {
+                        return string;
+                    }
+                    else {
+                        return escapes[escapeFn](string.string);
+                    }
+                }
+                else if( ___isArray( string ) ) {
+                    var ret = [];
+                    for ( var i = 0; i < string.length; ++i ) {
+                        ret.push(___safeString__(string[i], escapeFn));
+                    }
+                    return ret.join("");
+                }
+                else {
+                    console.log("else");
+                }
             }
-            return (escapes[escapeFn] || HTML)(string);
+
+            return escapes[escapeFn](string);
         };
     })();
 }).toString().replace(/^\s*\(?\s*\(?\s*function\s*\(\)\s*\{/, '').replace(/\}\s*\)?\s*$/, '');
