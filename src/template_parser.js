@@ -100,13 +100,9 @@ var input,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
-    
-    rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,
-    
-    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,
-    
-    rliteralid = /^(?:null|this|false|true)$/,
-    
+    rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
+    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,    
+    rinvalidref = /^(?:null|false|true|this)$/,    
     rfalsetrue = /^(?:false|true)$/,
     rtripleunderscore = /^___/,
     rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/,
@@ -293,7 +289,7 @@ var parseHelperHeader = (function() {
 
         name = name[1];
 
-        if( rkeyword.test( name ) || rillegal.test( name ) || rliteralid.test( name ) ) {
+        if( rkeyword.test( name ) || rillegal.test( name ) || rinvalidref.test( name ) ) {
             doError( "Helper name must not be a reserved word: '"+name+"'.");
         }
 
@@ -310,7 +306,7 @@ var parseHelperHeader = (function() {
                     doError( "Parameter name must be a valid Javascript identifier.");
                 }
                 
-                if( rkeyword.test( arg ) || rillegal.test( arg ) || rliteralid.test( arg ) ) {
+                if( rkeyword.test( arg ) || rillegal.test( arg ) || rinvalidref.test( arg ) ) {
                     doError( "Parameter name must not be a reserved word: '"+arg+"'.");
                 }
                                 
@@ -787,7 +783,6 @@ function parse( inp ) {
         blockType = token[2] || null;
         escapeFn = token[3] || null;
 
-        console.log( value, blockType );
         if( type === END_OF_INPUT ) {
             break;
         }
