@@ -107,7 +107,7 @@ var input,
     rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
     rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
-    rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped)$/,
+    rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
     rinvalidref = /^(?:null|false|true|this)$/,    
     rfalsetrue = /^(?:false|true)$/,
     rtripleunderscore = /^___/,
@@ -771,7 +771,7 @@ function getImports( importProgram, imports ) {
         helper = helpers[i];
         
         if( helper instanceof Program ) {
-            name = helper.getName();
+            name = helper.getImportName();
             
             if( imports.hasOwnProperty(name) ) {
                 alias = helper.getAliasedImportName();
@@ -826,7 +826,6 @@ function parse( inp ) {
         }
         
         importedProgram = exported[name].asHelper( name, alias );
-        
         helpers.push( importedProgram );
         
     }

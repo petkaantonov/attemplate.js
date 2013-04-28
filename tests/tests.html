@@ -75,6 +75,52 @@
        </script>
         
         
+<script type="asd">
+@export as form
+
+@helper hidden( key, value ) {
+    @if( key && value ) {
+        <input type="hidden" name="@key" value="@value">
+    }
+}
+
+<form
+    method="@(fileUpload ? 'POST' : method.toUpperCase() == 'GET' ? 'GET' : 'POST')"
+    enctype="@(fileUpload ? 'multipart/form-data' : 'application/x-www-form-urlencoded')
+    id="id"
+    autocomplete="off"
+    spellcheck="false"
+    accept-charset="UTF-8"
+
+    @foreach( key, value in this.attrs ) {
+        @key="@value"
+    }
+>
+
+    @if( legend ) {
+        <fieldset>
+            <legend>@legend</legend>
+        </fieldset>
+    }
+
+    @if( errorReporting && errors ) {
+        <div class="errors">
+            The form had a mistake
+        </div>
+    }
+
+    @hidden("redirectTo", redirectTo)
+    @hidden("utf8", "€")
+</form>
+</script>
+
+<script type="asd">
+@import form
+@import common
+@import computer
+@import computer2
+@form(attrs: $(class: 'classyclass', 'form-action': 'test'))
+</script>
         
         <script>
             var tem = [].map.call( document.querySelectorAll("[type=asd]"), function(t){

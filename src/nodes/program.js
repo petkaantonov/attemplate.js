@@ -12,17 +12,13 @@ var Program = (function() {
         this.aliasedImportName = null;
         this.isBeingImported = false;
     }
-    
-    method.getName = function() {
-        return this.aliasedImportName || this.importName;
+        
+    method.getImportName = function() {
+        return this.importName;  
     };
     
     method.getAliasedImportName = function() {
         return this.aliasedImportName;
-    };
-    
-    method.shouldCheckDataArgument = function() {
-        return this.isBeingImported;
     };
     
     method.asHelper = function( importName, aliasedImportName ) {
@@ -33,7 +29,7 @@ var Program = (function() {
             }
         }
         ret.aliasedImportName = aliasedImportName || null;
-        ret.importName = name;
+        ret.importName = importName;
         ret.isBeingImported = true;
         return ret;
     };
@@ -89,6 +85,7 @@ var Program = (function() {
         return ret.join("");
     };
     
+    //@override
     method.toString = function( imports, exported ) {
         if( this.isBeingImported ) {
             return "";
@@ -111,8 +108,8 @@ var Program = (function() {
         
         for( var primaryName in imports ) {
             if( imports.hasOwnProperty( primaryName ) ) {
-                                                //Todo check how alias came as primaryName
-                if( imports[primaryName] == null || exported[primaryName] == null ) { //Continue with regular helpers
+
+                if( imports[primaryName] == null ) { //Continue with regular helpers
                     continue;
                 }
                 var program = exported[primaryName],
@@ -141,6 +138,16 @@ var Program = (function() {
         ret.push( "return function( data ) { return "+idName+".call(data || {}); }; ");
         
         return ret.join("");
+    };
+
+    //@override
+    method.getName = function() {
+        return this.aliasedImportName || this.importName;
+    };
+
+    //@override
+    method.shouldCheckDataArgument = function() {
+        return this.isBeingImported;
     };
     
     return Program;
