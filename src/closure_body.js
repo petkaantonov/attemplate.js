@@ -142,7 +142,7 @@
         }
         
         switch( op ) {
-            case '/': return falsy ? 0: obj2 === 0 ? null : obj1 / obj2;
+            case '/': return falsy ? 0: obj2 == 0 ? null : obj1 / obj2;
             case '%': return falsy ? 0: obj1 % obj2;
             case '*': return falsy ? 0: obj1 * obj2;
             case '+': return falsy ? 0: obj1 + obj2;

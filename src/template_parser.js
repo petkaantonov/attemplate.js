@@ -731,7 +731,7 @@ function isImported( imports, helperName ) {
             if( key === helperName ) {
                 return true;
             }
-            else if( imports[key].indexOf(helperName) > -1 ) {
+            else if( imports[key] && imports[key].indexOf(helperName) > -1 ) {
                 return true;
             }
             
@@ -871,7 +871,7 @@ function parse( inp ) {
                     doError( "Cannot use '"+helperName+"', for a helper name - a helper or an import with that name already exists.");
                 }
 
-                imports[helperName] = [];
+                imports[helperName] = null;
                 stackTop = new HelperBlock( helperName, helperArgs ) ;
                 blockStack.push( stackTop );
                 setScopeBlock();

@@ -39,7 +39,7 @@ var Program = (function() {
     };
     
 
-    method.toHelperString = function() {
+    method.toImportCode = function() {
         this.isBeingImported = true;
         var ret = [],
             scopedReferences = [],
@@ -52,7 +52,6 @@ var Program = (function() {
         if( globalReferences.length ) {
             ret.push( "var " + globalReferences.join(", \n") + ";");
         }
-
         
         ret.push( this.getHelperCode() );
         
@@ -112,18 +111,16 @@ var Program = (function() {
         
         for( var primaryName in imports ) {
             if( imports.hasOwnProperty( primaryName ) ) {
-                var program = exported[primaryName];
-                
-                if( !program ) {
+                if( imports[primaryName] == null ) { //Continue with regular helpers
                     continue;
                 }
-                
-                var aliases = imports[primaryName],
-                    code = program.toHelperString(),
-                    
+                var program = exported[primaryName],
+                    aliases = imports[primaryName],
+                    code = program.toImportCode(),
+
                     vars = "var "+ primaryName + (aliases.length ? ",\n" + aliases.join(",\n")+";" : ";"),
                     assignment = primaryName + (aliases.length ? " = " + aliases.join(" = ")+ " = " + code : " = " + code);
-                
+
                 importCodes.push( vars, assignment );
             }
         }
