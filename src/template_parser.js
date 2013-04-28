@@ -26,6 +26,7 @@ function getEscapeFnByName( name ) {
 /* global state */
 
 var input,
+    attrCloser,
     character,
     i,
     blockStack,
@@ -65,6 +66,8 @@ var input,
     SHORT_EXPRESSION = 8,
     LONG_EXPRESSION = 9,
     KEYWORD_EXPRESSION = 10,
+    
+    ATTR_CLOSE = 11,
 
     mapType = {
 
@@ -102,7 +105,9 @@ var input,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
     rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
-    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,    
+    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,
+    rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
+    rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped)$/,
     rinvalidref = /^(?:null|false|true|this)$/,    
     rfalsetrue = /^(?:false|true)$/,
     rtripleunderscore = /^___/,
@@ -229,7 +234,7 @@ function isNextWord( word ) {
 function consumeUntilSpecial() {
     var character, ret = "";;
         while( character = input.charAt(i++) ) {
-            if( specials[character] === true ) {
+            if( specials[character] === true || character === attrCloser) {
                 i--;
                 break;
             }
@@ -478,8 +483,8 @@ var parseSimpleExpression = (function() {
                         ret += character;
                         break;
                     }
-
-
+                    
+                    
                     if( character === "(" ||
                         character === "[" ||
                         character === "'" ||
@@ -499,7 +504,7 @@ var parseSimpleExpression = (function() {
                     }
                     else if( rsimplecontinuation.test(character) && character !== "." ) {
                         //Syntax error fallback
-                        //It was never in the stack @aosdkasd[ ok okasd odsa da do dkos ) -> aosdkasd becomes id and becomes html
+                        //It was never in the stack @aosdkasd[ ok okasd odsa da do dkos ) -> aosdkasd becomes id and [ ok okasd odsa da do dkos ) becomes html
                         //or it was in the stack like @soaodad[ (aosdsdasda okosadad)] -> soaodad becomes id and [ (aosdsdasda ] becomes html
                         var lookbehind = character === "]" ? "[" : "(";
 
@@ -521,6 +526,7 @@ var parseSimpleExpression = (function() {
                     if( !pStack.length ) {
                         mode = CONTINUATION;
                     }
+                    
                     
                     lastChar = rwhitespace.test(character) ? lastChar : character;
                     ret += character;
@@ -549,6 +555,11 @@ var parseSimpleExpression = (function() {
 
             }
 
+        }
+        
+        //@ was at end of file
+        if( !ret.length && !character ) {
+            return "@";
         }
 
         if( pStack.length && anythingStarted ) {
@@ -672,6 +683,9 @@ function getNextToken() {
 
     if( character === "" ) {
         return [END_OF_INPUT, ""];
+    }
+    else if( character === attrCloser ) {
+        return [ATTR_CLOSE, character];
     }
     else if( escapingNext || specials[character] !== true ) {
         escapingNext = false;
@@ -838,6 +852,8 @@ function parse( inp ) {
     skipWhiteSpace();
     
     
+    
+    
     while( true ) {
         stackLen = blockStack.length;
         stackTop = blockStack[stackLen-1];
@@ -858,6 +874,15 @@ function parse( inp ) {
                 doError( "Cannot use continue or break while not in a loop.");
             }
             stackTop.push( new LoopStatement( value ) );
+        }
+        else if( type === ATTR_CLOSE ) {
+            htmlContextParser.write( attrCloser, i-1 );
+            attrCloser = null;
+            block = blockStack.pop();
+            stackLen = blockStack.length;
+            stackTop = blockStack[stackLen-1];
+            stackTop.push(block);
+            
         }
         else if( type === KEYWORD_BLOCK_OPEN ) {
 
@@ -892,7 +917,7 @@ function parse( inp ) {
             }
             else {
                 var snippet = parser.parse(value);
-                console.log( snippet.getExpression(), value );
+
                 switch( blockType ) {
                     case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
                     case "else if": stackTop = new IfElseBlock( snippet.getExpression() ); break;
@@ -928,6 +953,34 @@ function parse( inp ) {
             }
         }
         else if( type === STRING ) {
+            var valueLastChar = value.charAt(value.length - 1 ),
+                attrName;
+            if( !attrCloser && (valueLastChar === doubleQuote || valueLastChar === singleQuote) ) {
+                rtrailingattrname.lastIndex = 0;
+                
+                var trailAttrMatch = rtrailingattrname.exec( value );
+                
+                if( trailAttrMatch && rbooleanattr.exec( ( attrName = trailAttrMatch[1] ).toLowerCase() ) ) {
+                    var fullMatch = trailAttrMatch[0],
+                        tmp = htmlContextParser.clone(),
+                        matchIndex = rtrailingattrname.lastIndex - trailAttrMatch[0].length;
+                        
+                    value = value.substring(0, matchIndex);
+                    
+                    htmlContextParser.write( value, i - fullMatch.length );
+                    if( htmlContextParser.isWaitingForAttr() ) {
+                        htmlContextParser.write( fullMatch, i + value.length );
+                        stackTop.push( new LiteralExpression( value ) );
+                        blockStack.push( new BooleanAttributeExpression( attrName, valueLastChar ) );
+                        attrCloser = valueLastChar;
+                        continue;
+                    }
+                    else {
+                        value = value + fullMatch;
+                        htmlContextParser = tmp;
+                    }
+                }
+            }
         
             htmlContextParser.write( value, i - value.length );
             

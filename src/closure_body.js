@@ -243,7 +243,7 @@
         
             rattrname = /[^a-zA-Z0-9_:-]+/g,
         
-            rattrencode = /['"]/g,
+            rattrencode = /['"&]/g,
             
             rjsencode = /[\u0000-\u001F\u007f-\u00A0\u2028\u2029&<>'"\\\/]+/g,
             
@@ -257,7 +257,8 @@
             
             attrEncodeTable = {
                 '"': "&quot;",
-                "'": "&#39;"
+                "'": "&#39;",
+                "&": "&amp;"
             },
 
             replacerHtmlEncode = function( m ) {
@@ -391,7 +392,7 @@
                 return ___safeString__( string, escapeFn );                
             }
             
-            if( string instanceof ___Safe ) { /*wat*/
+            if( string instanceof ___Safe ) { /*wat, TODO: account for raw*/
                 if( string.safeFor !== escapeFn ) {
                     string.string = escapes[escapeFn](string.string);
                     string.safeFor = escapeFn;

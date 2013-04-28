@@ -6,6 +6,10 @@ var TemplateExpression = (function() {
         this.contextEscapeFn = contextEscapeFn; //The escape function as inferred from html context for this expression
         this.escapeFn = escapeFn; //The custom escape function
     }
+    
+    method.getExpression = function() {
+        return this.expression;
+    };
         
     method.toString = function() {
         var escapeFn = this.escapeFn ? this.escapeFn : this.contextEscapeFn;

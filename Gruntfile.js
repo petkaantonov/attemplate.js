@@ -37,6 +37,7 @@ module.exports = function( grunt ) {
                 "./src/nodes/literal_javascript_block.js",
                 "./src/nodes/program.js",
                 "./src/nodes/loop_statement.js",
+                "./src/nodes/boolean_attribute_expression.js",
                 
                 "./src/html_context_parser.js",
                 "./src/closure_body.js",

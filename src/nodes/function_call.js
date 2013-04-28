@@ -53,7 +53,7 @@ var FunctionCall = (function() {
             
             if( namedArgs.length ) {
                 var namedArg = "{" + namedArgs.join(", ") + "}";
-                normalArgs.push(namedArg);
+                normalArgs.unshift(namedArg);
             }
             else if( forceNamed ) {
                 return ["{}"];

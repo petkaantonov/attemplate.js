@@ -24,7 +24,7 @@ var HtmlContextParser = (function() {
 
     var method = HtmlContextParser.prototype;
                    //tagopen         //attribute open             //closing tag           //tagclose    //URL-param characters     //HTML comment end
-    var chunker = /(?:<!?([a-z0-9_-]+)|([a-z0-9_-]+)=(["']|[^"']|$)|<\/\s*([a-z0-9_-]+)>|(\/?>)|(["'])|([:/?.])|(refresh)|(dataurl)|(--)>)/g;
+    var chunker = /(?:<!?([a-z0-9_-]+)|([a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/\s*([a-z0-9_-]+)>|(\/?>)|(["'])|([:/?.])|(refresh)|(dataurl)|(--)>)/g;
                                                                                                  //attrclose     //URI context special cases
 
     var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
@@ -63,7 +63,15 @@ var HtmlContextParser = (function() {
         return ret;
     };
     
-    
+    method.clone = function() {
+        var ret = new HtmlContextParser();
+        for( var key in this ) {
+            if( this.hasOwnProperty(key) ) {
+                ret[key] = this[key];
+            }
+        }
+        return ret;
+    };
     
     method.popStack = function() {
         this.close();
@@ -236,6 +244,8 @@ var HtmlContextParser = (function() {
             this.inMetaRefresh = true;
         }
     };
+    
+    
 
     method.dataUrl = function() {
         if( this.inCharData || !this.currentAttr ) return;
