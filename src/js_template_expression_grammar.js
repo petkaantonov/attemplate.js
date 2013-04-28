@@ -247,7 +247,7 @@ var lex = {
         ["&&", "return '&&';"],
         [">=|<=|>|<", "return 'RELATION';"],
         ["\\|\\|", "return '||';"],
-        ["==|!=", "return 'EQUALITY';"],
+        ["===|!==|==|!=", "return 'EQUALITY';"],
         ["\\|", "return '|';"],
         ["\\)", "return ')';"],
         ["\\(", "return '(';"],
