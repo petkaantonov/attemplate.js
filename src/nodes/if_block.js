@@ -7,6 +7,10 @@ var IfBlock = (function() {
     function IfBlock() {
         _super.constructor.apply(this, arguments);
     }
+    
+    method.headerIsBooleanExpression = function() {
+        return true;
+    };
 
     method.getName = function() {
         return "if";

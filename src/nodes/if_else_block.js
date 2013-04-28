@@ -8,6 +8,10 @@ var IfElseBlock = (function() {
         _super.constructor.apply(this, arguments);
     }
     
+    method.headerIsBooleanExpression = function() {
+        return true;
+    };
+    
     method.getName = function() {
         return "else if";
     }

@@ -621,7 +621,7 @@ function consumeTemplateExpression() {
 
             
             if( identifier === "else" ) {
-                var lookForIf = isNextWord("if"); //=D
+                var lookForIf = isNextWord("if");
                 if( lookForIf ) {
                     identifier = "else if";
                 }
@@ -636,19 +636,19 @@ function consumeTemplateExpression() {
                     character === "f" &&
                     lastChar === "i" ) {
                     lookForIf = false;
-                    ret = "";                
+                    ret = "";
+                    continue;
                 }
                 
                 if( character === "{" ) {
                     skipWhiteSpace();
                     break;        
                 }
-
+                
                 ret += character;
                 lastChar = character;
-  
+                  
             }
-
             return [KEYWORD_BLOCK_OPEN, ret, identifier];  
         }
 }
@@ -892,7 +892,7 @@ function parse( inp ) {
             }
             else {
                 var snippet = parser.parse(value);
-                    
+                console.log( snippet.getExpression(), value );
                 switch( blockType ) {
                     case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
                     case "else if": stackTop = new IfElseBlock( snippet.getExpression() ); break;

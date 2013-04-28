@@ -10,8 +10,14 @@ var HeaderBlock = (function() {
         this.header = header;
     }
     
+    method.headerIsBooleanExpression = function() {
+        return false;
+    };
+    
     method.toString = function() {
-        return this.getName() + " ( " + this.header + " )  { " + _super.toString.call(this) + "}";
+        return this.getName() + " ( " + 
+            (this.headerIsBooleanExpression() ? '___boolOp(' + this.header + ')' : this.header ) + 
+        " )  { " + _super.toString.call(this) + "}";
     };
         
     return HeaderBlock;
