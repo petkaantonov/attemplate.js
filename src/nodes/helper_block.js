@@ -1,6 +1,8 @@
 var HelperBlock = (function() {
     var _super = ScopedBlock.prototype,
         method = HelperBlock.prototype = Object.create(_super);
+        
+    var id = "___helper___";
     
     method.constructor = HelperBlock;
     
@@ -40,7 +42,7 @@ var HelperBlock = (function() {
       
         this.establishReferences( globalReferences, scopedReferences );
         
-        ret.push( "var " + this.name + " = function("+this.parameterNames.join(", ")+"){ " );
+        ret.push( "var " + this.name + " = (function(){ function "+id+"("+this.parameterNames.join(", ")+") {" );
         
                 
         if( globalReferences.length ) {
@@ -57,7 +59,7 @@ var HelperBlock = (function() {
             ret.push( this.statements[i].toString() );
         }
         
-        ret.push( "return new ___Safe(___html.join(''), 'HTML'); };" );
+        ret.push( "return new ___Safe(___html.join(''), 'HTML'); } return function() {return "+id+".apply(___self, arguments); }; })();" );
         
         return ret.join( "" );
     };

@@ -46,28 +46,42 @@
         var ret = [];
     };
     
-    var ___method = function( obj, methodName, args ) {
-        var method;
-        if( obj == null || !( method = obj[methodName] ) ) {
-            return null;
-        }
+    var ___method = (function() {
+        
+        var rnocallforarray = /^(?:join|toString|toLocaleString)$/;
+        
+        return function( obj, methodName, args ) {
 
-        if( typeof method === FUNCTION ) {
-            try {
-                var ret = args? method.apply(obj, args): method.call(obj);
-                if( ret == null ) {
-                    return null;
-                }
-                return ret;
-            }
-            catch(e) {
+            var method;
+            if( obj == null || !( method = obj[methodName] ) ) {
                 return null;
             }
-        }
-        else {
-            return null;
-        }
-    };
+
+            //Calling these functions on array screws up auto escaping for them
+            if( ___isArray( obj ) && rnocallforarray.test( methodName ) ) {
+                return obj;
+            }
+
+            if( typeof method === FUNCTION ) {
+                try {
+                    var ret = args? method.apply(obj, args): method.call(obj);
+                    if( ret == null ) {
+                        return null;
+                    }
+                    return ret;
+                }
+                catch(e) {
+                    return null;
+                }
+            }
+            else {
+                return null;
+            }
+        };
+    })();
+    
+    
+
     
     var ___functionCall = function( thisp, fn, args ) {
         if( fn && typeof fn === FUNCTION ) {
@@ -202,7 +216,30 @@
 
 
     var ___safeString__ = (function(){
+    
+        var uriAttr = /src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data/;
         
+        var getAttrEscapeFunction = function( value, attrName ) {
+            attrName = ATTR_NAME((attrName + "").toLowerCase());
+            
+            if( uriAttr.test( attrName ) ) {
+                if( value.length ) {
+                    return "URI_PARAM";
+                }
+                else {
+                    return "URI";
+                }
+            }
+            else if( attrName === "style" ) {
+                return "CSS";
+            }
+            else if( attrName.charAt(0) === "o" && attrName.charAt(1) === "n" ) {
+                return "SCRIPT_IN_ATTR";
+            }
+            else {
+                return "ATTR";
+            }
+        };
         
         var counts = {
             2: "00",
@@ -221,7 +258,9 @@
 
         var rhtmlencode = /[&<>]/g,
         
-            rattrencode = /['"]/g,
+            rattrname = /[^a-zA-Z0-9_:-]+/g,
+        
+            rattrencode = /[&'"]/g,
             
             rjsencode = /[\u0000-\u001F\u007f-\u00A0\u2028\u2029&<>'"\\\/]+/g,
             
@@ -235,7 +274,8 @@
             
             attrEncodeTable = {
                 '"': "&quot;",
-                "'": "&#39;"
+                "'": "&#39;",
+                "&": "&amp;"
             },
 
             replacerHtmlEncode = function( m ) {
@@ -275,6 +315,14 @@
 
         var NO_ESCAPE = function( str ) {
                 return str == null ? "" : ("" + str);
+            },
+            
+            ATTR_NAME = function( str ) {
+                str = (str + "").replace( rattrname, "");
+                if( !str ) {
+                    return "data-empty-attribute";
+                }
+                return str;
             },
             
             CSS = function( str ) {
@@ -321,6 +369,7 @@
             NO_ESCAPE: NO_ESCAPE,
             HTML: HTML,
             ATTR: ATTR,
+            ATTR_NAME: ATTR_NAME,
             SCRIPT: SCRIPT,
             SCRIPT_IN_ATTR: SCRIPT_IN_ATTR,
             URI: URI,
@@ -328,10 +377,35 @@
             CSS: CSS
         };
 
-        return function( string, escapeFn ) {
+        return function( string, escapeFn, attrName ) {
+            var passAsIs = escapeFn === "SCRIPT" || escapeFn === "SCRIPT_IN_ATTR";
         
-            if( escapeFn !== "SCRIPT" &&
-                escapeFn !== "SCRIPT_IN_ATTR" ) {
+            if( !passAsIs && ___isArray( string ) ) {
+                if( string.length ) {
+                    if( string[0] instanceof ___Safe ) {
+                        var r = [],
+                            safeFor = string[0].safeFor;
+                        
+                        for( var i = 0, l = string.length; i < l; ++i ) {
+                            r.push( string[i].string );
+                        }
+                        string = new ___Safe( r.join(""), safeFor );
+                    }
+                    else {
+                        string = string.join("");
+                    }
+                }
+                else {
+                    string = "";
+                }
+            }
+        
+            if( escapeFn == null && attrName ) {                
+                escapeFn = getAttrEscapeFunction( string, attrName );
+                return ___safeString__( string, escapeFn );                
+            }
+        
+            if( !passAsIs ) {
                 
                 if( (string == null || typeof string === FUNCTION) ) {
                     return escapeFn === "URI" ? "#" : "";
@@ -343,13 +417,6 @@
                     else {
                         return escapes[escapeFn](string.string);
                     }
-                }
-                else if( ___isArray( string ) ) {
-                    var ret = [];
-                    for ( var i = 0; i < string.length; ++i ) {
-                        ret.push(___safeString__(string[i], escapeFn));
-                    }
-                    return ret.join("");
                 }
             }
 

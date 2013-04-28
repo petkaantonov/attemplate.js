@@ -14,9 +14,10 @@ function getEscapeFnByName( name ) {
         case "attr" : return "ATTR";
         case "css" : return "CSS";
         case "uri" : return "URI";
+        case "attrname" : return "ATTR_NAME";
         case "uriparam" : return "URI_PARAM";
         case "html" : return "HTML";
-        default: return "HTML";
+        default: return null;
     }
 }
 
@@ -183,9 +184,10 @@ function isWhiteSpace( str ) {
     return (str === ' ' || str === "\n") || rwhitespaceonly.test( str );
 }
 
-//get the next len characters from current position
-function lookahead( len ) { 
-    return len === 1 ? input.charAt(i) : input.substr( i, len );
+//get the next len characters from current position + offset
+function lookahead( len, offset ) { 
+    offset = offset || 0;
+    return len === 1 ? input.charAt(i + offset ) : input.substr( i + offset, len );
 }
 
 function skipWhiteSpace() {
@@ -784,10 +786,6 @@ function parse( inp ) {
     
     program = blockStack[blockStack.length-1];
 
-    
-
-
-
     while( ( matchImport = rimport.exec( input ) ) ) {
 
         if( !exported.hasOwnProperty( matchImport[1] ) ) {
@@ -798,7 +796,7 @@ function parse( inp ) {
             name = matchImport[1];
 
         if( imports.hasOwnProperty( name ) ) {
-            doError( "Cannot import the template '"+name+"' more than once in a single template" );
+            doError( "Cannot import the template '"+name+"' more than once in a single template." );
         }
         else {
             imports[name] = [];
@@ -925,7 +923,9 @@ function parse( inp ) {
             }
         }
         else if( type === STRING ) {
+        
             htmlContextParser.write( value, i - value.length );
+            
             
             if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
                 value = trimRight(value);
@@ -950,14 +950,42 @@ function parse( inp ) {
         }
         else if( type === EXPRESSION ) {
             var snippet = parser.parse(value);
-            scopeBlock.mergeVariables( snippet.getNakedVarReferences() );            
+            scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+            
+            
+            //Expression is giving attribute name dynamically, escape context needs to be determined at run-time
+            if( htmlContextParser.isWaitingForAttr() && lookahead(1) === "=") {
+                var quote = lookahead(1, 1);
+                
+                if( quote === doubleQuote || quote === singleQuote ) {
+                    var expr = snippet.getExpression();
+
+                    stackTop.push(
+                        new TemplateExpression(
+                            expr,
+                            htmlContextParser.getContext(),
+                            escapeFn
+                        )
+                    );
+
+                    htmlContextParser.dynamicAttribute( expr, quote );
+
+                    i+=2;
+
+                    stackTop.push( new LiteralExpression( "=" + quote ) );
+                    
+                    continue;
+                }
+            }
+            
             stackTop.push(
                 new TemplateExpression(
                     snippet.getExpression(),
-                    htmlContextParser.getEscapeFunction(),
+                    htmlContextParser.getContext(),
                     escapeFn
                 )
             );
+            
         }
         else if( type === BLOCK ) {
             stackTop.push( new LiteralJavascriptBlock( value ) ); //literal javascript block of code

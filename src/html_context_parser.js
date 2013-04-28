@@ -14,6 +14,7 @@ var HtmlContextParser = (function() {
     var CONTEXT = {
         HTML: {name: "HTML"},
         ATTR: {name: "ATTR"},
+        ATTR_NAME: {name: "ATTR_NAME"},
         URI: {name: "URI"},
         URI_PARAM: {name: "URI_PARAM"},
         SCRIPT: {name: "SCRIPT"},
@@ -35,8 +36,11 @@ var HtmlContextParser = (function() {
         this.tagStack = [];
         this.openedTag = null;
         this.currentAttr = null;
+        
+        this.dynamicAttr = null;
+        
         this.currentAttrQuote = null; //The quote type that closes the attribute
-
+        
         //Special url context in the case <meta http-equiv="refresh" content="0; URL=javascript:">
         this.inMetaRefresh = false;
 
@@ -59,6 +63,8 @@ var HtmlContextParser = (function() {
         return ret;
     };
     
+    
+    
     method.popStack = function() {
         this.close();
         if( !this.prev ) {
@@ -67,6 +73,17 @@ var HtmlContextParser = (function() {
         return this.prev;
     };
     
+    //Needed to escape attributes with dynamic keys
+    method.isWaitingForAttr = function() {
+        return !!(this.openedTag && !this.currentAttr);
+    };
+    
+    method.dynamicAttribute = function( expr, quote ) {
+        this.currentAttr = this.dynamicAttr = expr;
+        this.currentAttrQuote = quote;
+        this.context = expr;
+    };
+        
     method.currentTagName = function() {
         return this.tagStack[this.tagStack.length-1] || null;
     };
@@ -116,7 +133,7 @@ var HtmlContextParser = (function() {
             return;
         }
         this.openedTag = tagName;
-        this.context = CONTEXT.ATTR;
+        this.context = CONTEXT.ATTR_NAME;
     };
 
     method.tagOpenEnd = function( openEndSyntax ) {
@@ -198,9 +215,9 @@ var HtmlContextParser = (function() {
         if( this.inCharData ) return;
 
         if( this.currentAttrQuote === quoteType ) {
-            this.currentAttr = null;
+            this.dynamicAttr = this.currentAttr = null;
             this.currentAttrQuote = null;
-            this.context = CONTEXT.ATTR;
+            this.context = CONTEXT.ATTR_NAME;
         }
     };
 
@@ -282,8 +299,8 @@ var HtmlContextParser = (function() {
         if( tagName ) doError( "'<" + tagName + ">' is still open.", this.getIndex() );
     };
 
-    method.getEscapeFunction = function() {
-        return this.context.name;
+    method.getContext = function() {
+        return this.context;
     };
     
     return HtmlContextParser;

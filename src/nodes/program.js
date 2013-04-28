@@ -111,7 +111,8 @@ var Program = (function() {
         
         for( var primaryName in imports ) {
             if( imports.hasOwnProperty( primaryName ) ) {
-                if( imports[primaryName] == null ) { //Continue with regular helpers
+                                                //Todo check how alias came as primaryName
+                if( imports[primaryName] == null || exported[primaryName] == null ) { //Continue with regular helpers
                     continue;
                 }
                 var program = exported[primaryName],
