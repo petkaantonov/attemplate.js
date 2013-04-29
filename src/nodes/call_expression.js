@@ -7,7 +7,8 @@ var CallExpression = (function() {
     }
 
     method.toString = function() {
-        return '('+this.fn.toString()+' || {})['+this.member.toString()+']';
+        var ret = '(('+this.fn.toString()+') || {})['+this.member.toString()+']';
+        return this.parens ? '(' + ret + ')' : ret;
     };
         
     return CallExpression;

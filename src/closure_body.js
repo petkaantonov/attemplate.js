@@ -10,7 +10,7 @@
         toString = Object.prototype.toString;
     
     var ___self;
-    
+    var ___ref, ___ref2;
     var ___global = Function("return this")();
 
     var ___trim = (function() {
@@ -120,42 +120,7 @@
 
         return ___hasown.call( obj, str );
     };
-    
-    var ___boolOp = function( obj ) {
-        if( obj && obj.length ) {
-            return obj.length > 0;
-        }
-        return typeof obj === FUNCTION ? false : !!obj;
-    };
-    
-    var ___binOp = function( op, obj1, obj2 ) {
-        var falsy = false;
-        if( obj1 == null || obj2 == null ) {
-            falsy = true;
-        }
         
-        if( typeof obj1 === FUNCTION || typeof obj2 === FUNCTION ) {
-            falsy = true;
-        }
-        
-        switch( op ) {
-            case 1: return falsy ? 0: obj2 == 0 ? null : obj1 / obj2;
-            case 2: return falsy ? 0: obj1 % obj2;
-            case 4: return falsy ? 0: obj1 * obj2;
-            case 8: return falsy ? 0: obj1 + obj2;
-            case 16: return falsy ? 0: obj1 - obj2;
-            case 32: return falsy ? false: obj1 === obj2;
-            case 64: return falsy ? true: obj1 !== obj2;
-            case 128: return obj1 && obj2;
-            case 256: return obj1 || obj2;
-            case 512: return falsy ? false: obj1 < obj2;
-            case 1024: return falsy ? false: obj1 <= obj2;
-            case 2048: return falsy ? false: obj1 > obj2;
-            case 4096: return falsy ? false: obj1 >= obj2;
-        }
-        throw new Error("Invalid operation");
-    };
-    
     var ___hasown = Object.prototype.hasOwnProperty;
     
     var ___isArray = Array.isArray || function( obj ) {

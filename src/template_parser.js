@@ -21,6 +21,10 @@ function getEscapeFnByName( name ) {
     }
 }
 
+function boolOp( expr ) {
+    return '((___ref = '+expr+'), ___ref2 = ___ref && ___ref.length, ___ref2 != null ? ___ref2 > 0 : ___ref)';
+}
+
 
 
 /* global state */
@@ -868,9 +872,7 @@ function parse( inp ) {
         if( type === END_OF_INPUT ) {
             break;
         }
-        if( !blockType || type === EXPRESSION ) {
-            console.log(value);
-        }
+
         if( type === KEYWORD_EXPRESSION ) {
             if( !inLoopingConstruct() ) {
                 doError( "Cannot use continue or break while not in a loop.");

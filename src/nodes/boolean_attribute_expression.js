@@ -15,7 +15,7 @@ var BooleanAttributeExpression = (function() {
     };
         
     method.toString = function() {
-        return 'if(___boolOp('+this.expression.getExpression()+') ) {___html.push("'+this.name+'=\\"'+this.name+'\\"")}';
+        return 'if('+boolOp(this.expression.getExpression())+') {___html.push("'+this.name+'=\\"'+this.name+'\\"")}';
     };
     
     return BooleanAttributeExpression;

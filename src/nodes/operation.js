@@ -1,27 +1,8 @@
 var Operation = (function() {
     var method = Operation.prototype;
     
-    var binOpMap = {
-        '/': 1,
-        '%': 2,
-        '*': 4,
-        '+': 8,
-        '-': 16,
-        '==': 32,
-        '===': 32,
-        '!=': 64,
-        '!==': 64,
-        '&&': 128,
-        '||': 256,
-        '<': 512,
-        '<=': 1024,
-        '>': 2048,
-        '>=': 4096
-    }
-    
     var rrelational = /^(?:<|>|>=|<=)$/;
 
-    
     function isBooleanOp( obj ) {
         return obj.isBooleanOp && obj.isBooleanOp() || false;
     }
@@ -33,6 +14,13 @@ var Operation = (function() {
         this.op1 = op1;
         this.op2 = op2;
         this.madeRelational = false;
+        
+        if( this.opStr === "==" ) {
+            this.opStr = "===";
+        }
+        else if( this.opStr === "!=" ) {
+            this.opStr = "!==";
+        }
     }
     
     method.isBooleanOp = function() {
@@ -47,7 +35,7 @@ var Operation = (function() {
         var ret;
       
         if( this.isTernary ) {
-            var condition = isBooleanOp(this.opStr) ? this.opStr.toString() : '___boolOp('+this.opStr.toString()+')'
+            var condition = isBooleanOp(this.opStr) ? this.opStr.toString() : boolOp(this.opStr);
             ret = condition + " ? " + this.op1.toString() + " : " + this.op2.toString();
         }
         else if( this.isUnary ) {
@@ -56,7 +44,7 @@ var Operation = (function() {
                     ret = '!' + this.op1.toString();
                 }
                 else {
-                    ret = '!___boolOp('+this.op1.toString()+')';
+                    ret = '!' + boolOp(this.op1);
                 }
             }
             else {
@@ -70,11 +58,11 @@ var Operation = (function() {
             //Magic to make a < b < c work properly
             if( this.madeRelational ) {
                 if( this.op1.op1 && this.op1.isRelational() ) {
-                    this.op1.madeRelational = true;
-                    ret = '___binOp(128, '+this.op1.toString()+', ___binOp('+ binOpMap[this.opStr] + ','+ this.op1.op2.toString() +','+ this.op2.toString() + '))';
+                    this.op1.madeRelational = true;                             
+                    ret = '(' + this.op1.toString()+' ) && (' + this.op1.op2.toString() + this.opStr + this.op2.toString()+')';
                 }
                 else {
-                    ret = '___binOp('+binOpMap[this.opStr]+','+this.op1.toString()+','+this.op2.toString()+')';
+                    ret = this.op1.toString() + this.opStr + this.op2.toString();
 
                 }
 
@@ -83,14 +71,14 @@ var Operation = (function() {
                 this.op1.op1 &&
                 this.op1.isRelational() ) {
                 this.op1.madeRelational = true;
-                ret = '___binOp(128, '+this.op1.toString()+', ___binOp('+ binOpMap[this.opStr] + ','+ this.op1.op2.toString() +','+ this.op2.toString() + '))';
+                ret = '(' + this.op1.toString()+' ) && (' + this.op1.op2.toString() + this.opStr + this.op2.toString()+')';
             }
             else {
-                ret = '___binOp('+binOpMap[this.opStr]+','+this.op1.toString()+','+this.op2.toString()+')';
+                ret = this.op1.toString() + this.opStr + this.op2.toString();
             }
         }
         
-        return ret;
+        return this.parens ? '(' + ret + ')' : ret;
     };
     
     

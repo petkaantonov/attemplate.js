@@ -23,22 +23,8 @@ var ForeachBlock = (function() {
         var id = randomId();
         var body = _super.toString.call( this );
         
-        //Short array iteration for @for( items ) <div>@name</div>
-        if( !this.key && !this.value ) {
-            var key = "___key" + randomId();
-            return "    (function(___collection"+id+"){" +
-            " ___collection"+id+" = ___isArray(___collection"+id+") ? ___collection"+id+" : ___ensureArrayLike(___collection"+id+"); " +
-            "            var count = ___collection"+id+".length;" +
-            "            for( var ___i"+id+" = 0, ___len"+id+" = count; ___i"+id+" < ___len"+id+"; ++___i"+id+" ) {" +
-            "                var index = ___i"+id+";" +
-            "    with( ___collection"+id+"[___i"+id+"] ) { " +
-                    body +
-            "    }" +
-            "}" +
-            "    }).call(this, "+this.collection+");";
-        }
-        //Range iteration @for( item in | 5 -> 10| 5)
-        else if( this.collection instanceof Range ) {
+        //Range iteration @for( item from 5 to 10 by 5)
+        if( this.collection instanceof Range ) {
             var range = this.collection;
             if( this.value ) {
                 this.key = this.value;
@@ -50,19 +36,13 @@ var ForeachBlock = (function() {
                     "var ___step"+id+" = ___ensureNumeric("+range.stepExpr+") || 1; " +
                     
                     "if( ___min"+id+" === ___max"+id+" ) { return; }" +
+                    "else if( ___min"+id+" > ___max"+id+" && ___step"+id+" > 0 ) { return; }" +
+                    "else if( ___min"+id+" < ___max"+id+" && ___step"+id+" < 0 ) { return; }" +
                     
-                    "if( ___min"+id+" > ___max"+id+" ) { " +
-                    "    var count = ___min"+id+" - ___max"+id+"; " +
-                    "    for( var "+this.key+" = ___min"+id+"; "+this.key+" >= ___max"+id+"; "+this.key+" -= ___step"+id+" ) { " +
-                            body  +
-                    "    } " +
-                    "} " +
-                    "else { " +
                     "    var count = ___max"+id+" - ___min"+id+"; " +
                     "    for( var "+this.key+" = ___min"+id+"; "+this.key+" <= ___max"+id+"; "+this.key+" += ___step"+id+" ) { " +
                             body  +
                     "    } " +
-                    "} " +
                     "    }).call(this);";
         } 
         else if( !this.value ) { //Array iteration
@@ -72,6 +52,8 @@ var ForeachBlock = (function() {
                     "            for( var ___i"+id+" = 0, ___len"+id+" = count; ___i"+id+" < ___len"+id+"; ++___i"+id+" ) {" +
                     "                var "+this.key+" = ___collection"+id+"[___i"+id+"];" +
                     "                var index = ___i"+id+";" +
+                    "                var isLast = ___i"+id+" === ___len"+id+" - 1;" +
+                    "                var isFirst = ___i"+id+" === 0;" +
                             body +
                     "            }" +
                     "    }).call(this, "+this.collection+");";

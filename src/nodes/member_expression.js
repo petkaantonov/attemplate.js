@@ -59,7 +59,7 @@ var MemberExpression = (function() {
             for( var i = 0; i < this.members.length - 2; ++i ) {
                 ret.push("(");
             }
-            ret.push(this.identifier + "|| {})");
+            ret.push("("+this.identifier + ") || {})");
             for( var i = 0; i < this.members.length - 2; ++i ) {
 
                 ret.push( "[" + this.members[i].toString() + "] || {})" );
@@ -75,16 +75,15 @@ var MemberExpression = (function() {
             for( var i = 0; i < this.members.length - 1; ++i ) {
                 ret.push("(");
             }
-            ret.push(this.identifier + "|| {})");
+            ret.push("(" + this.identifier + ") || {})");
             for( var i = 0; i < this.members.length - 1; ++i ) {
-                
                 ret.push( "[" + this.members[i].toString() + "] || {})" );
             }
             ret.push( "[" + this.members[i].toString() + "]" );
-            return ret.join("");
+            return this.parens ? '(' + ret.join("") + ')' : ret.join("");
         }
         else {
-            return this.identifier + "";
+            return this.parens ? '(' + this.identifier + ')' : this.identifier + "";
         }
     };
     

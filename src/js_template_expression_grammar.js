@@ -80,7 +80,7 @@ var grammar = {
         ["literal"],
         ["array"],
         ["identifier"],
-        ["( expression )", "$$ = $2;"]
+        ["( expression )", "$$ = $2; $2.parens = true;"]
     ],
     
     literal: [
@@ -112,15 +112,14 @@ var grammar = {
     ],
     
     foreach: [
-        ["FOREACH ( member )", "$$ = new ForeachBlock(null, null, $3);"],
-        ["FOREACH ( identifier IN range )", "$$ = new ForeachBlock($3, null, $5);"],
+        ["FOREACH ( identifier range )", "$$ = new ForeachBlock($3, null, $4);"],
         ["FOREACH ( identifier IN expression )", "$$ = new ForeachBlock($3, null, $5);"],
         ["FOREACH ( identifier , identifier IN expression )", "$$ = new ForeachBlock($3, $5, $7);"]
     ],
     
     range: [
-        ["| expression ARROW expression |", "$$ = new Range($2, $4);" ],
-        ["| expression ARROW expression | expression", "$$ = new Range($2, $4, $5);" ]
+        ["FROM expression TO expression", "$$ = new Range($2, $4);" ],
+        ["FROM expression TO expression BY expression", "$$ = new Range($2, $4, $6);" ]
     ],
     
     array: [
@@ -230,6 +229,9 @@ var lex = {
 
     rules: [
         ["in\\b", "return 'IN';"],
+        ["from\\b", "return 'FROM';"],
+        ["by\\b", "return 'BY';"],
+        ["to\\b", "return 'TO';"],
         ["(?:foreach|for)\\b", "return 'FOREACH';"],
         ["0+\\b", "return 'ZERO';"],
         ["\\.[0-9]+\\b", "return 'AFTER';"],
@@ -248,7 +250,6 @@ var lex = {
         [">=|<=|>|<", "return 'RELATION';"],
         ["\\|\\|", "return '||';"],
         ["===|!==|==|!=", "return 'EQUALITY';"],
-        ["\\|", "return '|';"],
         ["\\)", "return ')';"],
         ["\\(", "return '(';"],
         ["\\[", "return '[';"],

@@ -16,7 +16,7 @@ var HeaderBlock = (function() {
     
     method.toString = function() {
         return this.getName() + " ( " + 
-            (this.headerIsBooleanExpression() ? '___boolOp(' + this.header + ')' : this.header ) + 
+            (this.headerIsBooleanExpression() ? boolOp(this.header) : this.header ) + 
         " )  { " + _super.toString.call(this) + "}";
     };
         

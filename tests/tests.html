@@ -11,8 +11,8 @@
         <script type="asd">
             @export as test
             <select>
-            @foreach( options ) {
-                <option value="@value" selected="@selected">
+            @foreach( option in options ) {
+                <option value="@option.value" selected="@option.selected">
                     
                 </option>
             }
@@ -242,7 +242,7 @@ var o = {
                 '@if( true ) {<div>True</div>}else if( file_not_found ) {    <div>File not found</div>   }else {    <div>False</div>}',
                 '@if( !loggedin ) {<div>You are not logged in</div>}',
                 '<ul>@foreach( item in arr ) {<li>@index: @item</li>}</ul>',
-                '@for( item in |1->10| ) {@if( true ) {<div>lonely div</div>@break}}',
+                '@for( item from 1 to 10 ) {@if( true ) {<div>lonely div</div>@break}}',
                 '<div>@day.@month.@year</div>',
                 '<ul>@foreach( recipe in recipes ) { <li>Ingredients for @recipe.name:</li> <li> <ul> @foreach( ingredient in recipe.ingredients ) { <li>@ingredient</li> } </ul> </li>}</ul>',
                 '@helper myHelper( arg1, arg2 ) { <div>@((Math.round( (arg1 + arg2 ) *100000000) /100000000).toFixed(2))</div> } <ul> @foreach( number in numbers ) { <li>@myHelper(number, number)</li> } </ul>',
@@ -349,7 +349,7 @@ var o = {
                 '<ul><li><div>2.00</div></li><li><div>4.68</div></li><li><div>10.20</div></li><li><div>12.00</div></li></ul>',
                 
                 
-                '<div><ul><li>Ingredients for wtf:</li>\n' +
+                '<div><ul>\n        <li>Ingredients for wtf:</li>\n' +
                 '            <li>\n' +
                 '                <ul>\n' +
                 '                    <li>why</li><li>would</li><li>I</li></ul>\n' +
