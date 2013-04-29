@@ -206,8 +206,7 @@ function skipWhiteSpace() {
 //Bugs here     
 function skipNewLineAndIndentation() {
     var ahead = lookahead(1), wsCount = 0;
-    
-    if( ahead === "\n" ) {
+    if( rlineterminator.test(ahead) ) {
         i++;
         skipWhiteSpace();
         i--;
@@ -610,6 +609,7 @@ function consumeTemplateExpression() {
             return [BLOCK, parseBlock()]; // @{ literal code block  }
         }
         else if( character === "(" ) {
+            skipNewLineAndIndentation()
             return [EXPRESSION, parseExpression(), LONG_EXPRESSION, escapeFn]; // @( expression code result pushed to output )
         }
         else {
@@ -796,6 +796,7 @@ function parse( inp ) {
         helpers = [], program, statements,  name, output,
         imports = {},
         statement,
+        prevType,
         startIndex;
 
     rimport.lastIndex = 0;
@@ -867,7 +868,9 @@ function parse( inp ) {
         if( type === END_OF_INPUT ) {
             break;
         }
-
+        if( !blockType || type === EXPRESSION ) {
+            console.log(value);
+        }
         if( type === KEYWORD_EXPRESSION ) {
             if( !inLoopingConstruct() ) {
                 doError( "Cannot use continue or break while not in a loop.");
@@ -954,6 +957,9 @@ function parse( inp ) {
         else if( type === STRING ) {
             var valueLastChar = value.charAt(value.length - 1 ),
                 attrName;
+                
+            //Because there is currently no object model for html the string is backtracked
+            //and possibly reparsed for boolean attributes here
             if( !attrCloser && (valueLastChar === doubleQuote || valueLastChar === singleQuote) ) {
                 rtrailingattrname.lastIndex = 0;
                 
@@ -961,12 +967,13 @@ function parse( inp ) {
                 
                 if( trailAttrMatch && rbooleanattr.exec( ( attrName = trailAttrMatch[1] ).toLowerCase() ) ) {
                     var fullMatch = trailAttrMatch[0],
-                        tmp = htmlContextParser.clone(),
+                        tmp = htmlContextParser.clone(), //Save the context for recovery
                         matchIndex = rtrailingattrname.lastIndex - trailAttrMatch[0].length;
                         
                     value = value.substring(0, matchIndex);
                     
                     htmlContextParser.write( value, i - fullMatch.length );
+                    //Only if the html context is waiting for attribute does it count as a boolean attribute
                     if( htmlContextParser.isWaitingForAttr() ) {
                         htmlContextParser.write( fullMatch, i + value.length );
                         stackTop.push( new LiteralExpression( value ) );
@@ -975,6 +982,7 @@ function parse( inp ) {
                         continue;
                     }
                     else {
+                        //Restore value and continue normally
                         value = value + fullMatch;
                         htmlContextParser = tmp;
                     }
@@ -984,21 +992,14 @@ function parse( inp ) {
             htmlContextParser.write( value, i - value.length );
             
             
-            if( lookahead(1) === "" ) { //Trim trailing whitespace when at the end
+            if( lookahead(1) === "" ||//Trim trailing whitespace when at EOF (the last string in the file)
+                (blockStack.length > 1 && lookahead(1) === "}") || //Trim whitespace before closing block
+                (isBlockAheadForWhiteSpaceTrim() && (prevType === BLOCK || prevType === KEYWORD_BLOCK_CLOSE)) //Ignore whitespace between consecutive blocks
+                    
+            ) { 
                 value = trimRight(value);
             }
-            else if( blockStack.length > 1 ) {
-                    if( isWhiteSpace( value ) ) {
-                        continue;
-                    }
-                    else if( lookahead(1) === "}" ) { //Trim whitespace before closing block
-                        value = trimRight(value);
-                    }
-            }
-            else if( isBlockAheadForWhiteSpaceTrim() ) {
-                value = trimRight(value);
-            }
-            
+
             if( !value.length ) { //See if there is anything after possible trims
                 continue;
             }
@@ -1047,6 +1048,7 @@ function parse( inp ) {
         else if( type === BLOCK ) {
             stackTop.push( new LiteralJavascriptBlock( value ) ); //literal javascript block of code
         }
+        prevType = type;
     }
     htmlContextParser.close();
 

@@ -145,9 +145,9 @@
             case 8: return falsy ? 0: obj1 + obj2;
             case 16: return falsy ? 0: obj1 - obj2;
             case 32: return falsy ? false: obj1 === obj2;
-            case 64: return falsy ? false: obj1 !== obj2;
-            case 128: return falsy ? null: obj1 && obj2;
-            case 256: return falsy ? null: obj1 || obj2;
+            case 64: return falsy ? true: obj1 !== obj2;
+            case 128: return obj1 && obj2;
+            case 256: return obj1 || obj2;
             case 512: return falsy ? false: obj1 < obj2;
             case 1024: return falsy ? false: obj1 <= obj2;
             case 2048: return falsy ? false: obj1 > obj2;
@@ -202,16 +202,11 @@
     
         var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
         
-        var getAttrEscapeFunction = function( value, attrName ) {
+        var getAttrEscapeFunction = function( attrName ) {
             attrName = ATTR_NAME(attrName).toLowerCase();
             
             if( uriAttr.test( attrName ) ) {
-                if( value.length ) {
-                    return "URI_PARAM";
-                }
-                else {
-                    return "URI";
-                }
+                return "URI";
             }
             else if( attrName === "style" ) {
                 return "CSS";
@@ -388,7 +383,7 @@
             }
         
             if( escapeFn == null && attrName ) {                
-                escapeFn = getAttrEscapeFunction( string, attrName );
+                escapeFn = getAttrEscapeFunction( attrName );
                 return ___safeString__( string, escapeFn );                
             }
             

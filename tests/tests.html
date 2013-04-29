@@ -114,6 +114,87 @@
 </form>
 </script>
 
+/*lots of bugs here
+    eager whitespace not working: class="@tableClass" should not because there is quote
+    eager whitespace not working: odd-rowtable-row
+        
+    
+*/
+var o = {
+    tableClass: "table table-condensed",
+    attrs: {border: 0},
+    headerClass: "header-row",
+    
+    columns: [
+        {name: "title", headerText: "Title"}, {name: "publisher", headerText: "Publisher"}
+    ],
+    
+    data: [{title: "Sisu", publisher: "Koulu"},{title: "Sisu", publisher: "Koulu"},{title: "Sisu", publisher: "Koulu"},{title: "Sisu", publisher: "Koulu"},{title: "Sisu", publisher: "Koulu"}],
+    
+    oddClass: "odd-row",
+    evenClass: "even-row",
+    rowClass: "table-row"
+};
+
+
+
+<script type="asd">
+@export as grid
+@if( !columns && data ) {
+    @{
+        columns = [];
+        for( key in data[0] ) {
+            columns.push( {
+                name: key
+            });
+        }
+    }
+}
+
+@if( caption ) {
+    <h3>@caption</h3>
+}
+<table class="@tableClass"
+    @for( key, value in attrs ) {
+        @key="@value"
+    }
+>
+
+    @if( displayHeader != false ) {
+        <thead>
+            <tr class="@headerClass">
+                @for( column in columns ) {
+                    <th>@(column.headerRenderer(column) || column.headerText || column.name)</th>
+                }
+            </tr>
+        </thead>
+    }
+    <tbody>
+        @for( datum in data ) {
+            <tr class="@(index % 2 === 0 ? evenClass : oddClass) @rowClass">
+            @for( column in columns ) {
+                <td>@(column.renderer(datum[column.name]) || datum[column.name])</td>
+            }
+            </tr>
+        }
+    </tbody>
+</table>
+</script>
+
+<script type="tet">
+@export as defaultGrid
+@import grid
+
+@grid(
+    attrs: $(border: 0),
+    tableClass: "table table-condensed",
+    headerClass: "header-row",
+    oddClass: "odd-row",
+    evenClass: "even-row",
+    rowClass: "table-row"
+)
+</script>
+
 <script type="asd">
 @import form
 @import common
