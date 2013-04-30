@@ -58,7 +58,6 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
             var maxExpr = (range.maxExpr.isPureNumber && range.maxExpr.isPureNumber()) ? +range.maxExpr.identifier : "___ensureNumeric("+range.maxExpr+");";
             var stepExpr = (isFinite(range.stepExpr)) ? +range.stepExpr : ((range.stepExpr.isPureNumber && range.stepExpr.isPureNumber()) ? (+range.stepExpr.identifier): "___ensureNumeric("+range.stepExpr+") || 1;");
 
-                console.log(minExpr, maxExpr, stepExpr, range.stepExpr );
             if( isFinite( minExpr ) && isFinite( maxExpr ) && isFinite( stepExpr ) ) {
                 /*Todo: line numbers*/
                 if( minExpr === maxExpr ) {
