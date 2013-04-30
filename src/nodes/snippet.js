@@ -1,4 +1,4 @@
-var Snippet = (function() {
+var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
     var method = Snippet.prototype;
     
     function Snippet( expr ) {

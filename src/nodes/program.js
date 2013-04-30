@@ -1,4 +1,4 @@
-var Program = (function() {
+var Program = TemplateExpressionParser.yy.Program = (function() {
     var _super = ScopedBlock.prototype,
         method = Program.prototype = Object.create(_super);
     

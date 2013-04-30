@@ -1,5 +1,5 @@
 //A block that has its own variable scope
-var ScopedBlock = (function() {
+var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
     var _super = Block.prototype,
         method = ScopedBlock.prototype = Object.create(_super);
     
@@ -57,7 +57,7 @@ var ScopedBlock = (function() {
             vars = this.getVariables(),
             possibleGlobal,
             shouldCheckDataArgument = this.shouldCheckDataArgument(),
-            shouldDeclareGlobalsSeparately = this.shouldDeclareGlobalsSeparately();
+            shouldDeclareGlobalsSeparately = this.shouldDeclareGlobalsSeparately(),
             hLen = helpers.length;
 
         for( var i = 0; i < hLen; ++i ) {

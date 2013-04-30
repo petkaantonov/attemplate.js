@@ -1,4 +1,4 @@
-var LiteralJavascriptBlock = (function() {
+var LiteralJavascriptBlock = TemplateExpressionParser.yy.LiteralJavascriptBlock = (function() {
     var method = LiteralJavascriptBlock.prototype;
     
     function LiteralJavascriptBlock( code ) {

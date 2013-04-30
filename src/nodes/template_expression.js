@@ -1,4 +1,4 @@
-var TemplateExpression = (function() {
+var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (function() {
     var method = TemplateExpression.prototype;
     
     function TemplateExpression( expression, contextEscapeFn, escapeFn ) {

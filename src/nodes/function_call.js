@@ -1,4 +1,4 @@
-var FunctionCall = (function() {
+var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
     var method = FunctionCall.prototype;
     
     function FunctionCall( expr, args) {
@@ -66,7 +66,7 @@ var FunctionCall = (function() {
     
     method.toString = function() {
         var ret = this.convertArgs(),
-            last;
+            last,
             context = 'this';
         
         if( this.expr instanceof CallExpression ) {

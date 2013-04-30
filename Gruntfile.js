@@ -14,6 +14,7 @@ module.exports = function( grunt ) {
         build: {
 
             src: [
+                "./src/begin.js",
                 "./src/runtime.js",
                 "./src/nodes/snippet.js",
                 "./src/nodes/call_expression.js",
@@ -62,11 +63,8 @@ module.exports = function( grunt ) {
         
         
         var compiled = [];
-        compiled.push(fs.readFileSync("./src/begin.js", "utf-8"));
         compiled.push(parsergen("./js_template_expression_grammar.js"));
-        
-        
-    
+       
         files.forEach( function( filepath) {
             var contents = fs.readFileSync( filepath, "utf-8");
             if( filepath.indexOf("closure_body") > -1 ) {

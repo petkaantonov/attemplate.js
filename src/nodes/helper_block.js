@@ -1,4 +1,4 @@
-var HelperBlock = (function() {
+var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
     var _super = ScopedBlock.prototype,
         method = HelperBlock.prototype = Object.create(_super);
         

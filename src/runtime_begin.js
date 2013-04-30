@@ -20,3 +20,4 @@
  * THE SOFTWARE.
  */
 ;(function(global) {
+    "use strict";

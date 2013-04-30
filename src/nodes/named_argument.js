@@ -1,4 +1,4 @@
-var NamedArgument = (function() {
+var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
     var method = NamedArgument.prototype;
     
     function NamedArgument( name, expr) {

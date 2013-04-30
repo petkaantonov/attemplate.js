@@ -1,4 +1,4 @@
-var IfBlock = (function() {
+var IfBlock = TemplateExpressionParser.yy.IfBlock = (function() {
     var _super = HeaderBlock.prototype,
         method = IfBlock.prototype = Object.create(_super);
     

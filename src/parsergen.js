@@ -7,5 +7,6 @@ module.exports = function( grammarFile ) {
     var parser = new Parser(grammar);
 
     var parserSource = parser.generate();
+    
     return parserSource;
 };

@@ -15,6 +15,11 @@
             Runtime.registerExtension( "Number.toDate", function() {
                  return new Date(this.valueOf());
             });
+
+            Runtime.registerExtension( "now", function() {
+                 return new Date();
+            });
+
             </script>
     </head>
     <body>

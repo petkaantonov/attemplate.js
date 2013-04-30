@@ -20,3 +20,5 @@
  * THE SOFTWARE.
  */
 ;(function(global) {
+    "use strict";
+    var TemplateExpressionParser = parser;

@@ -1,4 +1,4 @@
-var Range = (function() {
+var Range = TemplateExpressionParser.yy.Range = (function() {
     var method = Range.prototype;
     
     var sign = function(v){

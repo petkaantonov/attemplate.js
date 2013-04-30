@@ -1,4 +1,4 @@
-var StringLiteral = (function() {
+var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
     var method = StringLiteral.prototype;
     
     function StringLiteral( str ) {

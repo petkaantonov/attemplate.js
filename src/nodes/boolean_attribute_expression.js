@@ -1,4 +1,4 @@
-var BooleanAttributeExpression = (function() {
+var BooleanAttributeExpression = TemplateExpressionParser.yy.BooleanAttributeExpression = (function() {
     var method = BooleanAttributeExpression.prototype;
     
     function BooleanAttributeExpression( name, quote ) {

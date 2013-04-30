@@ -1,5 +1,5 @@
 //A block that has a header like @if( header ) { blockCode }
-var HeaderBlock = (function() {
+var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
     var _super = Block.prototype,
         method = HeaderBlock.prototype = Object.create(_super);
     

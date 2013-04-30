@@ -1,4 +1,4 @@
-var ArrayLiteral = (function() {
+var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
     var method = ArrayLiteral.prototype;
     
     function ArrayLiteral( elements ) {

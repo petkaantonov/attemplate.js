@@ -1,4 +1,4 @@
-var MemberExpression = (function() {
+var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function() {
     var method = MemberExpression.prototype;
     
     MemberExpression.identifiers = {};

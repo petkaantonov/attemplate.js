@@ -1,4 +1,4 @@
-var LoopStatement = (function() {
+var LoopStatement = TemplateExpressionParser.yy.LoopStatement = (function() {
     var method = LoopStatement.prototype;
     
     function LoopStatement( statement ) {

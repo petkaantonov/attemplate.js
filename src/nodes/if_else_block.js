@@ -1,4 +1,4 @@
-var IfElseBlock = (function() {
+var IfElseBlock = TemplateExpressionParser.yy.IfElseBlock = (function() {
     var _super = HeaderBlock.prototype,
         method = IfElseBlock.prototype = Object.create(_super);
     

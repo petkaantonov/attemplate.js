@@ -1,4 +1,4 @@
-var LiteralExpression = (function() {
+var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (function() {
     var method = LiteralExpression.prototype;
     
     function LiteralExpression( literal ) {

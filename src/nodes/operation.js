@@ -1,4 +1,4 @@
-var Operation = (function() {
+var Operation = TemplateExpressionParser.yy.Operation = (function() {
     var method = Operation.prototype;
     
     var rrelational = /^(?:<|>|>=|<=)$/;

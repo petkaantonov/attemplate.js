@@ -1,4 +1,4 @@
-var CallExpression = (function() {
+var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
     var method = CallExpression.prototype;
     
     function CallExpression( fn, mem ) {

@@ -1,4 +1,4 @@
-var ForeachBlock = (function() {
+var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
     var _super = Block.prototype,
         method = ForeachBlock.prototype = Object.create(_super);
 

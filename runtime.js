@@ -19,7 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-;(function(global) {var Runtime = (function() {
+;(function(global) {
+    "use strict";var Runtime = (function() {
     var method = Runtime.prototype,
         version = "0.2.0";
 

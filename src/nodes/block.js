@@ -1,4 +1,4 @@
-var Block = (function() {
+var Block = TemplateExpressionParser.yy.Block = (function() {
     var method = Block.prototype;
     
     function Block() {
