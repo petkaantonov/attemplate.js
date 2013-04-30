@@ -46,8 +46,9 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
     };
     
 
-    method.performAnalysis = function() {
+    method.performAnalysis = function( parent ) {
         if( !this.buildupExported ) {
+            //Adopt the initialization code from the inner loops and take them to the top
             var nestedLoops = this.getNestedLoops();
             for( var i = 0; i < nestedLoops.length; ++i ) {
                 nestedLoops.buildupExported = true;
