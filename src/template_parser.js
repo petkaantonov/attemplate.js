@@ -22,16 +22,15 @@ function getEscapeFnByName( name ) {
 }
 
 function boolOp( expr ) {
-    return '((___ref = '+expr+'), ___ref2 = ___ref && ___ref.length, ___ref2 != null ? ___ref2 > 0 : ___ref)';
+    return '((___ref = '+expr+'), ___isArray(___ref) ? ___ref.length > 0 : ___ref)';
 }
-
-
 
 /* global state */
 
 var input,
     attrCloser,
     character,
+    version = "@VERSION",
     i,
     blockStack,
     token,
@@ -108,8 +107,8 @@ var input,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
-    rkeyword = /^(?:break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
-    rillegal= /^(?:Function|String|Boolean|Number|Array|Object|eval)$/,
+    rkeyword = /^(?:eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
+    rillegal= /^(?:Function|String|Boolean|Number|Array|Object)$/,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
     rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
     rinvalidref = /^(?:null|false|true|this)$/,    
@@ -207,6 +206,12 @@ function skipWhiteSpace() {
         }
     }
 }
+
+function validIdentifier( str ) {
+    str = "" + str;
+    return rjsident.test(str) && !rinvalidref.test(str) && !rkeyword.test(str)
+}
+
 //Bugs here     
 function skipNewLineAndIndentation() {
     var ahead = lookahead(1), wsCount = 0;
@@ -794,7 +799,11 @@ function getImports( importProgram, imports ) {
     
 }
 
-function parse( inp ) {
+function parse( inp, compiledName ) {
+    if( compiledName && !validIdentifier( compiledName ) ) {
+        throw new Error("Invalid javascript identifier for extraction: '" + compiledName+"'.");
+    }
+
     var r, matchExport, matchImport, block,
         stackTop, stackLen,
         helpers = [], program, statements,  name, output,
@@ -945,6 +954,12 @@ function parse( inp ) {
             stackTop.push(block);
             
             setScopeBlock();
+            
+            //Remove reference error guards from current scope for the vars that the block defines
+            if( block.definesVars ) {
+                scopeBlock.unmergeVariables( block.definesVars() );
+            }
+            
             skipWhiteSpace(); //Skip whitespace after block
 
                                             //When closing a if|else if block, the next word could be another without @ prefix
@@ -1087,19 +1102,23 @@ function parse( inp ) {
     program.setHelpers( helpers );
     output = program.toString( imports, exported );
     
-    try {
-        r = new Function( output )();
-    }
-    catch(e) {
-        global.console && console.log( output );
 
-        throw e;
+    
+    if( compiledName ) {
+        r = "var "+compiledName+" = (function() { " + output + "})();";
+        r += "\n" + compiledName + ".registerRuntime(new Runtime('"+version+"'));";
+    }
+    else {
+        try {
+            r = new Function( output )();
+        }
+        catch(e) {
+            global.console && console.log( output );
+
+            throw e;
+        }
+        r.registerRuntime(new Runtime(version));
     }
 
-    r.extract = (function(o) {
-        return function(templateName) {
-            return "var "+templateName+" = (function() { " + o + "})();";            
-        };
-    })(output);
     return r;
 }

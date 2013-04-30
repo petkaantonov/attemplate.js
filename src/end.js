@@ -1,15 +1,13 @@
 var ret = {
 
-    compileStandaloneFromString: function( str, name, transformer ) {
+    compileStandaloneFromString: function( str, name) {
         name = name || "myTemplate";
-        var ret = this.fromString( str ).extract( name );
-        return typeof transformer === "function" ? transformer(ret) : ret;
+        return this.fromString( str, name );
     },
     
-    compileStandaloneFromFile: function( fileName, name, transformer ) {
+    compileStandaloneFromFile: function( fileName, name ) {
         name = name || "myTemplate";
-        var ret = this.fromFile( fileName ).extract( name );
-        return typeof transformer === "function" ? transformer(ret) : ret;
+        return this.fromFile( str, name );
     },
     
     registerGlobals: function() {
@@ -19,14 +17,14 @@ var ret = {
         return this;
     },
 
-    fromString: function( str ) {
+    fromString: function( str, compiledName ) {
         if( typeof str !== "string" ) {
             throw new TypeError( "Expecting string, got "+str );
         }
-        return parse( str );
+        return parse( str, compiledName  );
     },
 
-    fromFile: function( name ) {
+    fromFile: function( name, compiledName  ) {
         var fromString = this.fromString,
             data,
             tmpl;
@@ -37,11 +35,11 @@ var ret = {
 
         data = require("fs").readFileSync( name, "utf8" );
 
-        tmpl = fromString( data );
+        tmpl = fromString( data, compiledName );
         return compiledTemplates[name] = tmpl;
     },
 
-    getById: function( id ) {
+    getById: function( id, compiledName  ) {
         var template;
 
         id = id + "";
@@ -56,7 +54,7 @@ var ret = {
             throw new TypeError( "Cannot find template by id: " +id);
         }
 
-        return (compiledTemplates[id] = this.fromString( template.innerHTML ) );
+        return (compiledTemplates[id] = this.fromString( template.innerHTML, compiledName  ) );
     }
 };
 

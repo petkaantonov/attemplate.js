@@ -18,6 +18,29 @@ var ForeachBlock = (function() {
         this.value = value;
         this.collection = collection;
     }
+    
+    //Get the variables that the block defines which don't need to be 
+    //secured against reference errros
+    method.definesVars = function() {
+        var ret = {};
+        
+        if( this.collection instanceof Range ) {
+            ret[this.key] = true;
+            ret.count = true;
+        }
+        else if( !this.value ) {
+            ret.count = true;
+            ret.index = true;
+            ret.isLast = true;
+            ret.isFirst = true;
+            ret[this.key] = true;
+        }
+        else {
+            ret[this.key] = true;
+            ret[this.value] = true;
+        }
+        return ret;
+    };
 
     method.toString = function() {
         var id = randomId();

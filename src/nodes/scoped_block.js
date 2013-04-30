@@ -23,6 +23,14 @@ var ScopedBlock = (function() {
         return null;
     };
     
+    method.unmergeVariables = function( varsSet ) {
+        for( var key in varsSet ) {
+            if( varsSet.hasOwnProperty(key) && this.variables.hasOwnProperty(key) ) {
+                delete this.variables[key];
+            }
+        }
+    };
+    
     method.mergeVariables = function( varsSet ) {
         for( var key in varsSet ) { 
             if( varsSet.hasOwnProperty( key ) ) {

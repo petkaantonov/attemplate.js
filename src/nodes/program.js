@@ -135,7 +135,7 @@ var Program = (function() {
         
         ret.push( "return ___html.join(''); }" );
         
-        ret.push( "return function( data ) { return "+idName+".call(data || {}); }; ");
+        ret.push( "var ret = function( data ) { return "+idName+".call(data || {}); }; ret.registerRuntime = function( rt ) {___setRuntime(rt);}; return ret;");
         
         return ret.join("");
     };
