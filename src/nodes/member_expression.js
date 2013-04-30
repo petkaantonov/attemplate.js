@@ -25,6 +25,14 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
 
     }
     
+    method.isPureNumber = function() {
+        return (isFinite(this.identifier) && this.identifier.length);
+    };
+    
+    method.isNegativePureNumber = function() {
+        return (this.isPureNumber() && ((+this.identifier) < 0)) || false;
+    };
+    
     method.isBooleanOp = function() {
         return rfalsetrue.test(this.identifier);
     };

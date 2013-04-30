@@ -41,6 +41,7 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
         }
         return ret;
     };
+    
 
     method.toString = function() {
         var id = randomId();
@@ -52,10 +53,31 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
             if( this.value ) {
                 this.key = this.value;
             }
+            
+            var minExpr = (range.minExpr.isPureNumber && range.minExpr.isPureNumber()) ? +range.minExpr.identifier : "___ensureNumeric("+range.minExpr+");";
+            var maxExpr = (range.maxExpr.isPureNumber && range.maxExpr.isPureNumber()) ? +range.maxExpr.identifier : "___ensureNumeric("+range.maxExpr+");";
+            var stepExpr = (isFinite(range.stepExpr)) ? +range.stepExpr : ((range.stepExpr.isPureNumber && range.stepExpr.isPureNumber()) ? (+range.stepExpr.identifier): "___ensureNumeric("+range.stepExpr+") || 1;");
+
+                console.log(minExpr, maxExpr, stepExpr, range.stepExpr );
+            if( isFinite( minExpr ) && isFinite( maxExpr ) && isFinite( stepExpr ) ) {
+                /*Todo: line numbers*/
+                if( minExpr === maxExpr ) {
+                    doError("The range expression will never result in the loop body to be executed because 'from' and 'to' are of same value.");
+                }
+                else if( minExpr >= maxExpr && stepExpr > 0 ) {
+                    doError("The range expression will never result in the loop body to be executed because 'from' is higher than 'to' and the step size is positive. Use a negative step size.");
+                }
+                else if( minExpr <= maxExpr && stepExpr < 0 ) {
+                    doError("The range expression will never result in the loop body to be executed because 'from' is lower than 'to' and the step size is negative. Use a positive step size.");
+                }
+                else if( stepExpr === 0 ) {
+                    doError("The range expression will never result in the loop body to be executed because step size is 0.");
+                }
+            }
                         
-            return "var ___min"+id+" = ___ensureNumeric("+range.minExpr+"); " +
-                    "var ___max"+id+" = ___ensureNumeric("+range.maxExpr+"); " +
-                    "var ___step"+id+" = ___ensureNumeric("+range.stepExpr+") || 1; " +
+            return "var ___min"+id+" = "+minExpr+"; " +
+                    "var ___max"+id+" = "+maxExpr+"; " +
+                    "var ___step"+id+" = "+stepExpr+"; " +
                     "var ___key"+id+"; "+
                                     //Prevent infinite or empty loops
                     "if( !( (___min"+id+" === ___max"+id+") || (___min"+id+" >= ___max"+id+" && ___step"+id+" > 0) || (___min"+id+" <= ___max"+id+" && ___step"+id+" < 0) ) ) {"+

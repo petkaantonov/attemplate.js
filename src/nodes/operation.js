@@ -22,7 +22,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
             this.opStr = "!==";
         }
     }
-    
+        
     method.isBooleanOp = function() {
         return this.opStr === "in" || this.opStr === "!" ;
     };
@@ -48,7 +48,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
                 }
             }
             else {
-                ret = this.opStr.toString() + " " + this.op1.toString();
+                ret = " " + this.opStr.toString() + " " + this.op1.toString() + " ";
             }
         }
         else if( this.opStr === "in" ) {

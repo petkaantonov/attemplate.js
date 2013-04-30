@@ -92,8 +92,8 @@ var grammar = {
     
     operation: [
         ["UNARY expression", "$$ = new yy.Operation($1, $2, null);"],
-        ["- expression", "$$ = new yy.Operation($1, $2, null);", {prec: "UNARY"}],
-        ["+ expression", "$$ = new yy.Operation($1, $2, null);", {prec: "UNARY"}],
+        ["- expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = new yy.MemberExpression([($2.isNegativePureNumber() ? $2.identifier.replace(/-/g, '') : '-' + $2.identifier)]); } else{ $$ = new yy.Operation($1, $2, null);}", {prec: "UNARY"}],
+        ["+ expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = new yy.MemberExpression([$2.identifier]); } else{ $$ = new yy.Operation($1, $2, null); }", {prec: "UNARY"}],
         ["expression IN expression", "$$ = new yy.Operation($2, $1, $3);"],
         ["expression MATH expression", "$$ = new yy.Operation($2, $1, $3);"],
         ["expression RELATION expression", "$$ = new yy.Operation($2, $1, $3);"],
