@@ -17,6 +17,8 @@ module.exports = function( grunt ) {
                 "./src/begin.js",
                 "./src/runtime.js",
                 "./src/nodes/snippet.js",
+                "./src/nodes/output_expression.js",
+                "./src/nodes/combined_output_expression.js",
                 "./src/nodes/call_expression.js",
                 "./src/nodes/member_expression.js",
                 "./src/nodes/function_call.js",

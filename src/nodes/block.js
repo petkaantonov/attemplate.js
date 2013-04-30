@@ -52,5 +52,74 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         return this.statements;
     };
     
+    method.indexOfChild = function( child ) {
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            
+            if( statement === child ) {
+                return i;
+            }
+        }
+        return -1;
+    };
+    
+    method.insertChildAfter = function( haveChild, insertChild) {
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            
+            if( statement === haveChild ) {
+                this.statements.splice(i+1, 0, insertChild);
+            }
+        }
+    };
+
+    method.insertChildBefore = function( haveChild, insertChild) {
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            
+            if( statement === haveChild ) {
+                this.statements.splice(i, 0, insertChild);
+            }
+        }
+    };
+    
+    method.removeChildrenAt = function( index, count ) {
+        if( typeof index === "number" ) {
+            console.log(index, count, this.statements);
+            this.statements.splice( index, count );
+        }
+        else if( ( index = this.indexOfChild(index) ) > -1 ) {
+            this.statements.splice( index, count );
+        }
+    };
+    
+    method.appendChild = function( child ) {
+        this.statements.push( child );
+    };
+    
+    method.insertChildAt = function( index, child) {
+        if( !this.statements.length ) {
+            this.appendChild(child);
+        }
+        else {
+            this.statements.splice( index, 0, child);
+        }
+    };
+    
+    method.removeChild = function( child ) {
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            
+            if( statement === child ) {
+                this.statements.splice(i, 1);
+                return child;
+            }
+        }
+    };
+    
     return Block;
 })();
