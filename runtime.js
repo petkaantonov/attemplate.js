@@ -241,18 +241,10 @@
     };
     
     var ___ensureArrayLike = method.ensureArrayLike = function(obj) {
-        if( !obj ) {
-            return [];
-        }
-        
-        
-        if( obj.length &&
-            ___hasown.call(obj, "0") && 
-            typeof obj !== FUNCTION &&
-            ___hasown.call(obj, obj.length -1 ) ) {
+        if( ___isArray( obj ) && isFinite(obj.length) ) {
             return obj;
         }
-
+        
         return [];
     };
     

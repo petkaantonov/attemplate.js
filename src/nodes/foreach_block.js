@@ -52,43 +52,70 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
             if( this.value ) {
                 this.key = this.value;
             }
-            
-            return "    (function(){" +
-                    "var ___min"+id+" = ___ensureNumeric("+range.minExpr+"); " +
+                        
+            return "var ___min"+id+" = ___ensureNumeric("+range.minExpr+"); " +
                     "var ___max"+id+" = ___ensureNumeric("+range.maxExpr+"); " +
                     "var ___step"+id+" = ___ensureNumeric("+range.stepExpr+") || 1; " +
-                    
-                    "if( ___min"+id+" === ___max"+id+" ) { return; }" +
-                    "else if( ___min"+id+" > ___max"+id+" && ___step"+id+" > 0 ) { return; }" +
-                    "else if( ___min"+id+" < ___max"+id+" && ___step"+id+" < 0 ) { return; }" +
-                    
-                    "    var count = ___max"+id+" - ___min"+id+"; " +
-                    "    for( var "+this.key+" = ___min"+id+"; "+this.key+" <= ___max"+id+"; "+this.key+" += ___step"+id+" ) { " +
+                    "var ___key"+id+"; "+
+                                    //Prevent infinite or empty loops
+                    "if( !( (___min"+id+" === ___max"+id+") || (___min"+id+" >= ___max"+id+" && ___step"+id+" > 0) || (___min"+id+" <= ___max"+id+" && ___step"+id+" < 0) ) ) {"+
+                    " var ___ref"+id+" = (___min"+id+" < ___max"+id+" ? 1 : -1);" +
+                    " ___ref = ___ref"+id+" === 1 ? Math.ceil : Math.floor; "+
+                    " var ___count"+id+" = ___ref"+id+" * (___ref((___max"+id+" - ___min"+id+") / (___ref"+id+" * ___step"+id+")) + ___ref"+id+"), ___prevKey"+id+", ___prevCount"+id+"; "+
+                    "    var count, "+this.key+";" +
+                    "    for( var ___key"+id+" = ___min"+id+"; ; ___key"+id+" += ___step"+id+" ) { " +                    
+                    "       ___prevKey"+id+" = "+this.key+"; "+
+                    "       ___prevCount"+id+" = count;" +
+                    "       "+this.key+" = ___key"+id+";"+
+                    "       count = ___count"+id+";" +
                             body  +
+                    "       "+this.key+" = ___prevKey"+id+";"+
+                    "       count = ___prevCount"+id+"; "+
+                    "       if( ___ref"+id+" === 1 ?  ___key"+id+" >= ___max"+id+" : ___key"+id+" <= ___max"+id+" ) {"+
+                    "            break;"+
+                    "        }"+
                     "    } " +
-                    "    }).call(this);";
+                    " } ";
+
         } 
         else if( !this.value ) { //Array iteration
-            return  "    (function(___collection"+id+"){" +
+            return  " var ___collection"+id+" = "+this.collection+";" +
                     " ___collection"+id+" = ___isArray(___collection"+id+") ? ___collection"+id+" : ___ensureArrayLike(___collection"+id+"); " +
-                    "            var count = ___collection"+id+".length;" +
-                    "            for( var ___i"+id+" = 0, ___len"+id+" = count; ___i"+id+" < ___len"+id+"; ++___i"+id+" ) {" +
-                    "                var "+this.key+" = ___collection"+id+"[___i"+id+"];" +
-                    "                var index = ___i"+id+";" +
-                    "                var isLast = ___i"+id+" === ___len"+id+" - 1;" +
-                    "                var isFirst = ___i"+id+" === 0;" +
-                            body +
-                    "            }" +
-                    "    }).call(this, "+this.collection+");";
+                    " var ___count"+id+" = ___collection"+id+".length, ___prevKey"+id+", ___prevCount"+id+", ___prevIndex"+id+" , ___prevIsLast"+id+" , ___prevIsFirst"+id+" ; "+
+                    "  var count, "+this.key+", index, isLast, isFirst; "+
+                    "            for( var ___i"+id+" = 0; ___i"+id+" < ___count"+id+"; ++___i"+id+" ) {" +
+                    "                ___prevCount"+id+" = count;" +
+                    "                 ___prevIsLast"+id+" = isLast;" +
+                    "                 ___prevIsFirst"+id+" = isFirst;" +
+                    "                 ___prevIndex"+id+" = index;" +
+                    "                 ___prevKey"+id+" = "+this.key+";" +
+                    "                count = ___count"+id+";" +
+                    "                "+this.key+" = ___collection"+id+"[___i"+id+"];" +
+                    "                index = ___i"+id+";" +
+                    "                isLast = ___i"+id+" === ___count"+id+" - 1;" +
+                    "                isFirst = ___i"+id+" === 0;" +
+                                body +
+                    "          count = ___prevCount"+id+";" + //This should be much cheaper than using closures or the like, especially in nested loops
+                    "          isLast = ___prevIsLast"+id+";" +
+                    "          isFirst = ___prevIsFirst"+id+";" +
+                    "          index = ___prevIndex"+id+";" +
+                    "          "+this.key+" = ___prevKey"+id+";" +
+                    "            }";
         }
         else {  //Object/Map iteration
-            return  "    (function(___collection"+id+"){" +
+            return  " var ___collection"+id+" = "+this.collection+";" +
                     " ___collection"+id+" = ___isObject(___collection"+id+") ? ___collection"+id+" : {}; " +
-                    "            for( var "+this.key+" in ___collection"+id+" ) { if( ___hasown.call( ___collection"+id+", "+this.key+") ) {" +
-                    "                var "+this.value+" = ___collection"+id+"["+this.key+"];" +
+                    "  var ___prevKey"+id+", ___prevValue"+id+", ___key"+id+"; " +
+                    "  var "+this.key+", "+this.value+"; " +
+                    "            for( ___key"+id+" in ___collection"+id+" ) { if( ___hasown.call( ___collection"+id+", ___key"+id+") ) {" +
+                    "               ___prevKey"+id+" = "+this.key+";" +
+                    "               ___prevValue"+id+" = "+this.value+";"+
+                    "                "+this.key+" = ___key"+id+";" +
+                    "                "+this.value+" = ___collection"+id+"[___key"+id+"];" +
                             body +
-                    "            }}" +
-                    "    }).call(this, "+this.collection+");";
+                    "                "+this.key+" = ___prevKey"+id+";" +
+                    "                "+this.value+" = ___prevValue"+id+"; "+
+                    "            }}";
         }
     };
    
