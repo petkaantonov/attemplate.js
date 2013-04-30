@@ -1100,6 +1100,7 @@ function parse( inp, compiledName ) {
     }
     //This is why in the above loop we don't need to check for instanceof Program
     program.setHelpers( helpers );
+    program.performAnalysis();
     output = program.toString( imports, exported );
     
 

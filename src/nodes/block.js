@@ -17,6 +17,37 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         return ret.join("");
     };
     
+    method.performAnalysis = function( parent ) {
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            if( statement instanceof Block ) {
+                statement.performAnalysis( this );
+            }
+            else if( statement.performAnalysis ) {
+                statement.performAnalysis( this );
+            }
+        }
+    };
+    
+    method.getNestedLoops = function() {
+        var ret = [];
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            
+            statement = this.statements[i];         //Scoped blocks will not share the loops as they are separated from the main function later
+            if( !( statement instanceof Block) || statement instanceof ScopedBlock ) {
+                continue;
+            }
+            if( statement instanceof ForeachBlock ) {
+                ret.push(statement);
+            }
+
+            ret = ret.concat(statement.getNestedLoops());
+        }
+        return ret;
+    };
+    
     method.getStatements = function() {
         return this.statements;
     };

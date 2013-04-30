@@ -17,6 +17,9 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
         this.key = key;
         this.value = value;
         this.collection = collection;
+        
+        this.buildupExported = false;
+        this.buildUps = []; //Build ups from possible inner loops
     }
     
     //Get the variables that the block defines which don't need to be 
@@ -43,9 +46,23 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
     };
     
 
+    method.performAnalysis = function() {
+        if( !this.buildupExported ) {
+            var nestedLoops = this.getNestedLoops();
+            for( var i = 0; i < nestedLoops.length; ++i ) {
+                nestedLoops.buildupExported = true;
+            }
+        }
+        _super.performAnalysis.call( this );
+    };
+    
+    //TODO nested loop optimizations - add their static startup stuff at the top of this loop
     method.toString = function() {
         var id = randomId();
+        
         var body = _super.toString.call( this );
+        
+        
         
         //Range iteration @for( item from 5 to 10 by 5)
         if( this.collection instanceof Range ) {
@@ -70,7 +87,7 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
                     doError("The range expression will never result in the loop body to be executed because 'from' is lower than 'to' and the step size is negative. Use a positive step size.");
                 }
                 else if( stepExpr === 0 ) {
-                    doError("The range expression will never result in the loop body to be executed because step size is 0.");
+                    doError("The range expression will result in an infinite loop because step size is 0.");
                 }
             }
                         
