@@ -11,16 +11,19 @@ var HtmlContextParser = (function() {
     })();
 
 
-    var CONTEXT = {
-        HTML: {name: "HTML"},
-        ATTR: {name: "ATTR"},
-        ATTR_NAME: {name: "ATTR_NAME"},
-        URI: {name: "URI"},
-        URI_PARAM: {name: "URI_PARAM"},
-        SCRIPT: {name: "SCRIPT"},
-        SCRIPT_IN_ATTR: {name: "SCRIPT_IN_ATTR"},
-        CSS: {name: "CSS"}
+    var context = {
+        NO_ESCAPE: {name: 0},
+        HTML: {name: 1},
+        ATTR: {name: 2},
+        ATTR_NAME: {name: 4},
+        URI: {name: 8},
+        URI_PARAM: {name: 16},
+        SCRIPT: {name: 32},
+        SCRIPT_IN_ATTR: {name: 64},
+        CSS: {name: 128}
     };
+    
+    HtmlContextParser.context = context;
 
     var method = HtmlContextParser.prototype;
                    //tagopen         //attribute open             //closing tag           //tagclose    //URL-param characters     //HTML comment end
@@ -32,7 +35,7 @@ var HtmlContextParser = (function() {
     var charData = /^(?:script|style|textarea|title|--)$/;
     
     function HtmlContextParser() {
-        this.context = CONTEXT.HTML;
+        this.context = context.HTML;
         this.tagStack = [];
         this.openedTag = null;
         this.currentAttr = null;
@@ -136,12 +139,12 @@ var HtmlContextParser = (function() {
         if( tagName == "--" ) {
             this.inCharData = true;
             this.tagStack.push(tagName);
-            this.context = CONTEXT.HTML;
+            this.context = context.HTML;
             this.openedTag = null;
             return;
         }
         this.openedTag = tagName;
-        this.context = CONTEXT.ATTR_NAME;
+        this.context = context.ATTR_NAME;
     };
 
     method.tagOpenEnd = function( openEndSyntax ) {
@@ -151,16 +154,16 @@ var HtmlContextParser = (function() {
         this.inMetaRefresh = this.inDataUrl = false;
 
         var tagName = this.openedTag;
-        this.context = CONTEXT.HTML;
+        this.context = context.HTML;
         this.openedTag = null;
 
         if( this.isCharData( tagName ) ) {
 
             if( tagName === "script" ) {
-                this.context = CONTEXT.SCRIPT;
+                this.context = context.SCRIPT;
             }
             else if( tagName === "style" ) {
-                this.context = CONTEXT.CSS;
+                this.context = context.CSS;
             }
 
             this.tagStack.push(tagName);        
@@ -176,7 +179,7 @@ var HtmlContextParser = (function() {
         
         if( this.inCharData && equalsCurrent ) {
             this.tagStack.pop();
-            this.context = CONTEXT.HTML;
+            this.context = context.HTML;
             this.inCharData = false;
         }
         else if( this.inCharData || this.currentAttr ) {
@@ -184,7 +187,7 @@ var HtmlContextParser = (function() {
         }
         else if( equalsCurrent ) {
             this.tagStack.pop();
-            this.context = CONTEXT.HTML;
+            this.context = context.HTML;
         }
         else if( this.isSelfClosing( name ) ) {
             return;
@@ -206,16 +209,16 @@ var HtmlContextParser = (function() {
         this.currentAttrQuote = quoteType;
 
         if( this.isScriptAttr( attrName ) ) {
-            this.context = CONTEXT.SCRIPT_IN_ATTR;
+            this.context = context.SCRIPT_IN_ATTR;
         }
         else if( this.isUriAttr( attrName ) ) {
-            this.context = CONTEXT.URI;
+            this.context = context.URI;
         }
         else if( this.isCssAttr( attrName ) ) {
-            this.context = CONTEXT.CSS;
+            this.context = context.CSS;
         }
         else {
-            this.context = CONTEXT.ATTR;
+            this.context = context.ATTR;
         }
     };
 
@@ -225,7 +228,7 @@ var HtmlContextParser = (function() {
         if( this.currentAttrQuote === quoteType ) {
             this.dynamicAttr = this.currentAttr = null;
             this.currentAttrQuote = null;
-            this.context = CONTEXT.ATTR_NAME;
+            this.context = context.ATTR_NAME;
         }
     };
 
@@ -233,7 +236,7 @@ var HtmlContextParser = (function() {
         if( this.inCharData ) return;
 
         if( this.currentAttr && this.isUriAttr(this.currentAttr) ) {
-            this.context = CONTEXT.URI_PARAM;
+            this.context = context.URI_PARAM;
         }
     };
 

@@ -22,20 +22,53 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
                 MemberExpression.identifiers[this.identifier] = true;
             }
         }
-
+        this.static = false;
+        
+        if( this.members.length === 0 && this.identifier.isStatic && this.identifier.isStatic()) {
+            this.setStatic();
+        }
     }
     
+    method.getStaticType = function() {
+        if( !this.isStatic() ) {
+            throw new Error("Cannot call getStaticType on non-static member expression");
+        }
+        
+        return this.identifier.getStaticType();
+    };
+    
+    method.getIdentifier = function() {
+        return this.identifier;
+    };
+    
+    method.truthy = function() {
+        if( !this.isStatic() ) {
+            throw new Error("Cannot call truthy on non-static member expression");
+        }
+        return this.identifier.truthy();
+    };
+    
+    method.isStatic = function() {
+        return this.static;
+    };
+    
+    method.setStatic = function() {
+        this.static = true;
+    };
+    
     method.isPureNumber = function() {
-        return (isFinite(this.identifier) && this.identifier.length);
+        return this.isStatic() && (this.identifier instanceof NumericLiteral);
     };
     
     method.isNegativePureNumber = function() {
-        return (this.isPureNumber() && ((+this.identifier) < 0)) || false;
+        return (this.isPureNumber() && this.identifier.isNegative());
     };
     
     method.isBooleanOp = function() {
-        return rfalsetrue.test(this.identifier);
+        return this.isStatic() && (this.identifier instanceof BooleanLiteral);
     };
+    
+    
     
     //Pure reference, no member operators
     method.isPureReference = function() {

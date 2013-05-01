@@ -9,11 +9,9 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
     method.performAnalysis = function( parent ) {
         var insertionPoint = this,
             statements = parent.getStatements(),
-            insertAt,
-            removeAt,
-            expressions = [this];
+            expressions = [];
             
-        for( var i = insertAt = removeAt = parent.indexOfChild(this) + 1; i < statements.length; ++i ) {
+        for( var i = parent.indexOfChild(this); i < statements.length; ++i ) {
             var statement = statements[i];
             
             if( !(statement instanceof OutputExpression ) ) {
@@ -23,9 +21,8 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
         }
         
         if( expressions.length > 1 ) {
-            var newChild = new CombinedOutputExpression( expressions );
-             
-            parent.removeChildrenAt(removeAt-1, expressions.length);
+            parent.removeChildrenAt(i-expressions.length, expressions.length);
+            parent.insertChildAt( i-expressions.length,  new CombinedOutputExpression( expressions ) );
         }
     };
    

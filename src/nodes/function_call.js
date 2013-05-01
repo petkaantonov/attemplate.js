@@ -8,6 +8,10 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         this.checkSpecials(); //Handle special function calls
     }
     
+    method.isStatic = function() {
+        return false;
+    };
+    
     //Inline a map
     function toStringMapSpecial() {
         return this.convertArgs(true)[0];

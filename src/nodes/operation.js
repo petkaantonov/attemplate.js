@@ -14,6 +14,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         this.op1 = op1;
         this.op2 = op2;
         this.madeRelational = false;
+        this.static = false;
         
         if( this.opStr === "==" ) {
             this.opStr = "===";
@@ -21,7 +22,20 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         else if( this.opStr === "!=" ) {
             this.opStr = "!==";
         }
+        if( (this.isUnary && this.op1.isStatic()) ||
+            (!this.isTernary && this.op1.isStatic() && this.op2.isStatic())
+            ) {
+            this.setStatic();
+        }
     }
+    
+    method.setStatic = function() {
+        this.static = true;
+    };
+    
+    method.isStatic = function() {
+        return this.static;
+    };
         
     method.isBooleanOp = function() {
         return this.opStr === "in" || this.opStr === "!" ;
@@ -78,7 +92,70 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
             }
         }
         
+        if( this.isStatic() ) {
+            ret = this.resolveStaticOperation( ret );
+        }
+        
         return this.parens ? '(' + ret + ')' : ret;
+        
+    };
+    
+    method.getStaticType = function() {
+        if( !this.isStatic() ) {
+            throw new Error("Cannot call getStaticType on non-static member expression");
+        }
+        return this.resolveStaticOperation(this.op1.toString() + this.opStr + this.op2.toString()).getStaticType();
+        
+    };
+    
+    method.resolveStaticOperation = function( op ) {
+        op = new Function("return " +op)();
+        switch( this.opStr ) {
+            case "<":
+            case ">":
+            case ">=":
+            case "<=":
+            case "!":
+            case "!==":
+            case "===":
+                //Evaluation always returns either true or false
+                op = new BooleanLiteral(op); break;
+            case "-":
+            case "*":
+            case "/":
+            case "%":
+                //Evaluation always returns a number
+                op = new NumericLiteral(op); break;
+            case "+":
+                if( this.isUnary ) {//Evaluation always returns a number 
+                    op = new NumericLiteral(op);
+                }//Evaluation always returns a string 
+                else if( (this.op1.getStaticType() === "string" ) || 
+                    (this.op2.getStaticType() === "string" ) ) {
+                    op = StringLiteral.fromRaw(op);
+                }
+                else {//Evaluation always returns a number 
+                    op = new NumericLiteral(op); 
+                }
+                break;
+            case "&&": 
+                    if( !this.op1.truthy() ) {
+                        op = this.op1;
+                    }
+                    else {
+                        op = this.op2;
+                    }
+                break;
+            case "||":
+                    if( this.op1.truthy() ) {
+                        op = this.op1;
+                    }
+                    else {
+                        op = this.op2;
+                    }
+                break;
+        }
+        return op;
     };
     
     

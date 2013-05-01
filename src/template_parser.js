@@ -8,15 +8,7 @@ function trimRight( str ) {
 
 function getEscapeFnByName( name ) {
     switch( name ) {
-        case "json" : return "SCRIPT";
-        case "js" : return "SCRIPT";
-        case "raw" : return "NO_ESCAPE";
-        case "attr" : return "ATTR";
-        case "css" : return "CSS";
-        case "uri" : return "URI";
-        case "attrname" : return "ATTR_NAME";
-        case "uriparam" : return "URI_PARAM";
-        case "html" : return "HTML";
+        case "raw" : HtmlContextParser.context.NO_ESCAPE.name;
         default: return null;
     }
 }
@@ -97,7 +89,7 @@ var input,
 
 
 
-    rescapekeyword = /^(attr|raw|js|uri|uriparam|json|html|css):/,
+    rescapekeyword = /^(raw):/,
     rlineterminator = /[\n\r\u2028\u2029]+/g,
     rwhitespace = /\s/,
     rwscollapse = /\s+/g,
@@ -498,6 +490,16 @@ var parseSimpleExpression = (function() {
                         character === "'" ||
                         character === '"' ) {
                         pStack.push([character, i-1]);
+                    }
+                    else if( character === "{" ) {
+                        try {
+                            var block = parseBlock();
+                            ret += block;
+                        }
+                        catch( e ) {
+                            break loop;
+                        }
+                        lastChar = "}";
                     }
                     else if( peek && (character === ")" && peek[0] === "("
                         || character === "]" && peek[0] === "[" )) {

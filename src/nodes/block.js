@@ -88,7 +88,6 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
     
     method.removeChildrenAt = function( index, count ) {
         if( typeof index === "number" ) {
-            console.log(index, count, this.statements);
             this.statements.splice( index, count );
         }
         else if( ( index = this.indexOfChild(index) ) > -1 ) {
@@ -96,13 +95,21 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         }
     };
     
+    method.prependChild = function( child ) {
+        this.statements.unshift( child );
+    };
+    
     method.appendChild = function( child ) {
         this.statements.push( child );
     };
     
     method.insertChildAt = function( index, child) {
-        if( !this.statements.length ) {
+        if( index >= this.statements.length ) {
             this.appendChild(child);
+        }
+        else if( index < 0 ) {
+            this.prependChild(child);
+
         }
         else {
             this.statements.splice( index, 0, child);

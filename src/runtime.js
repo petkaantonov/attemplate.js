@@ -242,23 +242,35 @@ var Runtime = (function() {
     })();
     
     var ___safeString__ = method.safeString = (function(){
-    
+        
+        var NO_ESCAPE = 0,
+            HTML = 1,
+            ATTR = 2,
+            ATTR_NAME = 4,
+            URI = 8,
+            URI_PARAM = 16,
+            SCRIPT = 32,
+            SCRIPT_IN_ATTR = 64,
+            CSS = 128,
+            escapes = {};
+
+
         var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
         
         var getAttrEscapeFunction = function( attrName ) {
-            attrName = ATTR_NAME(attrName).toLowerCase();
+            attrName = escapeForAttrName(attrName).toLowerCase();
             
             if( uriAttr.test( attrName ) ) {
-                return "URI";
+                return URI;
             }
             else if( attrName === "style" ) {
-                return "CSS";
+                return CSS
             }
             else if( attrName.charAt(0) === "o" && attrName.charAt(1) === "n" ) {
-                return "SCRIPT_IN_ATTR";
+                return SCRIPT_IN_ATTR;
             }
             else {
-                return "ATTR";
+                return ATTR;
             }
         };
         
@@ -334,11 +346,11 @@ var Runtime = (function() {
                 return ret;
             };
 
-        var NO_ESCAPE = function( str ) {
+        var escapeForNothing = function( str ) {
                 return str == null ? "" : ("" + str);
             },
             
-            ATTR_NAME = function( str ) {
+            escapeForAttrName = function( str ) {
                 if( str !== 0 && !str || typeof str === FUNCTION ) {
                     str = "";
                 }
@@ -349,36 +361,37 @@ var Runtime = (function() {
                 return str;
             },
             
-            CSS = function( str ) {
+            escapeForCss = function( str ) {
                 str = "" + str;
                 return str.replace(rcssencode, replacerCssEncode);
             },
 
-            HTML = function( str ) {
+            escapeForHtml = function( str ) {
                 str = "" + str;
                 return str.replace(rhtmlencode, replacerHtmlEncode);
             },
 
-            ATTR = function( str ) {
+            escapeForAttr = function( str ) {
                 str = "" + str;
                 return str.replace(rattrencode, replacerAttrEncode);
             },
 
-            URI = function( str ) {
+            escapeForUri = function( str ) {
                 str = "" + str;
                 var scheme;
                 if( rurlstart.test(str)) {
-                    return ATTR(encodeURI(str));
+                    //TODO this isn't good
+                    return escapeForAttr(encodeURI(str));
                 }
                 return "#";
             },
 
-            URI_PARAM = function( str ) {
+            escapeForUriParam = function( str ) {
                 str = "" + str;
-                return ATTR(encodeURIComponent(str));
+                return escapeForAttr(encodeURIComponent(str));
             },
             
-            SCRIPT = function( obj ) {
+            escapeForScript = function( obj ) {
                 if( obj == null || typeof obj == FUNCTION) {
                     obj = null;
                 }
@@ -386,28 +399,30 @@ var Runtime = (function() {
                 return "JSON.parse('" +JSON.stringify(obj).replace(rjsencode, replacerJsEncode) + "')";
             },
 
-            SCRIPT_IN_ATTR = function( obj ) {
-                return ATTR(SCRIPT(obj));
+            escapeForScriptInAttr = function( obj ) {
+                return escapeForAttr(escapeForScript(obj));
             };
+                    
+        escapes[NO_ESCAPE] = escapeForNothing;
+        escapes[HTML] = escapeForHtml;
+        escapes[ATTR] = escapeForAttr;
+        escapes[ATTR_NAME] = escapeForAttrName;
+        escapes[URI] = escapeForUri;
+        escapes[URI_PARAM] = escapeForUriParam;
+        escapes[SCRIPT] = escapeForScript;
+        escapes[SCRIPT_IN_ATTR] = escapeForScriptInAttr;
+        escapes[CSS] = escapeForCss;
         
-        var escapes = {
-            NO_ESCAPE: NO_ESCAPE,
-            HTML: HTML,
-            ATTR: ATTR,
-            ATTR_NAME: ATTR_NAME,
-            SCRIPT: SCRIPT,
-            SCRIPT_IN_ATTR: SCRIPT_IN_ATTR,
-            URI: URI,
-            URI_PARAM: URI_PARAM,
-            CSS: CSS
-        };
+        
+        var passedAsIs = SCRIPT | SCRIPT_IN_ATTR | ATTR_NAME;
 
         return function( string, escapeFn, attrName ) {
-            var passAsIs = escapeFn === "SCRIPT" || escapeFn === "SCRIPT_IN_ATTR" || escapeFn === "ATTR_NAME";
+            var passAsIs = (escapeFn & passedAsIs) > 0;
         
             if( !passAsIs && ___isArray( string ) ) {
+                //Convert arrays to a string by joining them
                 if( string.length ) {
-                    if( string[0] instanceof ___Safe ) {
+                    if( string[0] instanceof ___Safe ) { //Assumption: If one item in an array is a ___Safe - others are too
                         var r = [],
                             safeFor = string[0].safeFor;
                         
@@ -440,7 +455,7 @@ var Runtime = (function() {
             }
         
             if( !passAsIs && (string == null || typeof string === FUNCTION) ) {
-                return escapeFn === "URI" ? "#" : "";
+                return escapeFn === 8 ? "#" : "";
             }
 
             return escapes[escapeFn](string);
@@ -471,9 +486,6 @@ var Runtime = (function() {
             }
         }
     };
-    
-    
-    
     
     var toType = function(obj) {
         return toString.call(obj).slice(8, -1);

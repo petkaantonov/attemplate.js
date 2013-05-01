@@ -15,6 +15,9 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
         return this.expression;
     };
     
+    method.performAnalysis = function( parent ) {
+        _super.performAnalysis.call( this, parent );
+    };
  
     method.getCode = function() {
         var escapeFn = this.escapeFn ? this.escapeFn : this.contextEscapeFn;
@@ -23,13 +26,13 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
             escapeFn = escapeFn.name;
         }
 
-        if( typeof escapeFn !== "string" ) {
+        if( typeof escapeFn === "object" ) {
             //Dynamic attr
             var dynamicAttr = escapeFn.toString();
-            return "___safeString__((" + this.expression.toString()+"), null, "+dynamicAttr+")";
+            return "___safeString__(" + this.expression.toString()+", null, "+dynamicAttr+")";
         }
                 
-        return "___safeString__((" + this.expression.toString()+"), '"+escapeFn+"')";
+        return "___safeString__(" + this.expression.toString()+", "+escapeFn+")";
     };
         
     method.toString = function() {

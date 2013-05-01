@@ -5,6 +5,10 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
         this.fn = fn;
         this.member = mem;
     }
+    
+    method.isStatic = function() {
+        return false;
+    };
 
     method.toString = function() {
         var ret = '(('+this.fn.toString()+') || {})['+this.member.toString()+']';

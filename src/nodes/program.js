@@ -59,7 +59,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         
         ret.push( this.getCode() );
         
-        ret.push( "return new ___Safe(___html.join(''), 'HTML'); }" );
+        ret.push( "return new ___Safe(___html.join(''), "+HtmlContextParser.context.HTML.name+"); }" );
         
         ret.push( "return function( data ) { return "+idName+".call(___self, data || {}); }; })();");
         this.isBeingImported = false;
@@ -125,7 +125,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         
         ret.push( importCodes.join("") );
         
-        ret.push( "function "+idName+"() { ___self = this; var ___html = [];" );
+        ret.push( "function "+idName+"() { if( !___runtime) {throw new Error('No registered runtime');}___self = this; var ___html = [];" );
         
         if( scopedReferences.length )  {
             ret.push( "var " + scopedReferences.join(", \n") + ";");

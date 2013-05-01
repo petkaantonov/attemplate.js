@@ -59,7 +59,7 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             ret.push( this.statements[i].toString() );
         }
         
-        ret.push( "return new ___Safe(___html.join(''), 'HTML'); } return function() {return "+id+".apply(___self, arguments); }; })();" );
+        ret.push( "return new ___Safe(___html.join(''), "+HtmlContextParser.context.HTML.name+"); } return function() {return "+id+".apply(___self, arguments); }; })();" );
         
         return ret.join( "" );
     };
