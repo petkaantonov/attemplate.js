@@ -16,7 +16,7 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     };
     
     method.toString = function() {
-       return "___html.push("+this.getCode()+");"
+       return "___html += ("+this.getCode()+");"
     };
     
     return LiteralExpression;

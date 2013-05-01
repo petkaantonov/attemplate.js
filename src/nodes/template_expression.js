@@ -37,7 +37,7 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
         
     method.toString = function() {
 
-        return "___html.push("+this.getCode()+");";
+        return "___html += ("+this.getCode()+");";
     };
     
     return TemplateExpression;

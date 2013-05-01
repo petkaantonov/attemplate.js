@@ -31,7 +31,7 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
     };
     
     method.toString = function() {
-       return "___html.push("+this.getCode()+");"
+       return "___html += ("+this.getCode()+");"
     };
     
     return OutputExpression;

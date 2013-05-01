@@ -53,13 +53,13 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             ret.push( "var " + scopedReferences.join(", \n") + ";");
         }
         
-        ret.push( "var ___html = [];" );
+        ret.push( "var ___html = '';" );
         
         for( var i = 0; i < this.statements.length; ++i ) {
             ret.push( this.statements[i].toString() );
         }
         
-        ret.push( "return new ___Safe(___html.join(''), "+HtmlContextParser.context.HTML.name+"); } return function() {return "+id+".apply(___self, arguments); }; })();" );
+        ret.push( "return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+"); } return function() {return "+id+".apply(___self, arguments); }; })();" );
         
         return ret.join( "" );
     };
