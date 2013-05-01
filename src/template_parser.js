@@ -241,9 +241,9 @@ function consumeUntilSpecial() {
     return ret;
 }
 
-
-function doError( msg, currentIndex ) {
-    var index = arguments.length === 2 ? currentIndex : i,
+//Return 1-based column index and the line for the 0-based index in the current input string
+function getLineAndColumnByInputIndex( index ) {
+    var index = index != null ? index : i, //Fallback to using the current index for usage by doError
         lines = input.split(/\n/g),
         lineno = -1,
         column = -1,
@@ -252,9 +252,14 @@ function doError( msg, currentIndex ) {
         line;
 
     if( lines.length <= 1 ) {
+    
         column = index;
         line = lines[0];
-        throw new Error( msg + " On line 1, column " + (column + 1) );
+        return {
+            line: line,
+            lineNumber: 1,
+            column: column + 1
+        }
     }
 
     for( var j = 0; j < lines.length; ++j ) {
@@ -275,10 +280,20 @@ function doError( msg, currentIndex ) {
         line = lines[lines.length-1];
         lineno = j;
     }
-
-    throw new Error( msg + " On line " + lineno  + ", column " + (column + 1) );
+    
+    return {
+        line: line,
+        lineNumber: lineno,
+        column: column + 1
+    }
 }
 
+function doError( msg, currentIndex ) {
+    var info = getLineAndColumnByInputIndex( currentIndex );
+    throw new Error( msg + " On line " + info.lineNumber  + ", column " + (info.column) +": " + info.line );
+}
+
+//TODO use a parser for this too ?
 var parseHelperHeader = (function() {
 
     var rhelpername = /\s*([A-Za-z$_][0-9A-Za-z$_]*)/,
@@ -609,51 +624,67 @@ function tryParseEscapeFnName( str ) {
 function consumeTemplateExpression() {
     var escapeFnName = tryParseEscapeFnName(input.substr(i, 12)),
         escapeFn = getEscapeFnByName(escapeFnName);
-
+ 
     if( escapeFnName ) {
         i += escapeFnName.length + 1;
     }
-
-    var character = input.charAt(i++), identifier, ret = "", lastChar;
+    
+    var originalIndex = i,
+        character = input.charAt(i++), identifier, ret = "", lastChar;
 
         if( character === "{" ) {
-            return [BLOCK, parseBlock()]; // @{ literal code block  }
+            var ret = parseBlock();
+            if( rwhitespaceonly.test(ret) ) {
+                return [STRING, "@{"+ret+"}", null, null, originalIndex - 1];
+            }
+            return [BLOCK, ret, null, null, originalIndex + 1]; // @{ literal code block  }
         }
         else if( character === "(" ) {
-            skipNewLineAndIndentation()
-            return [EXPRESSION, parseExpression(), LONG_EXPRESSION, escapeFn]; // @( expression code result pushed to output )
+            var ret = parseExpression();
+            if( rwhitespaceonly.test(ret) ) {
+                return [STRING, "@("+ret+")", null, null, originalIndex - 1];
+            }
+            return [EXPRESSION, ret, LONG_EXPRESSION, escapeFn, originalIndex + 1]; // @( expression code result pushed to output )
         }
         else {
             i--; //Backtrack since the character is meaningful
             identifier = parseSimpleExpression();
 
             if( identifier === "@" ) {
-                return [STRING, identifier];
+                return [STRING, identifier, null, null, originalIndex - 1];
             }
 
             if( keywords[identifier] !== true ) { // @someidentifier or @somefunctoion() etc
                 skipNewLineAndIndentation()
-                return [EXPRESSION, identifier, SHORT_EXPRESSION, escapeFn];
+                return [EXPRESSION, identifier, SHORT_EXPRESSION, escapeFn, originalIndex];
             }
 
             if( inlineKeywords[identifier] === true ) {
                 skipNewLineAndIndentation()
-                return [KEYWORD_EXPRESSION, identifier, SHORT_EXPRESSION];
+                return [KEYWORD_EXPRESSION, identifier, SHORT_EXPRESSION, null, originalIndex];
             }
 
-            
             if( identifier === "else" ) {
                 var lookForIf = isNextWord("if");
                 if( lookForIf ) {
                     identifier = "else if";
                 }
             }
-            else if( identifier === "for" ) {
-                identifier = "foreach";
-            }
+            var wsBeforeParen = "",
+                parenFound = (identifier === "for" || identifier === "foreach" ? false : true);
             //Todo Syntax error fest here when output doesn't match
-            while( character = input.charAt(i++) ) { // @while( true ) { and so on special blocks
-
+            while( character = input.charAt(i++) ) {
+                if( !parenFound ) {
+                    if( isWhiteSpace( character ) ) {
+                        wsBeforeParen += character;
+                    }
+                    else if( character === "(" ) {
+                        parenFound = true;
+                    }
+                    else {
+                        doError( "Expecting '(', got '"+character+"'." );
+                    }
+                }
                 if( lookForIf && 
                     character === "f" &&
                     lastChar === "i" ) {
@@ -671,7 +702,8 @@ function consumeTemplateExpression() {
                 lastChar = character;
                   
             }
-            return [KEYWORD_BLOCK_OPEN, ret, identifier];  
+            return [KEYWORD_BLOCK_OPEN, ret, identifier, null, 
+                (identifier === "for" || identifier === "foreach" ? originalIndex : originalIndex + identifier.length ), wsBeforeParen ];  
         }
 }
 
@@ -691,16 +723,18 @@ function getNextToken() {
     else {
         character = input.charAt(i++);
     }
+    
+    var startIndex = i-1;
 
     if( character === "" ) {
-        return [END_OF_INPUT, ""];
+        return [END_OF_INPUT, "", null, null, startIndex];
     }
     else if( character === attrCloser ) {
-        return [ATTR_CLOSE, character];
+        return [ATTR_CLOSE, character, null, null, startIndex];
     }
     else if( escapingNext || specials[character] !== true ) {
         escapingNext = false;
-        return [STRING, character + consumeUntilSpecial()];
+        return [STRING, character + consumeUntilSpecial(), null, null, startIndex];
     }
     else if( character === "\\" ) {
         escapingNext = true;
@@ -710,7 +744,7 @@ function getNextToken() {
         return consumeTemplateExpression();
     }
     else if( character === "}" ) {
-        return [KEYWORD_BLOCK_CLOSE, character];
+        return [KEYWORD_BLOCK_CLOSE, character, null, null, startIndex];
     }
 
 
@@ -874,14 +908,27 @@ function parse( inp, compiledName ) {
     while( true ) {
         stackLen = blockStack.length;
         stackTop = blockStack[stackLen-1];
-        startIndex = i;
         token = getNextToken();
 
         type = token[0];
         value = token[1];
         blockType = token[2] || null;
         escapeFn = token[3] || null;
-
+        startIndex = token[4];
+   
+        //TODO remove this for "production"
+        if( value !== input.substr(startIndex, value.length) ) {
+            if( blockType === "for" || blockType === "foreach" ) {
+                if( (blockType + token[5] + value ) !== input.substr(startIndex,  (blockType + token[5] + value ).length ) ) {
+                    console.log("current:", i, "start:", startIndex, "value:", (blockType + token[5] + value ), "substr:", input.substr(startIndex,  (blockType + token[5] + value ).length ));
+                }
+            }
+            else {
+                console.log("current:", i, "start:",startIndex, "value:", value, "substr:", input.substr(startIndex, value.length));
+            }
+        }
+        
+        
         if( type === END_OF_INPUT ) {
             break;
         }
@@ -922,8 +969,8 @@ function parse( inp, compiledName ) {
                 setScopeBlock();
                 htmlContextParser = htmlContextParser.pushStack();
             }
-            else if( blockType === "foreach" ) {
-                var snippet = TemplateExpressionParser.parse( "foreach " + value, startIndex );
+            else if( blockType === "foreach" || blockType === "for" ) {
+                var snippet = TemplateExpressionParser.parse( blockType + token[5] + value, startIndex, ")" );
                 scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
                 stackTop = snippet.getExpression().setStartIndex( startIndex );
                 blockStack.push( stackTop );
@@ -933,7 +980,7 @@ function parse( inp, compiledName ) {
                 blockStack.push( stackTop );
             }
             else {
-                var snippet = TemplateExpressionParser.parse(value, startIndex);
+                var snippet = TemplateExpressionParser.parse(value, startIndex, ")");
 
                 switch( blockType ) {
                     case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
@@ -996,7 +1043,7 @@ function parse( inp, compiledName ) {
                     htmlContextParser.write( value, i - fullMatch.length );
                     //Only if the html context is waiting for attribute does it count as a boolean attribute
                     if( htmlContextParser.isWaitingForAttr() ) {
-                        htmlContextParser.write( fullMatch, i + value.length );
+                        htmlContextParser.write( fullMatch, startIndex );
                         stackTop.push(
                             new LiteralExpression( value )
                             .setStartIndex( startIndex )
@@ -1014,7 +1061,7 @@ function parse( inp, compiledName ) {
                 }
             }
         
-            htmlContextParser.write( value, i - value.length );
+            htmlContextParser.write( value, startIndex );
             
             
             if( lookahead(1) === "" ||//Trim trailing whitespace when at EOF (the last string in the file)
@@ -1032,7 +1079,7 @@ function parse( inp, compiledName ) {
             stackTop.push( new LiteralExpression( value ).setStartIndex( startIndex ).setEndIndex( i - 1 ) );            
         }
         else if( type === EXPRESSION ) {
-            var snippet = TemplateExpressionParser.parse( value, startIndex );
+            var snippet = TemplateExpressionParser.parse( value, startIndex, blockType === LONG_EXPRESSION ? ")" : lookahead(1) );
             scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
             
             

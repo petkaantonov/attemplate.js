@@ -17,29 +17,15 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         _super.constructor.apply(this, arguments);
         this.members = members.slice(1) || [];
         this.identifier = members[0];
-        
-        if( typeof this.identifier === "string") {
-            if( rkeyword.test(this.identifier)) {
-                throw new Error("'"+this.identifier+"' is used as an identifier but identifiers cannot be Javascript reserved words.");
-            }
-            else if( rillegal.test(this.identifier)) {
-                throw new Error("'"+this.identifier+"' is an illegal reference.");
-            }
-            else if( rtripleunderscore.test(this.identifier) ) {
-                throw new Error( "Identifiers starting with ___ are reserved for internal use." );
-            }
-            
-            if( rjsident.test( this.identifier ) && !rinvalidref.test( this.identifier ) ) {
-                
-                MemberExpression.identifiers[this.identifier] = this;
-                
-            }
-        }
         this.static = false;
         this.referenceMode = MemberExpression.referenceMode.NONE;
     
         if( this.members.length === 0 && this.identifier.isStatic && this.identifier.isStatic()) {
             this.setStatic();
+        }
+        else if( this.identifier instanceof Identifier ) {
+            this.identifier.checkValid();
+            MemberExpression.identifiers[this.identifier] = this;
         }
     }
     

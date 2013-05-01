@@ -23,11 +23,35 @@
     "use strict";
     var TemplateExpressionParser = parser;
     
-    TemplateExpressionParser.parse = (function( old){
-        return function( input, index ) {
-            yy.templateParserIndex = index;
+    //The jison parser only parses small snippets at a time and has no knowledge of the big picture indices
+    TemplateExpressionParser.parse = (function( old ) {
+        return function( input, index, delimiter ) {
+            this.yy.delimiter = delimiter;
+            this.yy.templateParserIndex = index;
             return old.apply( this, arguments );
         };
     })( parser.parse );
+    
+    TemplateExpressionParser.yy.parseError = function( str, hash ) {
+        var token;
+        var index = this.lexer.offset - hash.text.length + this.yy.templateParserIndex;
+        if( hash.token === "EOF" ) {
+            token = this.yy.delimiter;
+            if( !token ) token = "EOF";
+        }
+        else if( hash.token === "UNEXPECTED" ) {
+            token = hash.text;
+        }
+        else {
+            token = hash.token;
+        }
+        doError("Unexpected token '"+token+"'.", index);
+    };
+    
+    TemplateExpressionParser.lexer.options.ranges = true;
+        
+    TemplateExpressionParser.lexer.parseError = function( str, hash ) {
+        doError( "Unrecognized text", this.lexer.offset + this.yy.templateParserIndex );
+    };
     
     

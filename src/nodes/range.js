@@ -29,9 +29,10 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
             type;
         
         
+        
         if( minExpr.isStatic() ) {
             if( (type = minExpr.getStaticType() ) !== "number" ) {
-                doError("Range cannot start from a " + type );
+                minExpr.raiseError("Range cannot start from a " + type );
             }
             minExpr = +minExpr.toString();
 
@@ -42,7 +43,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
   
         if( maxExpr.isStatic() ) {
             if( (type = maxExpr.getStaticType() ) !== "number" ) {
-                doError("Range cannot end to a " + type );
+                maxExpr.raiseError("Range cannot end to a " + type );
             }
             maxExpr = +maxExpr.toString();
         }
@@ -55,7 +56,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
         }
         else if( stepExpr.isStatic() ) {
             if( (type = stepExpr.getStaticType() ) !== "number" ) {
-                doError("Range step cannot be a " + type );
+                stepExpr.raiseError("Range step cannot be a " + type );
             }
             stepExpr = +stepExpr.toString();
         }
@@ -65,18 +66,18 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
         
         if( isFinite( minExpr ) && isFinite( maxExpr ) && isFinite( stepExpr ) ) {
             this.setStatic();
-            /*Todo: line numbers*/
+
             if( minExpr === maxExpr ) {
-                doError("The expression will never result in the loop body to be executed because 'from' and 'to' are of same value.");
+                this.minExpr.raiseError("The expression will never result in the loop body to be executed because 'from' and 'to' are of same value.");
             }
             else if( minExpr >= maxExpr && stepExpr > 0 ) {
-                doError("The expression will result in an infinite loop because 'from' is higher than 'to' and the step size is positive. Use a negative step size.");
+                this.minExpr.raiseError("The expression will result in an infinite loop because 'from' is higher than 'to' and the step size is positive. Use a negative step size.");
             }
             else if( minExpr <= maxExpr && stepExpr < 0 ) {
-                doError("The expression will result in an infinite loop because 'from' is lower than 'to' and the step size is negative. Use a positive step size.");
+                this.minExpr.raiseError("The expression will result in an infinite loop because 'from' is lower than 'to' and the step size is negative. Use a positive step size.");
             }
             else if( stepExpr === 0 ) {
-                doError("The expression will result in an infinite loop because step size is 0.");
+                this.stepExpr.raiseError("The expression will result in an infinite loop because step size is 0.");
             }
         }
         

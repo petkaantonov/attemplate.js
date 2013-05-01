@@ -1,24 +1,26 @@
 //String literals must not have line terminators
 
+var setIndex = "$$.setStartIndex((_$[_$.length-1].first_column) + yy.templateParserIndex);";
+
 var grammar = {
 
     snippet: [
-        ["", "return $$ = new yy.Snippet();"],
-        ["EOF", "return $$ = new yy.Snippet();"],
+        ["", "return $$ = new yy.Snippet(); " + setIndex],
+        ["EOF", "return $$ = new yy.Snippet(); " + setIndex],
         ["body EOF", "return $$ = $1;"]
         
     ],
     
     body: [
-        ["foreach", "$$ = new yy.Snippet($1);"],
-        ["assignments", "$$ = new yy.Snippet($1);"],
-        ["expression", "$$ = new yy.Snippet($1);"],
+        ["foreach", "$$ = new yy.Snippet($1); " + setIndex],
+        ["assignments", "$$ = new yy.Snippet($1); " + setIndex],
+        ["expression", "$$ = new yy.Snippet($1); " + setIndex],
         
         
     ],
     
     assignments: [
-        ["assignmentList", "$$ = new yy.AssignmentList($1);"]
+        ["assignmentList", "$$ = new yy.AssignmentList($1); " + setIndex]
     ],
     
     assignmentList: [
@@ -27,7 +29,7 @@ var grammar = {
     ],
     
     assignment: [
-        ["identifier = expression", "$$ = new yy.Assignment($1, $3);"]
+        ["identifier = expression", "$$ = new yy.Assignment($1, $3); " + setIndex]
     ],
     
     expression: [
@@ -42,10 +44,10 @@ var grammar = {
     ],
     
     functionCall: [
-        ["member args", "$$ = new yy.FunctionCall($1, $2);"],
-        ["functionCall args", "$$ = new yy.FunctionCall($1, $2);"],
-        ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3);" ],
-        ["functionCall . identifier", "$$ = new yy.CallExpression($1, '\"' + $3 + '\"');"]
+        ["member args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
+        ["functionCall args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
+        ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3); " + setIndex ],
+        ["functionCall . identifier", "$$ = new yy.CallExpression($1, '\"' + $3 + '\"'); " + setIndex]
     ],
 
     args: [
@@ -59,9 +61,9 @@ var grammar = {
     ],
     
     arg: [
-        ["identifier : expression", "$$ = new yy.NamedArgument($1, $3);"],
-        ["string : expression", "$$ = new yy.NamedArgument($1, $3);"],
-        ["number : expression", "$$ = new yy.NamedArgument($1, $3);"],
+        ["identifier : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
+        ["string : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
+        ["number : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
         ["expression"]
     ],
     
@@ -81,7 +83,7 @@ var grammar = {
     ],
     
     member: [
-        ["memberExpression", "$$ = new yy.MemberExpression($1);"]
+        ["memberExpression", "$$ = new yy.MemberExpression($1); " + setIndex]
     ],
     
     memberExpression: [
@@ -98,25 +100,25 @@ var grammar = {
     ],
     
     literal: [
-        ["NULL", "$$ = new yy.NullLiteral();"],
-        ["BOOLEAN", "$$ = new yy.BooleanLiteral($1);"],
+        ["NULL", "$$ = new yy.NullLiteral(); " + setIndex],
+        ["BOOLEAN", "$$ = new yy.BooleanLiteral($1); " + setIndex],
         ["number"],
         ["string"]
     ],
     
     operation: [
-        ["UNARY expression", "$$ = new yy.Operation($1, $2, null);"],
-        ["- expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; $$.identifier.flip(); } else{ $$ = new yy.Operation($1, $2, null);}", {prec: "UNARY"}],
-        ["+ expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; } else{ $$ = new yy.Operation($1, $2, null); }", {prec: "UNARY"}],
-        ["expression IN expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression MATH expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression RELATION expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression EQUALITY expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression && expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression || expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression + expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression - expression", "$$ = new yy.Operation($2, $1, $3);"],
-        ["expression ? expression : expression", "$$ = new yy.Operation($1, $3, $5, true);"]
+        ["UNARY expression", "$$ = new yy.Operation($1, $2, null); " + setIndex],
+        ["- expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; $$.identifier.flip(); } else{ $$ = new yy.Operation($1, $2, null);}; " + setIndex, {prec: "UNARY"}],
+        ["+ expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; } else{ $$ = new yy.Operation($1, $2, null); }; " + setIndex, {prec: "UNARY"}],
+        ["expression IN expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression MATH expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression RELATION expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression EQUALITY expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression && expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression || expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression + expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression - expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
+        ["expression ? expression : expression", "$$ = new yy.Operation($1, $3, $5, true); " + setIndex]
     ],
     
     optSign: [
@@ -126,20 +128,20 @@ var grammar = {
     ],
     
     foreach: [
-        ["FOREACH ( identifier range )", "$$ = new yy.ForeachBlock($3, null, $4);"],
-        ["FOREACH ( identifier IN expression )", "$$ = new yy.ForeachBlock($3, null, $5);"],
-        ["FOREACH ( identifier , identifier IN expression )", "$$ = new yy.ForeachBlock($3, $5, $7);"]
+        ["FOREACH ( identifier range )", "$$ = new yy.ForeachBlock($3, null, $4); " + setIndex],
+        ["FOREACH ( identifier IN expression )", "$$ = new yy.ForeachBlock($3, null, $5); " + setIndex],
+        ["FOREACH ( identifier , identifier IN expression )", "$$ = new yy.ForeachBlock($3, $5, $7); " + setIndex]
     ],
     
     range: [
-        ["FROM expression TO expression", "$$ = new yy.Range($2, $4);" ],
-        ["FROM expression TO expression BY expression", "$$ = new yy.Range($2, $4, $6);" ]
+        ["FROM expression TO expression", "$$ = new yy.Range($2, $4); " + setIndex ],
+        ["FROM expression TO expression BY expression", "$$ = new yy.Range($2, $4, $6); " + setIndex ]
     ],
     
     array: [
-        ["[ optElision ]", "$$ = new yy.ArrayLiteral([]);"],
-        ["[ elementList ]", "$$ = new yy.ArrayLiteral($2);"],
-        ["[ elementList , optElision ]", "$$ = new yy.ArrayLiteral($2);" ]
+        ["[ optElision ]", "$$ = new yy.ArrayLiteral([]); " + setIndex],
+        ["[ elementList ]", "$$ = new yy.ArrayLiteral($2); " + setIndex],
+        ["[ elementList , optElision ]", "$$ = new yy.ArrayLiteral($2); " + setIndex ]
     ],
     
     elementList: [
@@ -148,17 +150,17 @@ var grammar = {
     ],
     
     identifier: [
-        ["IDENTIFIER"]
+        ["IDENTIFIER", "$$ = new yy.Identifier($1); " + setIndex + ";" ]
     ],
        
     string: [
-        ["STRING", "$$ = new yy.StringLiteral($1);"]
+        ["STRING", "$$ = new yy.StringLiteral($1); " + setIndex]
     ],
     
 
     number: [
-        ["decimal", "$$ = new yy.NumericLiteral($1);"],
-        ["hex", "$$ = new yy.NumericLiteral($1);"]
+        ["decimal", "$$ = new yy.NumericLiteral($1); " + setIndex],
+        ["hex", "$$ = new yy.NumericLiteral($1); " + setIndex]
     ],
     
     decimal: [
@@ -173,7 +175,7 @@ var grammar = {
     ],
     
     hex: [
-        ["HEX", "$$ = $1 + $2;"]
+        ["HEX"]
     ]
 };
 
@@ -280,7 +282,8 @@ var lex = {
         ["\\/|%|\\*", "return 'MATH';"],
         ["\\.", "return '.';"],
         
-        ["$", "return 'EOF';"]
+        ["$", "return 'EOF';"],
+        [".", "return 'UNEXPECTED';"]
     ]
 };
 

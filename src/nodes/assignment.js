@@ -3,11 +3,12 @@ var Assignment = TemplateExpressionParser.yy.Assignment = (function() {
         method = Assignment.prototype = Object.create(_super);
     
     method.constructor = Assignment;
-    //Todo check identifier validity
+
     function Assignment( ident, expr ) {
         _super.constructor.apply(this, arguments);
         this.ident = ident;
         this.expr = expr;
+        this.ident.checkValid();
     }
     
     method.toString = function() {
