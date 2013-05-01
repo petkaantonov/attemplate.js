@@ -267,6 +267,7 @@ var HtmlContextParser = (function() {
         html = html.toLowerCase();
         var prevIndex = 0;
         var m;
+
         while( m = chunker.exec( html ) ) {
             this.lastIndex = chunker.lastIndex;
             this.lastLength = this.lastIndex - prevIndex - 1;

@@ -33,28 +33,35 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         ret.isBeingImported = true;
         return ret;
     };
-    
+
+    method.performAnalysis = function( parent ) {
+        var vars = this.getVariables();
+        for( var key in vars ) {
+            if( vars.hasOwnProperty(key) && !this.hasHelper(key) ) {
+                vars[key].setReferenceMode(
+                    this.isBeingImported ?
+                    MemberExpression.referenceMode.DATA_ARGUMENT : 
+                    MemberExpression.referenceMode.SELF_ONLY
+                );
+            }
+        }
+        _super.performAnalysis.call( this, parent );
+    };   
 
     method.toImportCode = function() {
         this.isBeingImported = true;
         var ret = [],
-            scopedReferences = [],
-            globalReferences = [];
+            references = this.getReferences();
         
-        this.establishReferences( globalReferences, scopedReferences );
-
         ret.push( "(function() {" );
-        
-        if( globalReferences.length ) {
-            ret.push( "var " + globalReferences.join(", \n") + ";");
-        }
+
         
         ret.push( this.getHelperCode() );
         
         ret.push( "function "+idName+"( ___data ) { ___data = ___data || {}; var ___html = '';" );
         
-        if( scopedReferences.length )  {
-            ret.push( "var " + scopedReferences.join(", \n") + ";");
+        if( references.length )  {
+            ret.push( "var " + references.join(", \n") + ";");
         }
         
         ret.push( this.getCode() );
@@ -92,18 +99,11 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         }
         
         var ret = [],
-            scopedReferences = [],
-            importCodes = [],
-            globalReferences = [];
+            references = this.getReferences(),
+            importCodes = [];
                 
-        this.establishReferences( globalReferences, scopedReferences );
-        
+
         ret.push( programInitBody );
-                
-        if( globalReferences.length ) {
-            ret.push( "var " + globalReferences.join(", \n") + ";");
-        }
-        
         ret.push( this.getHelperCode() );
         
         for( var primaryName in imports ) {
@@ -127,8 +127,8 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         
         ret.push( "function "+idName+"() { if( !___runtime) {throw new Error('No registered runtime');}___self = this; var ___html = '';" );
         
-        if( scopedReferences.length )  {
-            ret.push( "var " + scopedReferences.join(", \n") + ";");
+        if( references.length )  {
+            ret.push( "var " + references.join(", \n") + ";");
         }
         
         ret.push( this.getCode() );
@@ -148,6 +148,11 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
     //@override
     method.shouldCheckDataArgument = function() {
         return this.isBeingImported;
+    };
+    
+    //Clean static state that becomes corrupted in case of errors
+    Program.cleanStaticState = function() {
+        MemberExpression.identifiers = {};
     };
     
     return Program;

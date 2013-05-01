@@ -11,9 +11,23 @@ var grammar = {
     
     body: [
         ["foreach", "$$ = new yy.Snippet($1);"],
+        ["assignments", "$$ = new yy.Snippet($1);"],
         ["expression", "$$ = new yy.Snippet($1);"],
         
         
+    ],
+    
+    assignments: [
+        ["assignmentList", "$$ = new yy.AssignmentList($1);"]
+    ],
+    
+    assignmentList: [
+        ["assignment", "$$ = [$1];"],
+        ["assignmentList assignment", "$$ = $1.concat($3)"]
+    ],
+    
+    assignment: [
+        ["identifier = expression", "$$ = new yy.Assignment($1, $3);"]
     ],
     
     expression: [
@@ -247,9 +261,11 @@ var lex = {
         ["(?:true|false)\\b", "return 'BOOLEAN';"],
         ["(?:[a-zA-Z_$][a-zA-Z$_0-9]*)", "return 'IDENTIFIER';"],
         ["&&", "return '&&';"],
+        
         [">=|<=|>|<", "return 'RELATION';"],
         ["\\|\\|", "return '||';"],
         ["===|!==|==|!=", "return 'EQUALITY';"],
+        ["=", "return '=';"],
         ["\\)", "return ')';"],
         ["\\(", "return '(';"],
         ["\\[", "return '[';"],

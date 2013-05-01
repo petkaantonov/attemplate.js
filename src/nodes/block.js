@@ -1,10 +1,14 @@
 var Block = TemplateExpressionParser.yy.Block = (function() {
-    var method = Block.prototype;
+    var _super = ProgramElement.prototype,
+        method = Block.prototype = Object.create(_super);
+
+    method.constructor = Block;
     
     function Block() {
+        _super.constructor.apply(this, arguments);
         this.statements = [];
     }
-    
+        
     method.push = function( statement ) {
         this.statements.push( statement );
     };

@@ -1,7 +1,11 @@
 var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
-    var method = NumericLiteral.prototype;
+    var _super = ProgramElement.prototype,
+        method = NumericLiteral.prototype = Object.create(_super);
+    
+    method.constructor = NumericLiteral;
     
     function NumericLiteral( num ) {
+        _super.constructor.apply(this, arguments);
         this.num = +num;
         if( !isFinite(this.num)) {
             this.num = 0;

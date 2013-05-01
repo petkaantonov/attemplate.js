@@ -1,7 +1,5 @@
 var compiledTemplates = {};
 
-var globalsAvailable = {"Math": true, "Date": true};
-
 function trimRight( str ) {
     return str.replace(/\s\s*$/, "");
 }
@@ -263,7 +261,7 @@ function doError( msg, currentIndex ) {
         var len = lines[j].length;
 
         if( last <= index && index <= last + len ) {
-            column = index - total - 1;
+            column = index - total;
             lineno = j+1;
             line = lines[j];
             break;
@@ -287,27 +285,29 @@ var parseHelperHeader = (function() {
         rargssplit = /\s*,\s*/,
         rhelperargs = /\(([^)]*)\)/g;
 
-    return function ( header ) {
-        var name = rhelpername.exec( header ) || doError("Helper name must be a valid Javascript identifier."),
+    return function ( header, startIndex ) {
+        var name = rhelpername.exec( header ) || doError("Helper name must be a valid Javascript identifier.", startIndex),
             argString,
             len,
             args = [],
             uniqueArgs = {};
 
+        startIndex += name[0].length;
         name = name[1];
 
         if( rkeyword.test( name ) || rillegal.test( name ) || rinvalidref.test( name ) ) {
-            doError( "Helper name must not be a reserved word: '"+name+"'.");
+            doError( "Helper name must not be a reserved word: '"+name+"'.", startIndex - name[1].length);
         }
-
+        
         rhelperargs.lastIndex = 0;
-        argString = rhelperargs.exec( header ) || doError("Invalid helper syntax for arguments.");
-
+        argString = rhelperargs.exec( header ) || doError("Invalid helper syntax for arguments.", startIndex);
+        startIndex = rhelperargs.lastIndex - argString[0].length;
         args = argString[1].split( rargssplit );
 
         if( ( len = args.length ) ) {
-        
+
             for( var i = 0; i < len; ++i ) {
+                startIndex += args[i].length;
                 var arg = args[i].trim();
                 
                 if( !arg ) {
@@ -315,15 +315,15 @@ var parseHelperHeader = (function() {
                 }
                 
                 if( !rjsident.test( arg ) ) {
-                    doError( "Parameter name must be a valid Javascript identifier.");
+                    doError( "Parameter name must be a valid Javascript identifier.", startIndex );
                 }
                 
                 if( rkeyword.test( arg ) || rillegal.test( arg ) || rinvalidref.test( arg ) ) {
-                    doError( "Parameter name must not be a reserved word: '"+arg+"'.");
+                    doError( "Parameter name must not be a reserved word: '"+arg+"'.", startIndex );
                 }
                                 
                 if( uniqueArgs.hasOwnProperty( args ) ) {
-                    doError( "Duplicate helper parameter name, '"+arg+"' was already declared.");
+                    doError( "Duplicate helper parameter name, '"+arg+"' was already declared.", startIndex );
                 }
                 uniqueArgs[arg] = true;
                 args[i] = arg;
@@ -716,8 +716,10 @@ function getNextToken() {
 
 }
 
-function init( inp ) {   
+function init( inp ) {
+    Program.cleanStaticState();
     i = 0;
+    attrCloser = null;
     blockStack = [new Program()];
     blockType = null;
     character = "";
@@ -903,35 +905,35 @@ function parse( inp, compiledName ) {
 
             if( blockType === "helper" ) {
                 if( stackLen > 1 ) {
-                    doError( "Cannot define helper inside another block." );
+                    doError( "Cannot define helper inside another block.", startIndex );
                 }
 
-                var parsedHeader = parseHelperHeader(value),
+                var parsedHeader = parseHelperHeader(value, startIndex ),
                     helperArgs = parsedHeader.args,
                     helperName = parsedHeader.name;
 
                 if( isImported( imports, helperName ) ) {
-                    doError( "Cannot use '"+helperName+"', for a helper name - a helper or an import with that name already exists.");
+                    doError( "Cannot use '"+helperName+"', for a helper name - a helper or an import with that name already exists.", startIndex);
                 }
 
                 imports[helperName] = null;
-                stackTop = new HelperBlock( helperName, helperArgs ) ;
+                stackTop = new HelperBlock( helperName, helperArgs ).setStartIndex( startIndex ) ;
                 blockStack.push( stackTop );
                 setScopeBlock();
                 htmlContextParser = htmlContextParser.pushStack();
             }
             else if( blockType === "foreach" ) {
-                var snippet = parser.parse( "foreach " + value );
+                var snippet = TemplateExpressionParser.parse( "foreach " + value, startIndex );
                 scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
-                stackTop = snippet.getExpression();
+                stackTop = snippet.getExpression().setStartIndex( startIndex );
                 blockStack.push( stackTop );
             }
             else if( blockType === "else" ) {
-                stackTop = new ElseBlock();
+                stackTop = new ElseBlock().setStartIndex( startIndex );
                 blockStack.push( stackTop );
             }
             else {
-                var snippet = parser.parse(value);
+                var snippet = TemplateExpressionParser.parse(value, startIndex);
 
                 switch( blockType ) {
                     case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
@@ -939,7 +941,7 @@ function parse( inp, compiledName ) {
                 }
                 
                 scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
-                blockStack.push( stackTop );
+                blockStack.push( stackTop.setStartIndex( startIndex ) );
                 
             }
         }
@@ -953,7 +955,7 @@ function parse( inp, compiledName ) {
             block = blockStack.pop();
             stackLen = blockStack.length;
             stackTop = blockStack[stackLen-1];
-            stackTop.push(block);
+            stackTop.push(block.setEndIndex( startIndex ) );
             
             setScopeBlock();
             
@@ -977,7 +979,7 @@ function parse( inp, compiledName ) {
             var valueLastChar = value.charAt(value.length - 1 ),
                 attrName;
                 
-            //Because there is currently no object model for html the string is backtracked
+            //Because there is currently no object model for html, the string is backtracked
             //and possibly reparsed for boolean attributes here
             if( !attrCloser && (valueLastChar === doubleQuote || valueLastChar === singleQuote) ) {
                 rtrailingattrname.lastIndex = 0;
@@ -995,7 +997,11 @@ function parse( inp, compiledName ) {
                     //Only if the html context is waiting for attribute does it count as a boolean attribute
                     if( htmlContextParser.isWaitingForAttr() ) {
                         htmlContextParser.write( fullMatch, i + value.length );
-                        stackTop.push( new LiteralExpression( value ) );
+                        stackTop.push(
+                            new LiteralExpression( value )
+                            .setStartIndex( startIndex )
+                            .setEndIndex( startIndex + value.length ) 
+                        );
                         blockStack.push( new BooleanAttributeExpression( attrName, valueLastChar ) );
                         attrCloser = valueLastChar;
                         continue;
@@ -1023,10 +1029,10 @@ function parse( inp, compiledName ) {
                 continue;
             }
             
-            stackTop.push( new LiteralExpression( value ) );            
+            stackTop.push( new LiteralExpression( value ).setStartIndex( startIndex ).setEndIndex( i - 1 ) );            
         }
         else if( type === EXPRESSION ) {
-            var snippet = parser.parse(value);
+            var snippet = TemplateExpressionParser.parse( value, startIndex );
             scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
             
             
@@ -1042,7 +1048,7 @@ function parse( inp, compiledName ) {
                             expr,
                             htmlContextParser.getContext(),
                             escapeFn
-                        )
+                        ).setStartIndex( startIndex ).setEndIndex( i - 1 )
                     );
 
                     htmlContextParser.dynamicAttribute( expr, quote );
@@ -1060,7 +1066,7 @@ function parse( inp, compiledName ) {
                     snippet.getExpression(),
                     htmlContextParser.getContext(),
                     escapeFn
-                )
+                ).setStartIndex( startIndex ).setEndIndex( i - 1 )
             );
             
         }
@@ -1072,7 +1078,7 @@ function parse( inp, compiledName ) {
     htmlContextParser.close();
 
     if( stackLen > 1 ) { //Todo improve line num and block name
-        doError( "Unclosed block. ");
+        stackTop.raiseError( "Unclosed block. ");
     }
     
 

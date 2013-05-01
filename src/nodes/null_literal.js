@@ -1,8 +1,11 @@
 var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
-    var method = NullLiteral.prototype;
+    var _super = ProgramElement.prototype,
+        method = NullLiteral.prototype = Object.create(_super);
+    
+    method.constructor = NullLiteral;
     
     function NullLiteral() {
-      
+        _super.constructor.apply(this, arguments);
     }
     
     method.getStaticType = function() {

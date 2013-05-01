@@ -469,7 +469,9 @@ var Runtime = (function() {
         ___Boolean: {},
         ___Object: {},
         ___RegExp: {},
-        ___Date: {}
+        ___Date: {},
+        Math: Math,
+        Date: Date
     };
     method.___getExtensions = function() {
         return extensions;

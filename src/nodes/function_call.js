@@ -1,7 +1,11 @@
 var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
-    var method = FunctionCall.prototype;
+    var _super = ProgramElement.prototype,
+        method = FunctionCall.prototype = Object.create(_super);
+    
+    method.constructor = FunctionCall;
     
     function FunctionCall( expr, args) {
+        _super.constructor.apply(this, arguments);
         this.expr = expr;
         this.args = args || [];
         
@@ -18,7 +22,7 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
     }
     
     method.checkSpecials = function() {
-
+        //Convert a call like $(asd: daa, dasd: daa) into a {'asd': daa, 'dasd': daa} object literal
         if( this.expr.identifier === "$" &&
             this.expr.isPureReference()
         ) {

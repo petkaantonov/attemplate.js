@@ -1,8 +1,11 @@
 var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function() {
-    var method = OutputExpression.prototype;
+    var _super = ProgramElement.prototype,
+        method = OutputExpression.prototype = Object.create(_super);
+    
+    method.constructor = OutputExpression;
     
     function OutputExpression() {
-      
+        _super.constructor.apply(this, arguments);
     }
 
     //Optimize consecutive output expressions into a concatenation statement

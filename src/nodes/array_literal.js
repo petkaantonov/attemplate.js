@@ -1,8 +1,12 @@
 var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
-    var method = ArrayLiteral.prototype;
+    var _super = ProgramElement.prototype,
+        method = ArrayLiteral.prototype = Object.create(_super);
+    
+    method.constructor = ArrayLiteral;
     
     function ArrayLiteral( elements ) {
-        this.elements = elements;
+        _super.constructor.apply(this, arguments);
+        this.elements = elements || [];
         this.static = true;
         this.init();
     }
@@ -18,6 +22,10 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
     
     method.getStaticType = function() {
         return "string";
+    };
+    
+    method.getElementCount = function() {
+        return this.elements.length;
     };
     
     method.truthy = function() {

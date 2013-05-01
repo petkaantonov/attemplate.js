@@ -1,9 +1,20 @@
 var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function() {
-    var method = MemberExpression.prototype;
+    var _super = ProgramElement.prototype,
+        method = MemberExpression.prototype = Object.create(_super);
+    
+    method.constructor = MemberExpression;
+    
+    /*Those who are already set*/
     
     MemberExpression.identifiers = {};
+    MemberExpression.referenceMode = {
+        DATA_ARGUMENT: {},
+        SELF_ONLY: {},
+        NONE: {}
+    };
         
     function MemberExpression( members ) {
+        _super.constructor.apply(this, arguments);
         this.members = members.slice(1) || [];
         this.identifier = members[0];
         
@@ -19,15 +30,22 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             }
             
             if( rjsident.test( this.identifier ) && !rinvalidref.test( this.identifier ) ) {
-                MemberExpression.identifiers[this.identifier] = true;
+                
+                MemberExpression.identifiers[this.identifier] = this;
+                
             }
         }
         this.static = false;
-        
+        this.referenceMode = MemberExpression.referenceMode.NONE;
+    
         if( this.members.length === 0 && this.identifier.isStatic && this.identifier.isStatic()) {
             this.setStatic();
         }
     }
+    
+    method.setReferenceMode = function( mode ) {
+        this.referenceMode = mode;
+    };
     
     method.getStaticType = function() {
         if( !this.isStatic() ) {
@@ -92,11 +110,13 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     
         //Get everything in the member chain except the last
     method.toStringNoLast = function() {
+        var preamble = this.getPreamble(),
+            postamble = this.getPostamble();
         if( this.members.length < 2 ) {
-            return this.identifier.toString();
+            return preamble + this.identifier.toString() + postamble;
         }
         else {
-            var ret = ["("];
+            var ret = [preamble+"("];
             for( var i = 0; i < this.members.length - 2; ++i ) {
                 ret.push("(");
             }
@@ -106,13 +126,43 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
                 ret.push( "[" + this.members[i].toString() + "] || {})" );
             }
             ret.push( "[" + this.members[i].toString() + "]" );
-            return ret.join("");
+            return ret.join("") + postamble;
         }
     };
     
+    method.getPreamble = function() {
+        var preamble = "";
+
+        if( this.referenceMode !== MemberExpression.referenceMode.NONE ) {
+            var key = this.identifier;
+            switch( this.referenceMode ) {
+                case MemberExpression.referenceMode.DATA_ARGUMENT: 
+                    preamble = "(" + key + " = (___hasown.call(___data, '"+key+"' ) ? ___data."+key+":"+
+                                   "___hasown.call(this, '"+key+"' ) ? this."+key+" : ___ext." + key + "),";
+                break;
+                
+                case MemberExpression.referenceMode.SELF_ONLY:
+                    preamble = "(" + key + " = (___hasown.call(this, '"+key+"' ) ? this."+key+": ___ext." + key + "),";
+                break;
+            
+            }
+        }
+        return preamble;
+    };
+    
+    method.getPostamble = function() {
+        if( this.referenceMode !== MemberExpression.referenceMode.NONE ) {
+            return ")";
+        }
+        return "";
+    };
+    
     method.toString = function() {
+        var preamble = this.getPreamble(),
+            postamble = this.getPostamble();
+                    
         if( this.members.length ) {
-            var ret = ["("];
+            var ret = [ preamble + "("];
             for( var i = 0; i < this.members.length - 1; ++i ) {
                 ret.push("(");
             }
@@ -121,10 +171,10 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
                 ret.push( "[" + this.members[i].toString() + "] || {})" );
             }
             ret.push( "[" + this.members[i].toString() + "]" );
-            return this.parens ? '(' + ret.join("") + ')' : ret.join("");
+            return (this.parens ? '(' + ret.join("") + ')' : ret.join("")) + postamble;
         }
         else {
-            return this.parens ? '(' + this.identifier + ')' : this.identifier + "";
+            return preamble + (this.parens ? '(' + this.identifier + ')' : this.identifier + "")  + postamble;
         }
     };
     

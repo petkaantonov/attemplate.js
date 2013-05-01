@@ -38,6 +38,8 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
             ret.index = true;
             ret.isLast = true;
             ret.isFirst = true;
+            ret.prev = true;
+            ret.next = true;
             ret[this.key] = true;
         }
         else {
@@ -123,12 +125,15 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
         else if( !this.value ) { //Array iteration
             return  " var ___collection"+id+" = "+this.collection+";" +
                     " ___collection"+id+" = ___isArray(___collection"+id+") ? ___collection"+id+" : ___ensureArrayLike(___collection"+id+"); " +
-                    " var ___count"+id+" = ___collection"+id+".length, ___prevKey"+id+", ___prevCount"+id+", ___prevIndex"+id+" , ___prevIsLast"+id+" , ___prevIsFirst"+id+" ; "+
-                    "  var count, "+this.key+", index, isLast, isFirst; "+
+                    " var ___count"+id+" = ___collection"+id+".length; "+ (this.buildupExported ?
+                    " var ___prevKey"+id+", ___prevPrev"+id+", ___prevNext"+id+",___prevCount"+id+", ___prevIndex"+id+" , ___prevIsLast"+id+" , ___prevIsFirst"+id+" ; " : "") +
+                    "  var count, "+this.key+", index, isLast, isFirst, prev, next; "+
                     "            for( var ___i"+id+" = 0; ___i"+id+" < ___count"+id+"; ++___i"+id+" ) {" + ( this.buildupExported ? //Protect values in nested loops
                     "                ___prevCount"+id+" = count;" +
                     "                 ___prevIsLast"+id+" = isLast;" +
                     "                 ___prevIsFirst"+id+" = isFirst;" +
+                    "                 ___prevPrev"+id+" = prev;" +
+                    "                 ___prevNext"+id+" = next;" +
                     "                 ___prevIndex"+id+" = index;" +
                     "                 ___prevKey"+id+" = "+this.key+";" : "" ) +
                     "                count = ___count"+id+";" +
@@ -136,11 +141,15 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
                     "                index = ___i"+id+";" +
                     "                isLast = ___i"+id+" === ___count"+id+" - 1;" +
                     "                isFirst = ___i"+id+" === 0;" +
+                    "                prev = ___collection"+id+"[___i"+id+" - 1];" +
+                    "                next = ___collection"+id+"[___i"+id+" + 1];" +
                                 body + ( this.buildupExported ? //Protect values in nested loops
                     "          count = ___prevCount"+id+";" + 
                     "          isLast = ___prevIsLast"+id+";" +
                     "          isFirst = ___prevIsFirst"+id+";" +
                     "          index = ___prevIndex"+id+";" +
+                    "          prev = ___prevPrev"+id+";" +
+                    "          next = ___prevNext"+id+";" +
                     "          "+this.key+" = ___prevKey"+id+";" : "" )+
                     "            }";
         }

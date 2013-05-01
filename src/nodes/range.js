@@ -1,11 +1,11 @@
 var Range = TemplateExpressionParser.yy.Range = (function() {
-    var method = Range.prototype;
+    var _super = ProgramElement.prototype,
+        method = Range.prototype = Object.create(_super);
     
-    var sign = function(v){
-        return v === "+" || v === "-";
-    }
+    method.constructor = Range;
     
     function Range( minExpr, maxExpr, stepExpr ) {
+        _super.constructor.apply(this, arguments);
         this.minExpr = minExpr;
         this.maxExpr = maxExpr;
         this.stepExpr = stepExpr;

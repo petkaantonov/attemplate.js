@@ -9,10 +9,18 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
         _super.constructor.apply(this, arguments);
         this.helpers = [];
         this.variables = {};
+        this.helperNames = {};
     }
 
     method.setHelpers = function( helpers ) {
-        this.helpers = helpers;  
+        this.helpers = helpers;
+        for( var i = 0; i < helpers.length; ++i ) {
+            this.helperNames[helpers[i].getName()] = true;
+        }
+    };
+    
+    method.hasHelper = function( name ) {
+        return this.helperNames.hasOwnProperty( name );
     };
 
     method.getHelpers = function() {
@@ -23,82 +31,50 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
         return null;
     };
     
-    method.unmergeVariables = function( varsSet ) {
-        for( var key in varsSet ) {
-            if( varsSet.hasOwnProperty(key) && this.variables.hasOwnProperty(key) ) {
+    method.performAnalysis = function( parent ) {
+        for( var i = 0; i < this.helpers.length; ++i ) {
+            this.helpers[i].performAnalysis(this);
+        }
+        _super.performAnalysis.call( this, parent );
+    };
+
+    
+    method.unmergeVariables = function( referenceExpressionMap ) {
+        for( var key in referenceExpressionMap ) {
+            if( referenceExpressionMap.hasOwnProperty(key) && this.variables.hasOwnProperty(key) ) {
                 delete this.variables[key];
             }
         }
     };
     
-    method.mergeVariables = function( varsSet ) {
-        for( var key in varsSet ) { 
-            if( varsSet.hasOwnProperty( key ) ) {
-                this.variables[key] = true;
+    method.mergeVariables = function( referenceExpressionMap ) {
+        var vars = this.getVariables();
+        for( var key in referenceExpressionMap ) { 
+            if( referenceExpressionMap.hasOwnProperty( key ) &&
+                !vars.hasOwnProperty(key) ) {
+                vars[key] = referenceExpressionMap[key];
             } 
         }
     };
-    
-    method.shouldCheckDataArgument = function() {
-        return false;
-    };
-    
-    method.shouldDeclareGlobalsSeparately = function() {
-        return true;
-    };
-    
+            
     method.getVariables = function() {
         return this.variables;
     };
     
-    method.establishReferences = function( globalReferences, scopedReferences ) {
-        var helperNames = {},
-            helpers = this.helpers,
-            vars = this.getVariables(),
-            possibleGlobal,
-            shouldCheckDataArgument = this.shouldCheckDataArgument(),
-            shouldDeclareGlobalsSeparately = this.shouldDeclareGlobalsSeparately(),
-            hLen = helpers.length;
-
-        for( var i = 0; i < hLen; ++i ) {
-            helperNames[helpers[i].getName()] = true;
-        }
+    //Get references that don't refer to a helper call
+    method.getReferences = function() {
+        var vars = this.getVariables(),
+            references = [];
 
         for( var key in vars ) {
             if( vars.hasOwnProperty( key ) && //Don't override helpers
-                !helperNames.hasOwnProperty( key ) ) {
-                
-                
-                if( ( possibleGlobal = globalsAvailable.hasOwnProperty(key) ) ) {
-                    if( !shouldDeclareGlobalsSeparately ) {
-                        if( shouldCheckDataArgument ) {
-                            scopedReferences.push(key + " = (___hasown.call(___data, '"+key+"' ) ? ___data."+key+":"+
-                                    "___hasown.call(this, '"+key+"' ) ? this."+key+" : ___global." + key);
-                        }
-                        else {
-                            scopedReferences.push(key + " = this."+key+" || (___hasown.call(this, '"+key+"' ) ? this."+key+" : ___global." + key + ")");
-                        }
-                        continue;
-                    }
-                    else {
-                        globalReferences.push("____"+key + " = ___global." + key);
-                    }
-                }
-                
-                if( shouldCheckDataArgument ) {
-                    scopedReferences.push(key + " = (___hasown.call(___data, '"+key+"' ) ? ___data."+key+":"+
-                                    "___hasown.call(this, '"+key+"' ) ? this."+key+":"+
-                    ( possibleGlobal ? "____"+key : 'null') + ")");
-                }
-                else {
-                    scopedReferences.push(key + " = this."+key+" || (___hasown.call(this, '"+key+"' ) ? this."+key+" :"+
-                    ( possibleGlobal ? "____"+key : 'null') + ")");
-                
-                }              
+                !this.helperNames.hasOwnProperty( key ) ) {
+                    references.push(key);   
              }
         }
-
+        return references;
     };
     
     return ScopedBlock;
 })();
+

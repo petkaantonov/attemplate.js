@@ -12,45 +12,48 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
         this.parameterNames = parameterNames;
         
     }
-  
-    method.shouldCheckDataArgument = function() {
-        return false;
+      
+    method.performAnalysis = function( parent ) {
+        var vars = this.getVariables();
+        for( var key in vars ) {
+            if( vars.hasOwnProperty(key) && !this.hasHelper(key)) {
+                vars[key].setReferenceMode( MemberExpression.referenceMode.SELF_ONLY );
+            }
+        }
+        var statement;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            statement = this.statements[i];
+            if( statement instanceof Block ) {
+                statement.performAnalysis( this );
+            }
+            else if( statement.performAnalysis ) {
+                statement.performAnalysis( this );
+            }
+        }
     };
 
-    method.shouldDeclareGlobalsSeparately = function() {
-        return false;
-    };
-    
     //No need to merge the variabls that are declared in parameters
-    //Globals and other helper names cannot be known at this time
-    method.mergeVariables = function( varsSet ) {
+    //Other helper names cannot be known at this time
+    method.mergeVariables = function( referenceExpressionMap ) {
         var vars = this.getVariables();
         
-        for( var key in varsSet ) {
-            if( varsSet.hasOwnProperty( key ) &&
-                this.parameterNames.indexOf( key ) < 0 ) {
-                vars[key] = true;
+        for( var key in referenceExpressionMap ) {
+            if( referenceExpressionMap.hasOwnProperty( key ) &&
+                this.parameterNames.indexOf( key ) < 0 &&
+                !vars.hasOwnProperty(key) ) {
+                vars[key] = referenceExpressionMap[key];
             }
         }
     };
     
     method.toString = function() {
         var ret = [],
-            scopedReferences = [],
-            globalReferences = [];
-        
-      
-        this.establishReferences( globalReferences, scopedReferences );
+            references = this.getReferences();
         
         ret.push( "var " + this.name + " = (function(){ function "+id+"("+this.parameterNames.join(", ")+") {" );
-        
-                
-        if( globalReferences.length ) {
-            ret.push( "var " + globalReferences.join(", \n") + ";");
-        }
-
-        if( scopedReferences.length )  {
-            ret.push( "var " + scopedReferences.join(", \n") + ";");
+             
+        if( references.length )  {
+            ret.push( "var " + references.join(", \n") + ";");
         }
         
         ret.push( "var ___html = '';" );

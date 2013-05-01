@@ -1,7 +1,11 @@
 var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
-    var method = StringLiteral.prototype;
+    var _super = ProgramElement.prototype,
+        method = StringLiteral.prototype = Object.create(_super);
+    
+    method.constructor = StringLiteral;
     
     function StringLiteral( str ) {
+        _super.constructor.apply(this, arguments);
         this.str = str;
     }
     

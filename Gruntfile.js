@@ -16,6 +16,7 @@ module.exports = function( grunt ) {
             src: [
                 "./src/begin.js",
                 "./src/runtime.js",
+                "./src/nodes/program_element.js",
                 "./src/nodes/snippet.js",
                 "./src/nodes/output_expression.js",
                 "./src/nodes/combined_output_expression.js",

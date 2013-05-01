@@ -1,7 +1,11 @@
 var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
-    var method = NamedArgument.prototype;
+    var _super = ProgramElement.prototype,
+        method = NamedArgument.prototype = Object.create(_super);
     
+    method.constructor = NamedArgument;
+        
     function NamedArgument( name, expr) {
+        _super.constructor.apply(this, arguments);
         this.name = name;
         this.expr = expr;
     }

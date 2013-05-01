@@ -22,3 +22,12 @@
 ;(function(global) {
     "use strict";
     var TemplateExpressionParser = parser;
+    
+    TemplateExpressionParser.parse = (function( old){
+        return function( input, index ) {
+            yy.templateParserIndex = index;
+            return old.apply( this, arguments );
+        };
+    })( parser.parse );
+    
+    

@@ -1,10 +1,12 @@
 var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
-    var method = Snippet.prototype;
+    var _super = ProgramElement.prototype,
+        method = Snippet.prototype = Object.create(_super);
+    
+    method.constructor = Snippet;
     
     function Snippet( expr ) {
+        _super.constructor.apply(this, arguments);
         this.expr = expr;
-
-
     }
     
     method.getExpression = function() {
@@ -23,6 +25,6 @@ var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
         MemberExpression.identifiers = {};
         return ret;
     };
-    
+       
     return Snippet;
 })();

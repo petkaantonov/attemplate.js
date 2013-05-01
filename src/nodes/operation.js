@@ -1,5 +1,8 @@
 var Operation = TemplateExpressionParser.yy.Operation = (function() {
-    var method = Operation.prototype;
+    var _super = ProgramElement.prototype,
+        method = Operation.prototype = Object.create(_super);
+    
+    method.constructor = Operation;
     
     var rrelational = /^(?:<|>|>=|<=)$/;
 
@@ -8,6 +11,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
     }
     
     function Operation( opStr, op1, op2, isTernary) {
+        _super.constructor.apply(this, arguments);
         this.isTernary = !!isTernary;
         this.isUnary = op2 == null;
         this.opStr = opStr;
@@ -28,7 +32,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
             this.setStatic();
         }
     }
-    
+        
     method.setStatic = function() {
         this.static = true;
     };
@@ -109,6 +113,22 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
     };
     
     method.resolveStaticOperation = function( op ) {
+        if( this.opStr === "&&" ) {
+            if( !this.op1.truthy() ) {
+                return this.op1;
+            }
+            else {
+                return this.op2;
+            }
+        }
+        else if( this.opStr === "||" ) {
+            if( this.op1.truthy() ) {
+                return this.op1;
+            }
+            else {
+                return this.op2;
+            }
+        }
         op = new Function("return " +op)();
         switch( this.opStr ) {
             case "<":
@@ -137,22 +157,6 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
                 else {//Evaluation always returns a number 
                     op = new NumericLiteral(op); 
                 }
-                break;
-            case "&&": 
-                    if( !this.op1.truthy() ) {
-                        op = this.op1;
-                    }
-                    else {
-                        op = this.op2;
-                    }
-                break;
-            case "||":
-                    if( this.op1.truthy() ) {
-                        op = this.op1;
-                    }
-                    else {
-                        op = this.op2;
-                    }
                 break;
         }
         return op;
