@@ -15,9 +15,9 @@ var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
     };
     
     method.toString = function() {
-        return this.getName() + " ( " + 
+        return this.getIndentStr() + this.getName() + " ( " + 
             (this.headerIsBooleanExpression() ? boolOp(this.header) : this.header ) + 
-        " )  { " + _super.toString.call(this) + "}";
+        " ) {\n" + _super.toString.call(this) + "\n"+this.getIndentStr()+"}\n";
     };
         
     return HeaderBlock;

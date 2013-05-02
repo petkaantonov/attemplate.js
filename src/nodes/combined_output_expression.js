@@ -21,7 +21,7 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
             ret.push( expr[i].getCode() );
         }
         
-        return "___html += ("+ret.join(" + ") +");";
+        return this.getIndentStr() + "___html += ("+ret.join(" + ") +");\n";
     };
     
     return CombinedOutputExpression;

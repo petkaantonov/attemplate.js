@@ -31,7 +31,13 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             }
         }
     };
-
+    
+    method.setIndentLevel = function( level ) {
+        this.indentLevel = level;
+        for( var i = 0; i < this.statements.length; ++i ) {
+            this.statements[i].setIndentLevel( level + 2 );
+        }
+    };
     //No need to merge the variabls that are declared in parameters
     //Other helper names cannot be known at this time
     method.mergeVariables = function( referenceExpressionMap ) {
@@ -50,19 +56,27 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
         var ret = [],
             references = this.getReferences();
         
-        ret.push( "var " + this.name + " = (function(){ function "+id+"("+this.parameterNames.join(", ")+") {" );
+        var indent = this.getIndentStr();
+
+        ret.push( indent + "var " + this.name + " = (function(){\n"+
+            indent + "    function "+id+"("+this.parameterNames.join(", ")+") {\n" );
              
         if( references.length )  {
-            ret.push( "var " + references.join(", \n") + ";");
+            ret.push( indent + "        var " + references.join(", \n" + indent + "        ") + ";\n");
         }
         
-        ret.push( "var ___html = '';" );
+        ret.push( indent + "        var ___html = '';\n" );
         
         for( var i = 0; i < this.statements.length; ++i ) {
             ret.push( this.statements[i].toString() );
         }
         
-        ret.push( "return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+"); } return function() {return "+id+".apply(___self, arguments); }; })();" );
+        ret.push( indent + "        return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+");\n"+
+            indent + "    }\n"+
+            indent + "    return function() {\n"+
+            indent + "        return "+id+".apply(___self, arguments);\n"+
+            indent + "    };\n"+
+            indent + "})();" );
         
         return ret.join( "" );
     };

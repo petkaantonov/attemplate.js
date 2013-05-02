@@ -10,7 +10,7 @@ var LoopStatement = TemplateExpressionParser.yy.LoopStatement = (function() {
     }
     
     method.toString = function() {
-        return this.statement + ";";
+        return this.getIndentStr() + this.statement + ";\n";
     };
     
     return LoopStatement;

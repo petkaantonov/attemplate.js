@@ -46,29 +46,54 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
             }
         }
         _super.performAnalysis.call( this, parent );
-    };   
+    };
+    
+    method.setIndentLevel = function( level ) {
+        this.indentLevel = level;
+        
+        if( !this.isBeingImported ) {
+            _super.setIndentLevel.call( this, level );
+        }
+        else {
+            for( var i = 0; i < this.statements.length; ++i ) {
+                this.statements[i].setIndentLevel( level + 2 );
+            }
+        }
+        return this;
+    };
 
     method.toImportCode = function() {
         this.isBeingImported = true;
         var ret = [],
             references = this.getReferences();
+            
+            
+        var indent = this.getIndentStr();
         
-        ret.push( "(function() {" );
+        ret.push( "(function() {\n" );
 
         
         ret.push( this.getHelperCode() );
         
-        ret.push( "function "+idName+"( ___data ) { ___data = ___data || {}; var ___html = '';" );
+        ret.push( indent + "    function "+idName+"( ___data ) {\n" +
+            indent + "        ___data = ___data || {};\n"+
+            indent + "        var ___html = '';\n" );
         
         if( references.length )  {
-            ret.push( "var " + references.join(", \n") + ";");
+            ret.push( indent + "        var " + references.join(", \n" +indent + "            ") + ";\n");
         }
         
         ret.push( this.getCode() );
         
-        ret.push( "return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+"); }" );
+        ret.push( indent + "        return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+");\n    "+
+            indent+ "}\n\n" );
         
-        ret.push( "return function( data ) { return "+idName+".call(___self, data || {}); }; })();");
+        ret.push( indent + "    return function( data ) {\n" +
+                    indent + "        return "+idName+".call(___self, data || {});\n"+
+                    indent + "    };\n"+ 
+                    indent + "})();\n");
+                    
+                    
         this.isBeingImported = false;
         return ret.join("");
     };
@@ -105,6 +130,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
 
         ret.push( programInitBody );
         ret.push( this.getHelperCode() );
+        var indent = this.getIndentStr();
         
         for( var primaryName in imports ) {
             if( imports.hasOwnProperty( primaryName ) ) {
@@ -116,26 +142,42 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
                     aliases = imports[primaryName],
                     code = program.toImportCode(),
 
-                    vars = "var "+ primaryName + (aliases.length ? ",\n" + aliases.join(",\n")+";" : ";"),
-                    assignment = primaryName + (aliases.length ? " = " + aliases.join(" = ")+ " = " + code : " = " + code);
+                    vars = indent + "var "+ primaryName + (aliases.length ? ",\n    " + indent + aliases.join(",\n    " + indent)+";\n" : ";\n"),
+                    assignment = "\n" + indent + primaryName + 
+                        (aliases.length ? " = "+ aliases.join(" = " )+ " = " 
+                        + code : " = " + code);
 
                 importCodes.push( vars, assignment );
             }
         }
         
-        ret.push( importCodes.join("") );
         
-        ret.push( "function "+idName+"() { if( !___runtime) {throw new Error('No registered runtime');}___self = this; var ___html = '';" );
+        
+        ret.push( "\n" + importCodes.join("")  + "\n" );
+        
+        ret.push( indent + "function "+idName+"() {\n" +
+            indent + "    if( !___runtime) {\n"+
+            indent + "        throw new Error('No registered runtime');\n"+
+            indent + "    }\n"+
+            indent + "    ___self = this;\n"+
+            indent + "    var ___html = '';\n" );
         
         if( references.length )  {
-            ret.push( "var " + references.join(", \n") + ";");
+            ret.push( indent + "    var " + references.join(", \n" + indent + "        ") + ";\n");
         }
         
         ret.push( this.getCode() );
         
-        ret.push( "return ___html; }" );
+        ret.push( indent + "    return ___html;\n" + indent + "}\n" );
         
-        ret.push( "var ret = function( data ) { return "+idName+".call(data || {}); }; ret.registerRuntime = function( rt ) {___setRuntime(rt);}; return ret;");
+        ret.push( indent + "var ret = function( data ) {\n"+
+                indent +  "    return "+idName+".call(data || {});\n"+
+                indent + "};\n"+
+                indent + "ret.registerRuntime = function( rt ) {\n"+
+                indent + "    ___setRuntime(rt);\n"+
+                indent + "};\n"+
+                indent + "return ret;"
+        );
         
         return ret.join("");
     };

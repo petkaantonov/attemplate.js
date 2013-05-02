@@ -21,6 +21,13 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         return ret.join("");
     };
     
+    method.setIndentLevel = function( level ) {
+        _super.setIndentLevel.call( this, level );
+        for( var i = 0; i < this.statements.length; ++i ) {
+            this.statements[i].setIndentLevel( level + 1 );
+        }
+    };
+    
     method.performAnalysis = function( parent ) {
         var statement;
         for( var i = 0; i < this.statements.length; ++i ) {

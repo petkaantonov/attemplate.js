@@ -20,7 +20,7 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     };
     
     method.toString = function() {
-       return "___html += ("+this.getCode()+");"
+       return this.getIndentStr() + "___html += ("+this.getCode()+");\n";
     };
     
     return LiteralExpression;

@@ -31,6 +31,15 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
         return null;
     };
     
+    method.setIndentLevel = function( level ) {
+        this.indentLevel = level;
+        for( var i = 0; i < this.helpers.length; ++i ) {
+            this.helpers[i].setIndentLevel( level );
+        }
+        return _super.setIndentLevel.call( this, level );
+
+    };
+    
     method.performAnalysis = function( parent ) {
         for( var i = 0; i < this.helpers.length; ++i ) {
             this.helpers[i].performAnalysis(this);

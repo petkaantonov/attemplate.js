@@ -1,5 +1,7 @@
 var compiledTemplates = {};
 
+
+
 function trimRight( str ) {
     return str.replace(/\s\s*$/, "");
 }
@@ -1137,7 +1139,7 @@ function parse( inp, compiledName ) {
     }
     htmlContextParser.close();
 
-    if( stackLen > 1 ) { //Todo improve line num and block name
+    if( stackLen > 1 ) { //Todo block name
         stackTop.raiseError( "Unclosed block. ");
     }
     
@@ -1168,13 +1170,19 @@ function parse( inp, compiledName ) {
     }
     //This is why in the above loop we don't need to check for instanceof Program
     program.setHelpers( helpers );
+    
+    
     program.performAnalysis();
+    program.setIndentLevel(1);
+    
+    
+    
     output = program.toString( imports, exported );
     
 
     
     if( compiledName ) {
-        r = "var "+compiledName+" = (function() { " + output + "})();";
+        r = "var "+compiledName+" = (function() {\n" + output + "\n})();";
         r += "\n" + compiledName + ".registerRuntime(new Runtime('"+version+"'));";
     }
     else {

@@ -49,7 +49,7 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
     };
     
     method.toString = function() {
-       return "___html += ("+this.getCode()+");"
+       return this.getIndentStr() + "___html += ("+this.getCode()+");\n"
     };
     
     return OutputExpression;

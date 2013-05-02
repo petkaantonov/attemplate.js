@@ -1,7 +1,7 @@
 var fs = require("fs");
 var parsergen = require("./src/parsergen.js");
 function stringifyClosureBody( code ) {
-    code = code.replace(/[\r\n]/g, "").replace( /\\/g, "\\\\").replace(/"/g, '\\"');
+    code = code.replace( /\\/g, "\\\\").replace(/"/g, '\\"').replace(/(\r\n|\r|\n)/g, "\\n");
     return 'var programInitBody = "' + code + '";\n';
 }
 

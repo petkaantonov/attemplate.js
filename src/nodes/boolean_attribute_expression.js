@@ -19,7 +19,9 @@ var BooleanAttributeExpression = TemplateExpressionParser.yy.BooleanAttributeExp
     };
         
     method.toString = function() {
-        return 'if('+boolOp(this.expression.getExpression())+') {___html += ("'+this.name+'=\\"'+this.name+'\\"");}';
+        return this.getIndentStr() + 'if('+boolOp(this.expression.getExpression())+') {\n'+
+                    this.getIndentStr()+'    ___html += ("'+this.name+'=\\"'+this.name+'\\"");\n'+
+                    this.getIndentStr()+'}\n';
     };
     
     return BooleanAttributeExpression;

@@ -9,7 +9,7 @@ var ElseBlock = TemplateExpressionParser.yy.ElseBlock = (function() {
     }
     
     method.toString = function() {
-        return "else { " + _super.toString.call( this ) + " } ";
+        return this.getIndentStr() + "else {\n" + _super.toString.call( this ) + "\n"+this.getIndentStr()+"}\n";
     };
     
     return ElseBlock;
