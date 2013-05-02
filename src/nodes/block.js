@@ -75,6 +75,7 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
             
             if( statement === haveChild ) {
                 this.statements.splice(i+1, 0, insertChild);
+                break;
             }
         }
     };
@@ -86,16 +87,8 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
             
             if( statement === haveChild ) {
                 this.statements.splice(i, 0, insertChild);
+                break;
             }
-        }
-    };
-    
-    method.removeChildrenAt = function( index, count ) {
-        if( typeof index === "number" ) {
-            this.statements.splice( index, count );
-        }
-        else if( ( index = this.indexOfChild(index) ) > -1 ) {
-            this.statements.splice( index, count );
         }
     };
     
@@ -108,6 +101,9 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
     };
     
     method.insertChildAt = function( index, child) {
+        if( typeof index !== "number" ) {
+            index = this.indexOfChild(index);
+        }
         if( index >= this.statements.length ) {
             this.appendChild(child);
         }
@@ -131,6 +127,15 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
             }
         }
     };
-    
+    //More performant for removing multiple consecutive children
+    method.removeChildrenAt = function( index, count ) {
+        if( typeof index === "number" ) {
+            this.statements.splice( index, count );
+        }
+        else if( ( index = this.indexOfChild(index) ) > -1 ) {
+            this.statements.splice( index, count );
+        }
+    };
+   
     return Block;
 })();

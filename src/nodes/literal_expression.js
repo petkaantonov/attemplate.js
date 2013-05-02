@@ -8,6 +8,10 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
         _super.constructor.apply(this, arguments);
         this.literal = literal;
     }
+    
+    method.concat = function( literal ) {
+        return new LiteralExpression( this.literal + literal.literal );
+    };
 
     method.getCode = function() {
                 //Make it safe to embed in a javascript string literal

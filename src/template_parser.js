@@ -207,7 +207,7 @@ function validIdentifier( str ) {
     return rjsident.test(str) && !rinvalidref.test(str) && !rkeyword.test(str)
 }
 
-//Bugs here     
+/*skip whitespace if a dynamic expression is immediately followed by a new line and indentation*/
 function skipNewLineAndIndentation() {
     var ahead = lookahead(1), wsCount = 0;
     if( rlineterminator.test(ahead) ) {
@@ -416,8 +416,17 @@ function createDelimitParser( OPEN, CLOSE ) {
 }
 
 var rsimplechars = /[_$0-9A-Za-z]/,
-    rsimplecontinuation = /[\[\(\.]/; //Dot 
+    rsimplecontinuation = /[\[\(\.]/,
+    rnumeric = /[0-9]/;
 
+//Try to make a sense of undelimited simple @expr 
+//ideally the part where the expression starts to become invalid
+//is directly output and if there is a valid full expression, it becomes
+//a dynamic one
+
+//So for instance @asd.123 outputs value of variable 'asd' and then literally '.123'
+//@asd.a123 outputs property 'a123' of the variable 'asd'
+//@123 directly outputs '@123' statically and so on.
 var parseSimpleExpression = (function() {
     var IDENT_OR_CONTINUATION = {},
         PUREIDENT = {},
@@ -436,6 +445,13 @@ var parseSimpleExpression = (function() {
                 case PUREIDENT:
                     if( !rsimplechars.test(character) ) {
                         if( character !== "" ) i--;
+                        if( !ret.length ) {
+                            return "@";
+                        }
+                        break loop;
+                    }
+                    else if( rnumeric.test(character) ) {
+                        i--;
                         if( !ret.length ) {
                             return "@";
                         }
