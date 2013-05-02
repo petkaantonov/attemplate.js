@@ -20,6 +20,10 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         }
     };
     
+    method.checkValidForFunctionCall = function() {
+        this.raiseError("Cannot call array as a function");
+    };
+    
     method.getStaticType = function() {
         return "string";
     };

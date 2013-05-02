@@ -162,6 +162,22 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         return op;
     };
     
+    method.boolify = function() {
+        switch( this.opStr ) {
+            case "&&" :
+            case "||" :
+                return Operation.boolify( this.op1 ) + " " + this.opStr + " "+ Operation.boolify( this.op2 );
+            break;
+            
+            default:
+            
+            return Operation.boolify( this );
+        }
+    };
+    
+    Operation.boolify = function( expr ) {
+        return '((___ref = '+expr+'), ___isArray(___ref) ? ___ref.length > 0 : ___ref)';
+    };
     
     return Operation;
 })();

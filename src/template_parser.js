@@ -12,7 +12,12 @@ function getEscapeFnByName( name ) {
 }
 
 function boolOp( expr ) {
-    return '((___ref = '+expr+'), ___isArray(___ref) ? ___ref.length > 0 : ___ref)';
+    if( expr.boolify ) {
+        return expr.boolify();
+    }
+    else {
+        return Operation.boolify( expr );
+    }
 }
 
 /* global state */
@@ -97,7 +102,7 @@ var input,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
-    rkeyword = /^(?:eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
+    rkeyword = /^(?:this|false|true|null|eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
     rillegal= /^(?:Function|String|Boolean|Number|Array|Object)$/,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
     rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
@@ -310,9 +315,7 @@ var parseHelperHeader = (function() {
         startIndex += name[0].length;
         name = name[1];
 
-        if( rkeyword.test( name ) || rillegal.test( name ) || rinvalidref.test( name ) ) {
-            doError( "Helper name must not be a reserved word: '"+name+"'.", startIndex - name[1].length);
-        }
+        new Identifier( name ).setStartIndex( startIndex ).checkValid();
         
         rhelperargs.lastIndex = 0;
         argString = rhelperargs.exec( header ) || doError("Invalid helper syntax for arguments.", startIndex);
@@ -329,13 +332,7 @@ var parseHelperHeader = (function() {
                     continue;
                 }
                 
-                if( !rjsident.test( arg ) ) {
-                    doError( "Parameter name must be a valid Javascript identifier.", startIndex );
-                }
-                
-                if( rkeyword.test( arg ) || rillegal.test( arg ) || rinvalidref.test( arg ) ) {
-                    doError( "Parameter name must not be a reserved word: '"+arg+"'.", startIndex );
-                }
+                new Identifier( arg ).setStartIndex( startIndex ).checkValid();
                                 
                 if( uniqueArgs.hasOwnProperty( args ) ) {
                     doError( "Duplicate helper parameter name, '"+arg+"' was already declared.", startIndex );

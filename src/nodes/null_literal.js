@@ -8,6 +8,10 @@ var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
         _super.constructor.apply(this, arguments);
     }
     
+    method.checkValidForFunctionCall = function() {
+        this.raiseError("Cannot call null as a function");
+    };
+    
     method.getStaticType = function() {
         return "null";
     };

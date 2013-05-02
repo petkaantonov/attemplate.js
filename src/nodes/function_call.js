@@ -94,10 +94,8 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
                 return '___method('+this.expr.toStringNoLast()+', '+last.toString()+')';
             }
         }
-        else if( rinvalidref.test(this.expr.identifier) ) {
-            throw new Error("Cannot call '"+this.expr.identifier+"' as a function");
-        }
         else {
+            this.expr.checkValidForFunctionCall();
             var expr = this.expr.toString();
         }
         

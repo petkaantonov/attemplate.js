@@ -8,6 +8,10 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
         _super.constructor.apply(this, arguments);
         this.value = truefalse === "true" ? true : truefalse === "false" ? false : !!truefalse;
     }
+
+    method.checkValidForFunctionCall = function() {
+        this.raiseError("Cannot call boolean as a function");
+    };
     
     method.getStaticType = function() {
         return "boolean";

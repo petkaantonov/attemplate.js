@@ -9,8 +9,12 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         this.str = str;
     }
     
-   method.getStaticType = function() {
-            return "string";
+    method.checkValidForFunctionCall = function() {
+        this.raiseError("Cannot call string as a function");
+    };
+    
+    method.getStaticType = function() {
+        return "string";
     };
     
     method.truthy = function() {

@@ -12,6 +12,10 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         }
     }
     
+    method.checkValidForFunctionCall = function() {
+        this.raiseError("Cannot call number as a function");
+    };
+    
     method.getStaticType = function() {
         return "number";
     };

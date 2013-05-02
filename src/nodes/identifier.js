@@ -10,7 +10,10 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
     }
     
     method.checkValid = function() {
-        if( rkeyword.test(this.identifier)) {
+        if( !rjsident.test( this.identifier ) ) {
+            this.raiseError( "'" + this.identifier + "' is not a valid identifier.");    
+        }
+        else if( rkeyword.test(this.identifier)) {
             this.raiseError("'"+this.identifier+"' is used as an identifier but identifiers cannot be Javascript reserved words.");
         }
         else if( rillegal.test(this.identifier)) {
@@ -18,6 +21,12 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
         }
         else if( rtripleunderscore.test(this.identifier) ) {
             this.raiseError( "Identifiers starting with ___ are reserved for internal use." );
+        }
+    };
+    
+    method.checkValidForFunctionCall = function() {
+        if( rinvalidref.test(this.identifier) ) {
+            this.raiseError("Cannot call '"+this.identifier+"' as a function");
         }
     };
     

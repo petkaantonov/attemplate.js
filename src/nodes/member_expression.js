@@ -29,6 +29,13 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         }
     }
     
+    method.boolify = function() {
+        return this.identifier.boolify ? this.identifier.boolify() : Operation.boolify( this );
+    };
+    
+    method.checkValidForFunctionCall = function() {
+        this.identifier.checkValidForFunctionCall();
+    }    
     method.setReferenceMode = function( mode ) {
         this.referenceMode = mode;
     };
