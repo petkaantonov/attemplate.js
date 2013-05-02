@@ -241,7 +241,9 @@ var Runtime = (function() {
         return ___Safe;
     })();
     
-    var ___safeString__ = method.safeString = (function(){
+    
+    var ___safeString__ = method.safeString = (function() {
+
         
         var NO_ESCAPE = 0,
             HTML = 1,
@@ -285,6 +287,30 @@ var Runtime = (function() {
                 return str;
             }
             return ((counts[count]) + str).slice(-count);
+        };
+
+        var htmlControls = {},
+            rhtmlcontrol,
+            ranges = [[0x00,0x19], [0x7F, 0x9F]],
+            replacerHtmlControl = function( m ) {
+                return htmlControls[m];
+            };
+            
+        for( var i = 0; i < ranges.length; ++i ) {
+            for( var c = ranges[i][0]; c <= ranges[i][1]; ++c ) {
+                var character = String.fromCharCode(c);
+                htmlControls[character] = "&#FFFD;";
+            }
+            ranges[i] = "\\u" + pad(ranges[i][0].toString(16), 4) + "-" + "\\u" + pad(ranges[i][1].toString(16), 4)
+        };
+        
+        htmlControls[String.fromCharCode(0xA0)] = "&nbsp;";
+        ranges.push( "\\u00A0" );
+        
+        rhtmlcontrol = new RegExp( "[" + ranges.join("") + "]", "g");
+        
+        var htmlControlEncode = function( str ) {
+            return str.replace( rhtmlcontrol, replacerHtmlControl );
         };
         
         var rurlstart = /^(?:http|https|ftp):\/\//;
@@ -368,12 +394,12 @@ var Runtime = (function() {
 
             escapeForHtml = function( str ) {
                 str = "" + str;
-                return str.replace(rhtmlencode, replacerHtmlEncode);
+                return htmlControlEncode(str.replace(rhtmlencode, replacerHtmlEncode));
             },
 
             escapeForAttr = function( str ) {
                 str = "" + str;
-                return str.replace(rattrencode, replacerAttrEncode);
+                return htmlControlEncode(str.replace(rattrencode, replacerAttrEncode));
             },
 
             escapeForUri = function( str ) {

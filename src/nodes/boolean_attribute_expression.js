@@ -19,10 +19,17 @@ var BooleanAttributeExpression = TemplateExpressionParser.yy.BooleanAttributeExp
     };
         
     method.toString = function() {
-        return this.getIndentStr() + 'if('+boolOp(this.expression.getExpression())+') {\n'+
-                    this.getIndentStr()+'    ___html += ("'+this.name+'=\\"'+this.name+'\\"");\n'+
-                    this.getIndentStr()+'}\n';
+        return this._toString(
+            boolOp(this.expression.getExpression()),
+            this.name
+        );
     };
+    
+    method._toString = MACRO.create(function(){
+if ($1) {
+    ___html += '$2="$2"';
+}
+});
     
     return BooleanAttributeExpression;
 })();

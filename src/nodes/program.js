@@ -64,39 +64,25 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
 
     method.toImportCode = function() {
         this.isBeingImported = true;
-        var ret = [],
+        var ret,
             references = this.getReferences();
             
             
         var indent = this.getIndentStr();
         
-        ret.push( "(function() {\n" );
-
-        
-        ret.push( this.getHelperCode() );
-        
-        ret.push( indent + "    function "+idName+"( ___data ) {\n" +
-            indent + "        ___data = ___data || {};\n"+
-            indent + "        var ___html = '';\n" );
-        
-        if( references.length )  {
-            ret.push( indent + "        var " + references.join(", \n" +indent + "            ") + ";\n");
-        }
-        
-        ret.push( this.getCode() );
-        
-        ret.push( indent + "        return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+");\n    "+
-            indent+ "}\n\n" );
-        
-        ret.push( indent + "    return function( data ) {\n" +
-                    indent + "        return "+idName+".call(___self, data || {});\n"+
-                    indent + "    };\n"+ 
-                    indent + "})();\n");
-                    
-                    
+        ret = this._toStringHelper(
+            this.getHelperCode(),
+            idName,
+            (references.length ? "var " + references.join(", \n" +indent + "            ") + ";\n" : ""),
+            this.getCode(),
+            HtmlContextParser.context.HTML.name
+        );
+                           
         this.isBeingImported = false;
-        return ret.join("");
+        return ret;
     };
+
+
     
     method.getHelperCode = function() {
         var ret = [], helper;
@@ -150,38 +136,62 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
                 importCodes.push( vars, assignment );
             }
         }
+                
+        ret.push( importCodes.join("\n") );
         
-        
-        
-        ret.push( "\n" + importCodes.join("")  + "\n" );
-        
-        ret.push( indent + "function "+idName+"() {\n" +
-            indent + "    if( !___runtime) {\n"+
-            indent + "        throw new Error('No registered runtime');\n"+
-            indent + "    }\n"+
-            indent + "    ___self = this;\n"+
-            indent + "    var ___html = '';\n" );
-        
-        if( references.length )  {
-            ret.push( indent + "    var " + references.join(", \n" + indent + "        ") + ";\n");
-        }
-        
-        ret.push( this.getCode() );
-        
-        ret.push( indent + "    return ___html;\n" + indent + "}\n" );
-        
-        ret.push( indent + "var ret = function( data ) {\n"+
-                indent +  "    return "+idName+".call(data || {});\n"+
-                indent + "};\n"+
-                indent + "ret.registerRuntime = function( rt ) {\n"+
-                indent + "    ___setRuntime(rt);\n"+
-                indent + "};\n"+
-                indent + "return ret;"
-        );
-        
-        return ret.join("");
+        ret.push( this._toStringProgram(
+            idName,
+            (references.length ? "var " + references.join(", \n" + indent + "        ") + ";\n" : ""),
+            this.getCode()
+        ));
+                
+        return ret.join("\n");
     };
+    
 
+    
+    method._toStringProgram = MACRO.create(function(){
+    
+function $1() {
+    if( !___runtime ) {
+        throw new Error('No registered runtime');
+    }
+    ___self = this;
+    var ___html = '';
+    $2
+$3
+    return ___html;
+}
+
+var ret = function(data) {
+    return $1.call(data || {});
+};
+
+ret.registerRuntime = function(rt) {
+    ___setRuntime(rt);
+};
+
+return ret;
+
+});
+
+    method._toStringHelper = MACRO.create(function(){
+(function() {
+$1
+    function $2(___data) {
+        ___data = ___data || {};
+        var ___html = '';
+        $3
+$4
+        return new ___Safe(___html, $5);
+    }
+    
+    return function(data) {
+        return $2.call(___self, data || {});
+    };
+})();
+});
+    
     //@override
     method.getName = function() {
         return this.aliasedImportName || this.importName;

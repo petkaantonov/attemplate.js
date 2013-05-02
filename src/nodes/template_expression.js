@@ -36,9 +36,12 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
     };
         
     method.toString = function() {
-
-        return this.getIndentStr() + "___html += ("+this.getCode()+");\n";
+        return this._toString(this.getCode());
     };
+    
+    method._toString = MACRO.create(function(){
+___html += $1;
+});
     
     return TemplateExpression;
 })();

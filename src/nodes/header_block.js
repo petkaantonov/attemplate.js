@@ -8,6 +8,7 @@ var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
     function HeaderBlock( header ) {
         _super.constructor.apply(this, arguments);
         this.header = header;
+        console.log(this.header);
     }
     
     method.headerIsBooleanExpression = function() {
@@ -15,10 +16,27 @@ var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
     };
     
     method.toString = function() {
-        return this.getIndentStr() + this.getName() + " ( " + 
-            (this.headerIsBooleanExpression() ? boolOp(this.header) : this.header ) + 
-        " ) {\n" + _super.toString.call(this) + "\n"+this.getIndentStr()+"}\n";
+        return this._toString(
+            this.getName(),
+            (this.headerIsBooleanExpression() ? boolOp(this.header) : this.header ),
+            _super.toString.call(this)
+        );
+        
+        
     };
+    
+    method._toString = MACRO.create(function(){
+
+$1 ($2)
+{
+$3
+}
+
+});
+
+
         
     return HeaderBlock;
 })();
+
+

@@ -123,6 +123,15 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         }
     };
     
+    method.replaceChild = function( oldChild, newChild ) {
+        var index = this.indexOfChild( oldChild );
+        if( index < 0 ) {
+            return;
+        }
+        
+        this.statements[index] = newChild;
+    };
+    
     method.removeChild = function( child ) {
         var statement;
         for( var i = 0; i < this.statements.length; ++i ) {

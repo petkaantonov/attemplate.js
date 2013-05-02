@@ -10,7 +10,7 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
     }
     
     method.performAnalysis = function() {
-    
+        //Noop override
     };
     
     method.toString = function() {
@@ -20,9 +20,13 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
         for( var i = 0; i < expr.length; ++i ) {
             ret.push( expr[i].getCode() );
         }
-        
-        return this.getIndentStr() + "___html += ("+ret.join(" + ") +");\n";
+
+        return this._toString(ret.join(" +\n           " + this.getIndentStr())) + "\n";
     };
+
+    method._toString = MACRO.create(function(){
+___html += $1;
+});
     
     return CombinedOutputExpression;
 })();

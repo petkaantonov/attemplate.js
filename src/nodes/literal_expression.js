@@ -20,8 +20,12 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     };
     
     method.toString = function() {
-       return this.getIndentStr() + "___html += ("+this.getCode()+");\n";
+        return this._toString(this.getCode());
     };
+    
+    method._toString = MACRO.create(function(){
+___html += $1;
+});
     
     return LiteralExpression;
 })();

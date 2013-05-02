@@ -53,33 +53,46 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
     };
     
     method.toString = function() {
-        var ret = [],
+        var codes = [],
+            ret,
             references = this.getReferences();
         
         var indent = this.getIndentStr();
-
-        ret.push( indent + "var " + this.name + " = (function(){\n"+
-            indent + "    function "+id+"("+this.parameterNames.join(", ")+") {\n" );
-             
-        if( references.length )  {
-            ret.push( indent + "        var " + references.join(", \n" + indent + "        ") + ";\n");
-        }
-        
-        ret.push( indent + "        var ___html = '';\n" );
         
         for( var i = 0; i < this.statements.length; ++i ) {
-            ret.push( this.statements[i].toString() );
+            codes.push( this.statements[i].toString() );
         }
         
-        ret.push( indent + "        return new ___Safe(___html, "+HtmlContextParser.context.HTML.name+");\n"+
-            indent + "    }\n"+
-            indent + "    return function() {\n"+
-            indent + "        return "+id+".apply(___self, arguments);\n"+
-            indent + "    };\n"+
-            indent + "})();" );
+        return this._toString(
+            this.name,
+            id,
+            this.parameterNames.join(", "),
+            ( references.length ? "var " + references.join(", \n" + indent + "        ") + ";\n" : ""),
+            codes.join("\n"),
+            HtmlContextParser.context.HTML.name
         
-        return ret.join( "" );
+        );
+        
     };
+    
+    method._toString = MACRO.create(function(){
+    
+    
+var $1 = (function() {
+    function $2($3) {
+        $4
+        var ___html = '';
+$5
+        return new ___Safe(___html, $6);
+    }
+    
+    return function() {
+        return $2.apply(___self, arguments);
+    };
+})();
+
+
+});
     
     method.getParameterNames = function() {
         return this.parameterNames;
