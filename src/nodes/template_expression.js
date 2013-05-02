@@ -34,14 +34,7 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
                 
         return "___safeString__(" + this.expression.toString()+", "+escapeFn+")";
     };
-        
-    method.toString = function() {
-        return this._toString(this.getCode());
-    };
-    
-    method._toString = MACRO.create(function(){
-___html += $1;
-});
+
     
     return TemplateExpression;
 })();

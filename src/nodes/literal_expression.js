@@ -18,14 +18,6 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
        var ret = this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
        return "'" + ret +"'";
     };
-    
-    method.toString = function() {
-        return this._toString(this.getCode());
-    };
-    
-    method._toString = MACRO.create(function(){
-___html += $1;
-});
-    
+        
     return LiteralExpression;
 })();

@@ -21,7 +21,7 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
             ret.push( expr[i].getCode() );
         }
 
-        return this._toString(ret.join(" +\n           " + this.getIndentStr())) + "\n";
+        return "\n" + this._toString( ret.join(" +\n           " + this.getIndentStr())) + "\n";
     };
 
     method._toString = MACRO.create(function(){

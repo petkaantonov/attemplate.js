@@ -1,9 +1,9 @@
 var BooleanAttributeExpression = TemplateExpressionParser.yy.BooleanAttributeExpression = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = OutputExpression.prototype,
         method = BooleanAttributeExpression.prototype = Object.create(_super);
     
     method.constructor = BooleanAttributeExpression;
-    
+        
     function BooleanAttributeExpression( name, quote ) {
         _super.constructor.apply(this, arguments);
         this.name = name;
@@ -17,19 +17,10 @@ var BooleanAttributeExpression = TemplateExpressionParser.yy.BooleanAttributeExp
         }
         this.expression = value;
     };
-        
-    method.toString = function() {
-        return this._toString(
-            boolOp(this.expression.getExpression()),
-            this.name
-        );
+    
+    method.getCode = function() {
+        return '('+boolOp(this.expression.getExpression())+' ? "'+this.name+'=\\"'+this.name+'\\"" : "")';
     };
-    
-    method._toString = MACRO.create(function(){
-if ($1) {
-    ___html += '$2="$2"';
-}
-});
-    
+            
     return BooleanAttributeExpression;
 })();

@@ -7,9 +7,7 @@
         ___ensureNumeric, ___trim, ___method,
         ___functionCall, ___inOp, ___hasown,
         ___ensureArrayLike,
-        ___isArray, ___isObject, ___Safe, ___safeString__,
-
-        ___global = Function("return this")();
+        ___isArray, ___isObject, ___Safe, ___safeString__;
 
     var ___setRuntime = function( rt ) {
         rt.checkVersion( ___version );
