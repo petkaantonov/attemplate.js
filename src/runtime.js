@@ -254,6 +254,8 @@ var Runtime = (function() {
             SCRIPT = 32,
             SCRIPT_IN_ATTR = 64,
             CSS = 128,
+            HTML_COMMENT = 256,
+            SCRIPT_IN_URI_PARAM_ATTR = 512,
             escapes = {};
 
 
@@ -318,6 +320,8 @@ var Runtime = (function() {
         var rhtmlencode = /[&<>]/g,
         
             rattrname = /[^a-zA-Z0-9_:-]+/g,
+            
+            rhtmlcomment = /--/g,
         
             rattrencode = /['"&]/g,
             
@@ -371,16 +375,34 @@ var Runtime = (function() {
                 
                 return ret;
             };
-
+            
+        
+        var coerceValueToString = function( obj ) {
+            return ((!obj && obj !== 0) || (typeof str === FUNCTION)) ? "" : "" + obj;
+        };
+        
+        var tryJSONStringify = function( obj ) {
+            var ret = null;
+            try {
+                ret = JSON.stringify(obj);
+            }
+            catch( e ) {
+                ret = null;
+            }
+            return ret;
+        };
+             
         var escapeForNothing = function( str ) {
-                return !str && str !== 0 ? "" : ("" + str);
+                return str;
+            },
+            
+            escapeForHtmlComment = function( str ) {
+                str = "" + str;
+                return htmlControlEncode(str.replace( rhtmlcomment, '&#45;&#45;' ));
             },
             
             escapeForAttrName = function( str ) {
-                if( str !== 0 && !str || typeof str === FUNCTION ) {
-                    str = "";
-                }
-                str = (str + "").replace( rattrname, "");
+                str = coerceValueToString(str).replace( rattrname, "");
                 if( !str ) {
                     return "data-empty-attribute";
                 }
@@ -388,22 +410,18 @@ var Runtime = (function() {
             },
             
             escapeForCss = function( str ) {
-                str = "" + str;
                 return str.replace(rcssencode, replacerCssEncode);
             },
 
             escapeForHtml = function( str ) {
-                str = "" + str;
                 return htmlControlEncode(str.replace(rhtmlencode, replacerHtmlEncode));
             },
 
             escapeForAttr = function( str ) {
-                str = "" + str;
                 return htmlControlEncode(str.replace(rattrencode, replacerAttrEncode));
             },
 
             escapeForUri = function( str ) {
-                str = "" + str;
                 var scheme;
                 if( rurlstart.test(str)) {
                     //TODO this isn't good
@@ -411,9 +429,9 @@ var Runtime = (function() {
                 }
                 return "#";
             },
-
+            
+            /*TODO: does attribute escaping too although not necessary in style tags*/
             escapeForUriParam = function( str ) {
-                str = "" + str;
                 return escapeForAttr(encodeURIComponent(str));
             },
             
@@ -421,8 +439,17 @@ var Runtime = (function() {
                 if( obj == null || typeof obj == FUNCTION) {
                     obj = null;
                 }
-                
-                return "JSON.parse('" +JSON.stringify(obj).replace(rjsencode, replacerJsEncode) + "')";
+
+                var ret = tryJSONStringify(obj);
+
+                if( !ret ) {
+                    return "JSON.parse('null');";
+                }
+                return "JSON.parse('" +ret.replace(rjsencode, replacerJsEncode) + "')";
+            },
+            
+            escapeForScriptInUriParamAttr = function( obj ) {
+                return escapeForUriParam(escapeForScript(obj));
             },
 
             escapeForScriptInAttr = function( obj ) {
@@ -438,9 +465,11 @@ var Runtime = (function() {
         escapes[SCRIPT] = escapeForScript;
         escapes[SCRIPT_IN_ATTR] = escapeForScriptInAttr;
         escapes[CSS] = escapeForCss;
+        escapes[HTML_COMMENT] = escapeForHtmlComment;
+        escapes[SCRIPT_IN_URI_PARAM_ATTR] = escapeForScriptInUriParamAttr;
         
         
-        var passedAsIs = SCRIPT | SCRIPT_IN_ATTR | ATTR_NAME;
+        var passedAsIs = SCRIPT | SCRIPT_IN_ATTR | SCRIPT_IN_URI_PARAM_ATTR | ATTR_NAME;
 
         return function( string, escapeFn, attrName ) {
             var passAsIs = (escapeFn & passedAsIs) > 0;
@@ -480,8 +509,12 @@ var Runtime = (function() {
                 return string.string;
             }
         
-            if( !passAsIs && (!string && string !== 0 || typeof string === FUNCTION) ) {
-                return escapeFn === URI ? "#" : "";
+            if( !passAsIs ) {
+                string = coerceValueToString(string);
+                
+                if( !string ) {
+                    return (escapeFn === URI ? "#" : "");
+                }
             }
 
             return escapes[escapeFn](string);

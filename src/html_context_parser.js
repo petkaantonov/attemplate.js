@@ -1,5 +1,96 @@
 var HtmlContextParser = (function() {
 
+    //Broken or unimplemented    
+    //TAG_NAME
+    //CSS_QUOTED_URI in style tag
+    //CSS_UNQUOTED_URI in style tag
+    //CSS_QUOTED_URI in style attr
+    //CSS_UNQUOTED URI in style attr
+    //CSS_QUOTED_URI_PARAM in style tag
+    //CSS_UNQUOTED_URI_PARAM in style tag
+    //CSS_QUOTED_URI_PARAM in style attr
+    //CSS_UNQUOTED URI_PARAM in style attr
+    
+    //SCRIPT_IN_CSS_QUOTED_URI in style tag
+    //SCRIPT_IN_CSS_UNQUOTED_URI in style tag
+    //SCRIPT_IN_CSS_QUOTED_URI in style attr
+    //SCRIPT_IN_CSS_UNQUOTED URI in style attr
+    //SCRIPT_IN_CSS_QUOTED_URI_PARAM in style tag
+    //SCRIPT_IN_CSS_UNQUOTED_URI_PARAM in style tag
+    //SCRIPT_IN_CSS_QUOTED_URI_PARAM in style attr
+    //SCRIPT_IN_CSS_UNQUOTED URI_PARAM in style attr
+    
+    //CSS_STRING_QUOTED attr
+    //CSS_STRING_QUOTED tag
+    //URI ATTR
+    //URI_PARAM_ATTR
+    //CSS_ATTR arbirtrary css in style attr
+    //CSS arbitrary css in style tag
+    
+    //SCRIPT_IN_URI_PARAM_ATTR
+
+    //Flyweight enum + runtime bitwise checks for speed at the same time
+    var context = {
+        NO_ESCAPE: {name: 0}, //Special flag for when escaping is not applied
+        
+        
+        HTML: {name: 1}, //Dynamic data inside non-special html tags. The initial context
+                        //e.g <div>Hello, @data</div>
+                        
+                        //Probably 80-90% of dynamic data insertion cases
+        
+        
+        ATTR: {name: 2}, //Dynamic data in a plain attribute with no possibly harmful immediate interpretation
+                        //e.g. value="@data"
+                        
+                        //The engine enforces that all attributes are delimited with either ' or "
+                        //so unquoted attribute context doesn't exist
+        
+        
+        ATTR_NAME: {name: 4}, //Dynamic data fully, or partly, composes an attribute name.
+                            //e.g <div @attr="key"
+                            //if the "key" part is dynamic as well, it becomes a special case
+                            //where context is determined for it by the runtime value of @attr
+                            
+                            //TODO use .writeDynamic to determine part
+        
+        
+        URI: {name: 8}, //Where the dynamic data would start an uri in an html attribute 
+                        //e.g href="@data" 
+        
+        
+        URI_PARAM: {name: 16}, //Where the dynamic data would be placed on a statically started uri in an html attribute 
+                                //e.g href="/mysite?@param"
+        
+        
+        SCRIPT: {name: 32}, //Arbitrary placement of dynamic data when inside a script tag. 
+                            //e.g. <script>@data</script>. this can actually be secured for without sacrificing valid use cases
+        
+        
+        SCRIPT_IN_ATTR: {name: 64}, //Placement of dynamic data when inside a html attribute that gets interpreted as a script
+                        //e.g onmouseover="alert(@data)". There is no valid use cases for this but it can easily happen.
+                         //like in SCRIPT, the placement doesn't matter in the script.
+        
+        
+        CSS: {name: 128}, //Arbitrary placement of dynamic data when inside a <style> tag. 
+                            //e.g. <style>@data</style
+                            //Unlike SCRIPT, this cannot be secured for, any dynamic data in this context is "escaped" currently to the empty string
+        
+        
+        HTML_COMMENT: {name: 256}, //Placement of dynamic data in html comments, -- becomes special.
+                                    //e.g. <!-- @data -->
+                                    //use cases probably include something like rendering rendering time dynamically in a comment
+        
+        
+        SCRIPT_IN_URI_PARAM_ATTR: {name: 512} //Placement of dynamic data when inside a html attribute that gets interpreted
+                                            //as an URI where javascript: is statically placed so the data
+                                            //gets interpreted as javascript. Or in other words, the decode stack goes ATTR -> URI -> JAVASCRIPT
+                                            //e.g. <a href="javascript: alert(@data);">
+                                            //Sometimes used as an alternative for the just as bad onclick=""
+    };
+    
+    
+
     var CssContextParser = (function() {
         var method = CssContextParser.prototype;
         
@@ -10,29 +101,17 @@ var HtmlContextParser = (function() {
         return CssContextParser;
     })();
 
-
-    var context = {
-        NO_ESCAPE: {name: 0},
-        HTML: {name: 1},
-        ATTR: {name: 2},
-        ATTR_NAME: {name: 4},
-        URI: {name: 8},
-        URI_PARAM: {name: 16},
-        SCRIPT: {name: 32},
-        SCRIPT_IN_ATTR: {name: 64},
-        CSS: {name: 128}
-    };
-    
-    HtmlContextParser.context = context;
-
+    HtmlContextParser.context = CssContextParser.context = context;
     var method = HtmlContextParser.prototype;
-                   //tagopen         //attribute open             //closing tag           //tagclose    //URL-param characters     //HTML comment end
-    var chunker = /(?:<!?([a-z0-9_-]+)|([a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/\s*([a-z0-9_-]+)>|(\/?>)|(["'])|([:/?.])|(refresh)|(dataurl)|(--)>)/g;
+    
+    
+                   //tagopen         //attribute open             //closing tag           //tagclose                   //SCRIPT_IN_URI        //HTML comment end //URL-param characters    
+    var chunker = /(?:<!?([a-z0-9_:-]+)|([:a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/([a-z0-9:_-]+)\s*\/?\s*>|(\/?>)|(["'])|(javascript|data):|(refresh)|(dataurl)|(--)>|([:/?.]))/g; //toLowerCase() is called on the string
                                                                                                  //attrclose     //URI context special cases
 
     var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
     var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
-    var charData = /^(?:script|style|textarea|title|--)$/;
+    var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName> or --> in case of a comment
     
     function HtmlContextParser() {
         this.context = context.HTML;
@@ -139,7 +218,7 @@ var HtmlContextParser = (function() {
         if( tagName == "--" ) {
             this.inCharData = true;
             this.tagStack.push(tagName);
-            this.context = context.HTML;
+            this.context = context.HTML_COMMENT;
             this.openedTag = null;
             return;
         }
@@ -231,11 +310,21 @@ var HtmlContextParser = (function() {
             this.context = context.ATTR_NAME;
         }
     };
+    
+    method.maybeUriScript = function() {
+        if( this.inCharData ) return;
+
+        if( this.currentAttr && this.context === context.URI &&
+            this.isUriAttr(this.currentAttr) ) {
+            this.context = context.SCRIPT_IN_URI_PARAM_ATTR;
+        }
+    };
 
     method.uriParamValue = function() {
         if( this.inCharData ) return;
 
-        if( this.currentAttr && this.isUriAttr(this.currentAttr) ) {
+        if( this.currentAttr && this.context === context.URI &&
+            this.isUriAttr(this.currentAttr) ) {
             this.context = context.URI_PARAM;
         }
     };
@@ -249,6 +338,7 @@ var HtmlContextParser = (function() {
     };
     
     
+
 
     method.dataUrl = function() {
         if( this.inCharData || !this.currentAttr ) return;
@@ -287,7 +377,7 @@ var HtmlContextParser = (function() {
                 this.attributeOpenEnd( m[6]);
             }
             else if( m[7] ) {
-                this.uriParamValue();
+                this.maybeUriScript();
             }
             else if( m[8] ) {
                 this.metaRefresh();
@@ -298,6 +388,9 @@ var HtmlContextParser = (function() {
             else if( m[10] ) {
                 this.tagClose(m[10]);
             }
+            else if( m[11] ) {
+                this.uriParamValue();
+            }
             prevIndex = this.lastIndex;
         }
     };
@@ -307,10 +400,9 @@ var HtmlContextParser = (function() {
     };
 
     method.close = function() {
+        if( this.currentAttr ) doError( "Attribute '"+this.currentAttr+"' in tag '<" + this.openedTag + ">' has not been closed.", this.getIndex() );
         if( this.openedTag ) doError( "'<" + this.openedTag + ">' has not been closed.", this.getIndex() );
-
-        var tagName = this.currentTagName();
-        if( tagName ) doError( "'<" + tagName + ">' is still open.", this.getIndex() );
+        if( this.currentTagName() ) doError( "'<" + this.currentTagName() + ">' is still open.", this.getIndex() );
     };
 
     method.getContext = function() {
