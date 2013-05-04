@@ -5,8 +5,15 @@ var ProgramElement = TemplateExpressionParser.yy.ProgramElement = (function() {
         this.startIndex = 0;
         this.endIndex = 0;
         this.indentLevel = 0;
+        this.parens = false;
+        this.static = false;
     }
     
+    method.setStatic = function() {
+        this.parens = false;
+        this.static = true;
+    };
+
     method.setEndIndex = function( endIndex ) {
         this.endIndex = endIndex;
         return this;
@@ -46,7 +53,7 @@ var ProgramElement = TemplateExpressionParser.yy.ProgramElement = (function() {
             return levels[this.indentLevel] || Array(this.indentLevel*4+1).join(" ");
         };
     })();
-    
+        
     method.raiseError = function( msg ) {
         doError(msg, this.startIndex);
     };

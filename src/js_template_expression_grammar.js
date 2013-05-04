@@ -47,7 +47,8 @@ var grammar = {
         ["member args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
         ["functionCall args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
         ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3); " + setIndex ],
-        ["functionCall . identifier", "$$ = new yy.CallExpression($1, '\"' + $3 + '\"'); " + setIndex]
+        ["functionCall . propAccessLiteral", "$$ = new yy.CallExpression($1, $3); " + setIndex],
+        ["functionCall . identifier", "$$ = new yy.CallExpression($1, $3); " + setIndex]
     ],
 
     args: [
@@ -61,9 +62,8 @@ var grammar = {
     ],
     
     arg: [
+        ["literal : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
         ["identifier : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
-        ["string : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
-        ["number : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
         ["expression"]
     ],
     
@@ -88,7 +88,8 @@ var grammar = {
     
     memberExpression: [
         ["primary", "$$ = [$1];"],
-        ["memberExpression . identifier", "$$ = $1.concat('\"' + $3 + '\"');"],
+        ["memberExpression . propAccessLiteral", "$$ = $1.concat($3);"],
+        ["memberExpression . identifier", "$$ = $1.concat($3);"],
         ["memberExpression [ expression ]", "$$ = $1.concat($3);"]
     ],
             
@@ -100,10 +101,17 @@ var grammar = {
     ],
     
     literal: [
-        ["NULL", "$$ = new yy.NullLiteral(); " + setIndex],
-        ["BOOLEAN", "$$ = new yy.BooleanLiteral($1); " + setIndex],
+        ["this"],
+        ["null"],
+        ["boolean"],
         ["number"],
         ["string"]
+    ],
+    
+    propAccessLiteral: [
+        ["this"],
+        ["null"],
+        ["boolean"]
     ],
     
     operation: [
@@ -147,6 +155,18 @@ var grammar = {
     elementList: [
         ["optElision expression", "$$ = [$2];"],
         ["elementList , optElision expression", "$$ = $1.concat($4);"]
+    ],
+    
+    'this': [
+        ["THIS", "$$ = new yy.ThisLiteral(); " + setIndex]
+    ],
+    
+    'null': [
+        ["NULL", "$$ = new yy.NullLiteral(); " + setIndex]
+    ],
+    
+    'boolean': [
+        ["BOOLEAN", "$$ = new yy.BooleanLiteral($1); " + setIndex]
     ],
     
     identifier: [
@@ -257,10 +277,11 @@ var lex = {
         ["[0-9]+\\b", "return 'DIGITS';"],
         ["\\s+", "/* skip whitespace */"],
         ["\\ufeff", "/* skip boms */"],
-        ["'[^']*", delimited("STRING")],
-        ["\"[^\"]*", delimited("STRING")],
+        ["'[^\\\\']*(?:\\\\.[^\\\\']*)*'", "return 'STRING';"],
+        ['"[^\\\\"]*(?:\\\\.[^\\\\"]*)*"', "return 'STRING';"],
         ["null\\b", "return 'NULL';"],
         ["(?:true|false)\\b", "return 'BOOLEAN';"],
+        ["this\\b", "return 'THIS';"],
         ["(?:[a-zA-Z_$][a-zA-Z$_0-9]*)", "return 'IDENTIFIER';"],
         ["&&", "return '&&';"],
         

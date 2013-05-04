@@ -8,7 +8,6 @@ var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
     function HeaderBlock( header ) {
         _super.constructor.apply(this, arguments);
         this.header = header;
-        console.log(this.header);
     }
     
     method.headerIsBooleanExpression = function() {

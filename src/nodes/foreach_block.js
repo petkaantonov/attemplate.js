@@ -27,6 +27,8 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
    
     //Get the variables that the block defines which don't need to be
     //secured against reference errros
+    
+    //TODO do this after AST has been done so nested loops can be done
     method.definesVars = function() {
         var ret = {};
        
@@ -57,7 +59,7 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
            
             for( var i = 0; i < nestedLoops.length; ++i ) {
                 nestedLoops[i].buildupExported = true;
-                this.buildUps.push( nestedLoops[i].getBuildupCode() );
+                //this.buildUps.push( nestedLoops[i].getBuildupCode() );
             }
         }
        
@@ -95,7 +97,7 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
        
         //Range iteration @for( item from 5 to 10 by 5)
         if( this.collection instanceof Range ) {       
-            return this.buildUps.join("") + (!this.buildupExported ? this.getBuildupCode() : "") + this._rangeBody(
+            return this.buildUps.join("") + this.getBuildupCode() + this._rangeBody(
                 id,
                 this.key,
                 body
@@ -165,7 +167,7 @@ $3
     method._arrayBody = MACRO.create(function(){
    
 var ___collection$1 = $3;
-___collection$1 = ___isArray(___collection$1) ? ___collection$1 : ___ensureArrayLike(___collection$1);
+___collection$1 = ___isArray(___collection$1) ? ___collection$1 : [];
 var ___count$1 = ___collection$1.length;
 
 var ___prevKey$1,

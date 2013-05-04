@@ -12,11 +12,19 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         }
     }
     
+    method.memberAccessible = function() {
+        return false;
+    };
+    
+    method.toStringQuoted = function() {
+        return '"' +this.num+ '"';
+    };
+    
     method.checkValidForFunctionCall = function() {
         this.raiseError("Cannot call number as a function");
     };
     
-    method.getStaticType = function() {
+    method.getStaticCoercionType = function() {
         return "number";
     };
     

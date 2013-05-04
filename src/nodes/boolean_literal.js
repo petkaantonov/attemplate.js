@@ -7,14 +7,23 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
     function BooleanLiteral( truefalse ) {
         _super.constructor.apply(this, arguments);
         this.value = truefalse === "true" ? true : truefalse === "false" ? false : !!truefalse;
+        this.parens = false;
     }
 
     method.checkValidForFunctionCall = function() {
         this.raiseError("Cannot call boolean as a function");
     };
     
-    method.getStaticType = function() {
-        return "boolean";
+    method.memberAccessible = function() {
+        return false;
+    };
+    
+    method.toStringQuoted = function() {
+        return '"' +this.value+ '"';
+    };
+    
+    method.getStaticCoercionType = function() {
+        return "number";
     };
     
     method.truthy = function() {

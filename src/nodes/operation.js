@@ -27,14 +27,17 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
             this.opStr = "!==";
         }
         if( (this.isUnary && this.op1.isStatic()) ||
-            (!this.isTernary && this.op1.isStatic() && this.op2.isStatic())
+            (!this.isTernary && this.op1.isStatic() && this.op2.isStatic()) ||
+            this.isTernary && this.opStr.isStatic() && this.op1.isStatic() && this.op2.isStatic()
             ) {
             this.setStatic();
         }
+        this.cachedStaticResult = null;
     }
         
     method.setStatic = function() {
         this.static = true;
+        this.parens = false;
     };
     
     method.isStatic = function() {
@@ -51,6 +54,10 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         
     method.toString = function() {
         var ret;
+        
+        if( this.isStatic() ) {
+            return this.getStaticResolvedOp().toString();
+        }
       
         if( this.isTernary ) {
             var condition = isBooleanOp(this.opStr) ? this.opStr.toString() : boolOp(this.opStr);
@@ -95,25 +102,55 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
                 ret = this.op1.toString() + this.opStr + this.op2.toString();
             }
         }
-        
-        if( this.isStatic() ) {
-            ret = this.resolveStaticOperation( ret );
-        }
-        
+                
         return this.parens ? '(' + ret + ')' : ret;
         
     };
-    
-    method.getStaticType = function() {
-        if( !this.isStatic() ) {
-            throw new Error("Cannot call getStaticType on non-static member expression");
+ 
+    method.getStaticResolvedOp = function() {
+        if( this.cachedStaticResult ) {
+            return this.cachedStaticResult;
         }
-        return this.resolveStaticOperation(this.op1.toString() + this.opStr + this.op2.toString()).getStaticType();
+        if( this.isUnary ) {
+            return (this.cachedStaticResult = this.resolveStaticOperation(this.opStr.toString() + this.op1.toString()));
+        }
+        else if( this.isTernary ) {             //No need to toString anything
+            return (this.cachedStaticResult = this.resolveStaticOperation());
+        }
+        else {
+            return (this.cachedStaticResult = this.resolveStaticOperation(this.op1.toString() + this.opStr + this.op2.toString()));
+        }
+        
+    };
+
+    method.toStringQuoted = function() {
+        return this.getStaticResolvedOp().toStringQuoted();
+    };
+    
+    method.memberAccessible = function() {
+        return this.getStaticResolvedOp().memberAccessible();
+    };
+    
+    method.getStaticCoercionType = function() {
+        if( !this.isStatic() ) {
+            throw new Error("Cannot call getStaticCoercionType on non-static operation");
+        }
+        return this.getStaticResolvedOp().getStaticCoercionType();
         
     };
     
     method.resolveStaticOperation = function( op ) {
-        if( this.opStr === "&&" ) {
+        
+        if( this.isTernary ) {
+            if( this.opStr.truthy() ) {
+                return this.op1;
+            }
+            else {
+                return this.op2;
+            }
+        }
+        
+        else if( this.opStr === "&&" ) {
             if( !this.op1.truthy() ) {
                 return this.op1;
             }
@@ -129,7 +166,9 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
                 return this.op2;
             }
         }
+        //TODO don't cheap out like this
         op = new Function("return " +op)();
+        
         switch( this.opStr ) {
             case "<":
             case ">":
@@ -150,13 +189,16 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
                 if( this.isUnary ) {//Evaluation always returns a number 
                     op = new NumericLiteral(op);
                 }//Evaluation always returns a string 
-                else if( (this.op1.getStaticType() === "string" ) || 
-                    (this.op2.getStaticType() === "string" ) ) {
+                else if( (this.op1.getStaticCoercionType() === "string" ) || 
+                    (this.op2.getStaticCoercionType() === "string" ) ) {
                     op = StringLiteral.fromRaw(op);
                 }
                 else {//Evaluation always returns a number 
                     op = new NumericLiteral(op); 
                 }
+                break;
+            case "!":
+                   op = new BooleanLiteral(op);
                 break;
         }
         return op;

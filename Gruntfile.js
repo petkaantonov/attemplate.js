@@ -7,8 +7,7 @@ function stringifyClosureBody( code ) {
 
 module.exports = function( grunt ) {
 
-
-    grunt.initConfig({
+    var gruntConfig = {
         pkg: grunt.file.readJSON("package.json"),
     
         build: {
@@ -30,6 +29,7 @@ module.exports = function( grunt ) {
                 "./src/nodes/array_literal.js",
                 "./src/nodes/boolean_literal.js",
                 "./src/nodes/numeric_literal.js",
+                "./src/nodes/this_literal.js",
                 "./src/nodes/null_literal.js",
                 "./src/nodes/named_argument.js",
                 "./src/nodes/range.js",
@@ -59,7 +59,20 @@ module.exports = function( grunt ) {
             separator: '\n'
             
         }
-    });
+    };
+    
+    gruntConfig.watch = {
+        scripts: {
+            files: ["./src/*", "./src/nodes/*"],
+            tasks: ['build', 'runtimeCode'],
+            options: {
+              interrupt: true,
+              debounceDelay: 2500
+            }
+        }
+    };
+
+    grunt.initConfig(gruntConfig);
     
     var version = grunt.config("pkg.version");
 
@@ -100,5 +113,6 @@ module.exports = function( grunt ) {
             
     });
     
-    grunt.registerTask( "default", ["build", "runtimeCode"] );    
+    grunt.registerTask( "default", ["build", "runtimeCode"] );
+    grunt.loadNpmTasks('grunt-contrib-watch');
 };

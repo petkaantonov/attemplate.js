@@ -1,7 +1,4 @@
 var compiledTemplates = {};
-
-
-
 function trimRight( str ) {
     return str.replace(/\s\s*$/, "");
 }
@@ -46,9 +43,7 @@ var input,
     exported = {},
 
     /* constants / helpers */
-
-    __push = [].push,
-
+    
     doubleQuote = '"',
     singleQuote = "'",
     escapeChar = "\\",
@@ -69,31 +64,6 @@ var input,
     
     ATTR_CLOSE = 11,
 
-    mapType = {
-
-        "0" : "EXPRESSION",
-        "1" : "LITERAL_BLOCK",
-        "2" : "END_OF_INPUT",
-        "3" : "STRING",
-        "4" : "KEYWORD_BLOCK_OPEN",
-        "5" : "KEYWORD_BLOCK_CLOSE"
-
-    },
-
-    mapSpecial = {
-        "8" : "SHORT_EXPRESSION",
-        "9" : "LONG_EXPRESSION",
-        "do": "DO BLOCK",
-        "for": "FOR BLOCK",
-        "while": "WHILE BLOCK",
-        "if": "IF BLOCK",
-        "else": "ELSE BLOCK",
-        "helper": "HELPER BLOCK",
-        "foreach": "FOREACH BLOCK"
-    },
-
-
-
     rescapekeyword = /^(raw):/,
     rlineterminator = /[\n\r\u2028\u2029]+/g,
     rwhitespace = /\s/,
@@ -104,11 +74,11 @@ var input,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
-    rkeyword = /^(?:this|false|true|null|eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,    
-    rillegal= /^(?:Function|String|Boolean|Number|Array|Object)$/,
+    rkeyword = /^(?:undefined|NaN|Infinity|this|false|true|null|eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
     rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
-    rinvalidref = /^(?:null|false|true|this)$/,    
+    rinvalidref = /^(?:null|false|true|this)$/,
+    rinvalidprop = /^"(?:charAt|charCodeAt|__proto__|prototype|getPrototypeOf|call|apply|constructor|__defineGetter__|__defineSetter__|__lookupGetter__|__lookupSetter__|valueOf|toString)"$/,
     rfalsetrue = /^(?:false|true)$/,
     rtripleunderscore = /^___/,
     rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/,
@@ -297,7 +267,11 @@ function getLineAndColumnByInputIndex( index ) {
 
 function doError( msg, currentIndex ) {
     var info = getLineAndColumnByInputIndex( currentIndex );
-    throw new Error( msg + " On line " + info.lineNumber  + ", column " + (info.column) +": " + info.line );
+    var e = new Error( msg + " On line " + info.lineNumber  + ", column " + (info.column) +": " + info.line );
+    e.lineNumber = info.lineNumber;
+    e.column = info.column;
+    e.line = info.line;
+    throw e;
 }
 
 //TODO use a parser for this too ?
@@ -649,14 +623,14 @@ function consumeTemplateExpression() {
 
         if( character === "{" ) {
             var ret = parseBlock();
-            if( rwhitespaceonly.test(ret) ) {
+            if( !ret || rwhitespaceonly.test(ret) ) {
                 return [STRING, "@{"+ret+"}", null, null, originalIndex - 1];
             }
             return [BLOCK, ret, null, null, originalIndex + 1]; // @{ literal code block  }
         }
         else if( character === "(" ) {
             var ret = parseExpression();
-            if( rwhitespaceonly.test(ret) ) {
+            if( !ret || rwhitespaceonly.test(ret) ) {
                 return [STRING, "@("+ret+")", null, null, originalIndex - 1];
             }
             return [EXPRESSION, ret, LONG_EXPRESSION, escapeFn, originalIndex + 1]; // @( expression code result pushed to output )

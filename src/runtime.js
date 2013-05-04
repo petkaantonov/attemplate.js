@@ -146,7 +146,7 @@ var Runtime = (function() {
                         return args? method.apply(obj, args): method.call(obj);
                     }
                     catch(e) {
-                        return null;
+                        return e.toString() + ("stack" in e ? e.stack : "");
                     }
                 }
                 else {
@@ -164,7 +164,7 @@ var Runtime = (function() {
                     return args? method.apply(obj, args): method.call(obj);
                 }
                 catch(e) {
-                    return null;
+                    return e.toString() + ("stack" in e ? e.stack : "");
                 }
             }
         };
@@ -180,7 +180,7 @@ var Runtime = (function() {
                 return ret;
             }
             catch(e) {
-                return null;
+                return e.toString()  + ("stack" in e ? e.stack : "");;
             }
         }
         return null;
@@ -373,7 +373,7 @@ var Runtime = (function() {
             };
 
         var escapeForNothing = function( str ) {
-                return str == null ? "" : ("" + str);
+                return !str && str !== 0 ? "" : ("" + str);
             },
             
             escapeForAttrName = function( str ) {
@@ -480,8 +480,8 @@ var Runtime = (function() {
                 return string.string;
             }
         
-            if( !passAsIs && (string == null || typeof string === FUNCTION) ) {
-                return escapeFn === 8 ? "#" : "";
+            if( !passAsIs && (!string && string !== 0 || typeof string === FUNCTION) ) {
+                return escapeFn === URI ? "#" : "";
             }
 
             return escapes[escapeFn](string);

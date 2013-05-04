@@ -6,27 +6,38 @@ var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
     
     function NullLiteral() {
         _super.constructor.apply(this, arguments);
+        this.parens = false;
     }
-    
+
     method.checkValidForFunctionCall = function() {
         this.raiseError("Cannot call null as a function");
     };
     
-    method.getStaticType = function() {
-        return "null";
+    method.getStaticCoercionType = function() {
+        return "number";
     };
     
     method.truthy = function() {
         return false;
     };
     
+    method.memberAccessible = function() {
+        return false;
+    };
+    
     method.isStatic = function() {
         return true;
+    };
+
+    method.toStringQuoted = function() {
+        return '"null"';
     };
     
     method.toString = function() {
         return "null";
     };
+    
+    NullLiteral.INSTANCE = new NullLiteral();
     
     return NullLiteral;
 })();

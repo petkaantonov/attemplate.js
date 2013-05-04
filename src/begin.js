@@ -39,11 +39,8 @@
             token = this.yy.delimiter;
             if( !token ) token = "EOF";
         }
-        else if( hash.token === "UNEXPECTED" ) {
-            token = hash.text;
-        }
         else {
-            token = hash.token;
+            token = hash.text;
         }
         doError("Unexpected token '"+token+"'.", index);
     };

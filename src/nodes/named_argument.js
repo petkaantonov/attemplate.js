@@ -7,13 +7,31 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
     function NamedArgument( name, expr) {
         _super.constructor.apply(this, arguments);
         this.name = name;
-        this.expr = expr;
+        this.expr = expr;        
     }
     
+    method.checkValidForFunctionCall = function() {
+        
+    };
+    
+    method.getValue = function() {
+        return this.expr;
+    };
+    
+    method.toStringQuoted = function() {
+        return this.toString();
+    };
+    
+    method.getNameQuoted = function() {
+        return this.name.toStringQuoted();
+    };
+   
+    method.isStatic = function() {
+        return this.expr.isStatic && this.expr.isStatic();
+    };
+        
     method.toString = function() {
-        return ( typeof this.name === "string" ? 
-            '"' + this.name + '"' : 
-            this.name.toString() ) + ": " + this.expr.toString();
+        return this.name.toStringQuoted() + ": " + this.expr.toString();
     };
     
     return NamedArgument;

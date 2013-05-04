@@ -8,12 +8,85 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         _super.constructor.apply(this, arguments);
         this.expr = expr;
         this.args = args || [];
-        
+        this.static = false;
+        this.isMap = false;
         this.checkSpecials(); //Handle special function calls
     }
+
+    method.checkValidForFunctionCall = function() {
+        if( this.isMap ) {
+            this.raiseError("Cannot call map as a function");
+        }
+    };
     
+    method.accessMapStatically = function( member ) {
+        if( !this.isMap ) {
+            throw new Error("Cannot do static map access on non-map");
+        }
+        var name = member.toStringQuoted(),
+            arg,
+            j = 0;
+        
+        for( var i = 0; i < this.args.length; ++i ) {
+            arg = this.args[i];
+            if( arg instanceof NamedArgument ) {
+                if( arg.getNameQuoted() !== name ) {
+                    continue;
+                }
+                if( !arg.isStatic() ) {
+                    throw new Error("Cannot do static map access on non-static key.");
+                }
+                return arg.getValue();
+            }
+            else {
+                if( name === '"' + j + '"') {
+                    if( !arg.isStatic() ) {
+                        throw new Error("Cannot do static map access on non-static key.");
+                    }
+                    return arg.getValue();
+                }
+                j++;
+            }
+        }
+        //Undefined is not supported
+        return NullLiteral.INSTANCE;
+    };
+    //Determine if $(...).prop is a static access
+    method.isStaticMapAccess = function( member ) {
+        if( !this.isMap ) {
+            throw new Error("Cannot do static map access on non-map");
+        }
+        var name = member.toStringQuoted(),
+            arg,
+            j = 0;
+                    
+        for( var i = 0; i < this.args.length; ++i ) {
+            arg = this.args[i];
+            
+            if( arg instanceof NamedArgument ) {
+                if( arg.getNameQuoted() !== name ) {
+                    continue;
+                }
+                return arg.isStatic();
+            }
+            else {
+                if( name === '"' + j + '"') {
+                    return arg.isStatic();
+                }
+                j++;
+            }
+        }
+        //The member is static and does not exist in map for sure, so it's going to
+        //result in undefined
+        return true;
+    };
+
     method.isStatic = function() {
-        return false;
+        return this.static;
+    };
+        
+    method.setStatic = function() {
+        this.static = true;
     };
     
     //Inline a map
@@ -22,12 +95,15 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
     }
     
     method.checkSpecials = function() {
+        var expr = this.expr;
         //Convert a call like $(asd: daa, dasd: daa) into a {'asd': daa, 'dasd': daa} object literal
-        if( this.expr.identifier === "$" &&
-            this.expr.isPureReference()
+        if( expr.identifier instanceof Identifier &&
+            expr.identifier.toString() === "$" &&
+            expr.isPureReference()
         ) {
-            this.expr.removeFromDeclaration();
+            expr.removeFromDeclaration();
             this.toString = toStringMapSpecial;
+            this.isMap = true;
         }
         
     }
@@ -69,6 +145,9 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
             
             return normalArgs;
         }
+        else if( forceNamed ) {
+            return ["{}"];
+        }
         return [];
     };
     
@@ -79,26 +158,26 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         
         if( this.expr instanceof CallExpression ) {
             if( ret.length ) {
-                return '___method('+this.expr.fn+', '+this.expr.member+', ['+ret.join(", ") + '])';
+                return '___method('+this.expr.fn+', '+this.expr.member.toStringQuoted()+', ['+ret.join(", ") + '])';
             }
             else {
-                return '___method('+this.expr.fn+', '+this.expr.member+')';
+                return '___method('+this.expr.fn+', '+this.expr.member.toStringQuoted()+')';
             } 
         }
 
         if( (last = ( this.expr.getLast && this.expr.getLast() ) ) ) {
             if( ret.length ) {
-                return '___method('+this.expr.toStringNoLast()+', '+last.toString()+', ['+ret.join(", ") + '])';
+                return '___method('+this.expr.toStringNoLast()+', '+last.toStringQuoted()+', ['+ret.join(", ") + '])';
             }
             else {
-                return '___method('+this.expr.toStringNoLast()+', '+last.toString()+')';
+                return '___method('+this.expr.toStringNoLast()+', '+last.toStringQuoted()+')';
             }
         }
         else {
             this.expr.checkValidForFunctionCall();
-            var expr = this.expr.toString();
+
         }
-        
+        var expr = this.expr.toStringQuoted();
         
         if( ret.length ) {
             return '___functionCall(this, '+expr+', ['+ret.join(", ") + '])';
@@ -108,6 +187,10 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         }
 
         
+    };
+    
+    method.toStringQuoted = function() {
+        return this.toString();
     };
     
     return FunctionCall;

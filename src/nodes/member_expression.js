@@ -15,19 +15,104 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         
     function MemberExpression( members ) {
         _super.constructor.apply(this, arguments);
-        this.members = members.slice(1) || [];
         this.identifier = members[0];
-        this.static = false;
+        this.members = members.slice(1) || [];
         this.referenceMode = MemberExpression.referenceMode.NONE;
+        this.init();
+    }
     
-        if( this.members.length === 0 && this.identifier.isStatic && this.identifier.isStatic()) {
-            this.setStatic();
+    method.init = function() {        
+        this.static = false;
+        this.parens = false;
+
+        if( this.identifier instanceof ArrayLiteral ) {
+            this.checkArrayAccessStaticness();
+        }
+        else if( this.identifier.isStatic()) {
+            this.checkMemberStaticness();
         }
         else if( this.identifier instanceof Identifier ) {
             this.identifier.checkValid();
             MemberExpression.identifiers[this.identifier] = this;
         }
-    }
+    };
+    
+    method.getNormalizedAccessIdentifier = function() {
+        return this.identifier.toStringQuoted();
+    };
+    
+    method.checkArrayAccessStaticness = function() {
+        var members = this.members,
+            id = this.identifier,
+            staticResult,
+            len = members.length;
+            
+            //If the expression is just a sole array, then
+            //it is static if the full array is static
+        if( len === 0 && id.isStatic() ) {
+            this.setStatic();
+        }
+        else if( members[0].isStatic( true ) && ( staticResult = id.accessArrayStatically( members[0] ) ) ) {
+            this.identifier = staticResult;
+            if( len === 1 ) {
+                this.members = [];
+                this.setStatic();
+            }   //Have Further accesses
+            else if( !staticResult.memberAccessible() ) {
+                //Further access would result in undefined or error
+                this.identifier = NullLiteral.INSTANCE;
+                this.members = [];
+                this.setStatic();
+            }
+            else { //Propagate
+                this.members.shift();
+                this.init();
+            }     
+        }        
+    };
+    
+    method.checkMemberStaticness = function() {
+        var members = this.members,
+            member,
+            id = this.identifier,
+            len = members.length;
+            
+        if( !len ) {
+            this.setStatic();
+        }
+        else {
+            member = members[0];
+
+            if( !member.isStatic( true ) ) {
+                return;
+            }
+
+            if( !id.memberAccessible() ) {
+                this.identifier = NullLiteral.INSTANCE;
+                this.members = [];
+                this.setStatic();
+            }   
+            else { //The only static thing accessible by now is a string literal or an operation resulting in a string
+                var staticResult;
+                
+                if( id instanceof Operation ) {
+                    staticResult = this.identifier = id.getStaticResolvedOp().accessStringStatically(member);
+                }
+                else {
+                    staticResult = this.identifier = id.accessStringStatically(member);
+                }
+                
+                if( len === 1 ) {
+                    this.members = [];
+                    this.setStatic();
+                }
+                else {
+                    this.members.shift();
+                    this.init();
+                }
+            }
+        }
+    };
     
     method.boolify = function() {
         return this.identifier.boolify ? this.identifier.boolify() : Operation.boolify( this );
@@ -40,12 +125,12 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         this.referenceMode = mode;
     };
     
-    method.getStaticType = function() {
+    method.getStaticCoercionType = function() {
         if( !this.isStatic() ) {
-            throw new Error("Cannot call getStaticType on non-static member expression");
+            throw new Error("Cannot call getStaticCoercionType on non-static member expression");
         }
         
-        return this.identifier.getStaticType();
+        return this.identifier.getStaticCoercionType();
     };
     
     method.getIdentifier = function() {
@@ -65,6 +150,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     
     method.setStatic = function() {
         this.static = true;
+        this.parens = false;
     };
     
     method.isPureNumber = function() {
@@ -101,10 +187,14 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         return this.members[this.members.length-1];
     };
     
+
+    
         //Get everything in the member chain except the last
     method.toStringNoLast = function() {
         var preamble = this.getPreamble(),
-            postamble = this.getPostamble();
+            postamble = this.getPostamble(),
+            quotedMember;
+            
         if( this.members.length < 2 ) {
             return preamble + this.identifier.toString() + postamble;
         }
@@ -115,10 +205,17 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             }
             ret.push("("+this.identifier + ") || {})");
             for( var i = 0; i < this.members.length - 2; ++i ) {
-
-                ret.push( "[" + this.members[i].toString() + "] || {})" );
+                quotedMember = this.members[i].toStringQuoted();
+                if( rinvalidprop.test(quotedMember) ) {
+                    this.members[i].raiseError("Illegal property access: "+quotedMember);
+                }
+                ret.push( "[" + quotedMember + "] || {})" );
             }
-            ret.push( "[" + this.members[i].toString() + "]" );
+            quotedMember = this.members[i].toStringQuoted();
+            if( rinvalidprop.test(quotedMember) ) {
+                this.members[i].raiseError("Illegal property access: "+quotedMember);
+            }
+            ret.push( "[" + quotedMember + "]" );
             return ret.join("") + postamble;
         }
     };
@@ -152,6 +249,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     
     method.toString = function() {
         var preamble = this.getPreamble(),
+            quotedMember,
             postamble = this.getPostamble();
                     
         if( this.members.length ) {
@@ -161,14 +259,29 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             }
             ret.push("(" + this.identifier + ") || {})");
             for( var i = 0; i < this.members.length - 1; ++i ) {
-                ret.push( "[" + this.members[i].toString() + "] || {})" );
+                quotedMember = this.members[i].toStringQuoted();
+                if( rinvalidprop.test(quotedMember) ) {
+                    this.members[i].raiseError("Illegal property access: "+quotedMember);
+                }
+                ret.push( "[" + quotedMember + "] || {})" );
             }
-            ret.push( "[" + this.members[i].toString() + "]" );
+            quotedMember = this.members[i].toStringQuoted();
+            if( rinvalidprop.test(quotedMember) ) {
+                this.members[i].raiseError("Illegal property access: "+quotedMember);
+            }
+            ret.push( "[" + quotedMember + "]" );
             return (this.parens ? '(' + ret.join("") + ')' : ret.join("")) + postamble;
         }
         else {
             return preamble + (this.parens ? '(' + this.identifier + ')' : this.identifier + "")  + postamble;
         }
+    };
+
+    method.toStringQuoted = function() {
+        if( this.static ) {
+            return this.identifier.toStringQuoted();
+        }
+        return this.toString();
     };
     
     return MemberExpression;

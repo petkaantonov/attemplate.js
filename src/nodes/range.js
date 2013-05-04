@@ -25,14 +25,11 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
     method.checkExpr = function() {
         var minExpr = this.minExpr,
             maxExpr = this.maxExpr,
-            stepExpr = this.stepExpr,
-            type;
-        
-        
-        
+            stepExpr = this.stepExpr;
+
         if( minExpr.isStatic() ) {
-            if( (type = minExpr.getStaticType() ) !== "number" ) {
-                minExpr.raiseError("Range cannot start from a " + type );
+            if( !(minExpr.getIdentifier() instanceof NumericLiteral) ) {
+                minExpr.raiseError("Range can only start from a number type." );
             }
             minExpr = +minExpr.toString();
 
@@ -42,8 +39,8 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
         }
   
         if( maxExpr.isStatic() ) {
-            if( (type = maxExpr.getStaticType() ) !== "number" ) {
-                maxExpr.raiseError("Range cannot end to a " + type );
+            if( !(maxExpr.getIdentifier() instanceof NumericLiteral) ) {
+                maxExpr.raiseError("Range only end to a number type.");
             }
             maxExpr = +maxExpr.toString();
         }
@@ -55,8 +52,8 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
             stepExpr = 1;
         }
         else if( stepExpr.isStatic() ) {
-            if( (type = stepExpr.getStaticType() ) !== "number" ) {
-                stepExpr.raiseError("Range step cannot be a " + type );
+            if( !(stepExpr.getIdentifier() instanceof NumericLiteral) ) {
+                stepExpr.raiseError("Range step can only be a number type." );
             }
             stepExpr = +stepExpr.toString();
         }
