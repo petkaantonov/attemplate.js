@@ -20,7 +20,6 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
             }
         };
     
-    //TODO check where this is launched from
     function StringLiteral( str, nointerpret ) {
         _super.constructor.apply(this, arguments);
         this.str = nointerpret ? str : this.interpretString(str);
@@ -28,8 +27,8 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
     }
     //Interpret strings that have been passed directly from source
     method.interpretString = function( str ) {
-        var i = 1,
-            l = str.length - 1,
+        var i = 1, //The source string literal includes quotes so start at 1
+            l = str.length - 1, //and end 1 sooner...
             ret = "",
             quote = str.charAt(0),
             escaping = false;

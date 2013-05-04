@@ -157,20 +157,28 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
             context = 'this';
         
         if( this.expr instanceof CallExpression ) {
+            var memberQuoted = this.expr.member.toStringQuoted();
+            if( rinvalidprop.test(memberQuoted)) {
+                this.expr.member.raiseError( "Illegal method call "+memberQuoted+"." );
+            }
             if( ret.length ) {
-                return '___method('+this.expr.fn+', '+this.expr.member.toStringQuoted()+', ['+ret.join(", ") + '])';
+                return '___method('+this.expr.fn+', '+memberQuoted+', ['+ret.join(", ") + '])';
             }
             else {
-                return '___method('+this.expr.fn+', '+this.expr.member.toStringQuoted()+')';
+                return '___method('+this.expr.fn+', '+memberQuoted+')';
             } 
         }
 
         if( (last = ( this.expr.getLast && this.expr.getLast() ) ) ) {
+            var memberQuoted = last.toStringQuoted();
+            if( rinvalidprop.test(memberQuoted)) {
+                last.raiseError( "Illegal method call "+memberQuoted+"." );
+            }
             if( ret.length ) {
-                return '___method('+this.expr.toStringNoLast()+', '+last.toStringQuoted()+', ['+ret.join(", ") + '])';
+                return '___method('+this.expr.toStringNoLast()+', '+memberQuoted+', ['+ret.join(", ") + '])';
             }
             else {
-                return '___method('+this.expr.toStringNoLast()+', '+last.toStringQuoted()+')';
+                return '___method('+this.expr.toStringNoLast()+', '+memberQuoted+')';
             }
         }
         else {
@@ -178,7 +186,10 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
 
         }
         var expr = this.expr.toStringQuoted();
-        
+  
+        if( rinvalidprop.test(expr)) {
+            this.expr.raiseError( "Illegal function call "+expr +"." );
+        }
         if( ret.length ) {
             return '___functionCall(this, '+expr+', ['+ret.join(", ") + '])';
         }
