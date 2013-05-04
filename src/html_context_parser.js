@@ -34,7 +34,7 @@ var HtmlContextParser = (function() {
         NO_ESCAPE: {name: 0}, //Special flag for when escaping is not applied
         
         
-        HTML: {name: 1}, //Dynamic data inside non-special html tags. The initial context
+        HTML: {name: 1}, //Dynamic data inside non-special html tags or outside any tags at all. The initial context.
                         //e.g <div>Hello, @data</div>
                         
                         //Probably 80-90% of dynamic data insertion cases
@@ -64,7 +64,12 @@ var HtmlContextParser = (function() {
         
         
         SCRIPT: {name: 32}, //Arbitrary placement of dynamic data when inside a script tag. 
-                            //e.g. <script>@data</script>. this can actually be secured for without sacrificing valid use cases
+                            //e.g. <script>@data</script>. this can actually be secured for without sacrificing most use cases with a ridiculously simple implementation. 
+                            
+                            //Unsupported use case is where one wants to inject exectuble script code from dynamic data.
+                            //e.g. @data = "function(){alert('hello');}"
+                            
+                            //<script>@data</script> cannot be supported in the "expected" way.
         
         
         SCRIPT_IN_ATTR: {name: 64}, //Placement of dynamic data when inside a html attribute that gets interpreted as a script
@@ -84,7 +89,7 @@ var HtmlContextParser = (function() {
         
         SCRIPT_IN_URI_PARAM_ATTR: {name: 512} //Placement of dynamic data when inside a html attribute that gets interpreted
                                             //as an URI where javascript: is statically placed so the data
-                                            //gets interpreted as javascript. Or in other words, the decode stack goes ATTR -> URI -> JAVASCRIPT
+                                            //gets interpreted as javascript. The decode stack goes 3 levels deep: ATTR -> URI -> JAVASCRIPT
                                             //e.g. <a href="javascript: alert(@data);">
                                             //Sometimes used as an alternative for the just as bad onclick=""
     };
@@ -111,17 +116,21 @@ var HtmlContextParser = (function() {
 
     var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
     var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
-    var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName> or --> in case of a comment
+    var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
     
     function HtmlContextParser() {
         this.context = context.HTML;
-        this.tagStack = [];
-        this.openedTag = null;
-        this.currentAttr = null;
+        this.tagStack = []; //Stack of tag names to pop when one gets closed
         
-        this.dynamicAttr = null;
+        this.openedTag = null; //The tag name that is currently open or null. 
+                               //Open, as in the tag declaration is open: '<div open-here'
+                               //'>' would close the tag in this sense and put it on the tagStack.
+                               
+        this.currentAttr = null; //The attribute name that is currently open, requires a tag to be opened
+        this.currentAttrQuote = null; //The quote type that opened the current attribute, and therefore closed it
         
-        this.currentAttrQuote = null; //The quote type that closes the attribute
+        
+        this.dynamicAttr = null; //The current dynamic attribute or null. Similar to currentAttr but is special.
         
         //Special url context in the case <meta http-equiv="refresh" content="0; URL=javascript:">
         this.inMetaRefresh = false;
@@ -132,10 +141,12 @@ var HtmlContextParser = (function() {
         //While in script, style, textarea or title tag, context doesn't change until it is closed
         this.inCharData = false;
         
-        this.currentIndex = 0;
+        
+        //Index wizardry For error reporting
+        this.currentIndex = 0; 
         this.lastLength = 0;
         
-        //For stack
+        //For parser stack when juggling between sections that are considered completely independent of each other
         this.prev = null;
     };
     
@@ -143,6 +154,14 @@ var HtmlContextParser = (function() {
         var ret = new HtmlContextParser();
         ret.prev = this;
         return ret;
+    };
+    
+    method.popStack = function() {
+        this.close();
+        if( !this.prev ) {
+            return this;
+        }
+        return this.prev;
     };
     
     method.clone = function() {
@@ -155,13 +174,7 @@ var HtmlContextParser = (function() {
         return ret;
     };
     
-    method.popStack = function() {
-        this.close();
-        if( !this.prev ) {
-            return this;
-        }
-        return this.prev;
-    };
+
     
     //Needed to escape attributes with dynamic keys
     method.isWaitingForAttr = function() {
@@ -178,6 +191,7 @@ var HtmlContextParser = (function() {
         return this.tagStack[this.tagStack.length-1] || null;
     };
 
+    //Not the formal term, tests for script|style|textarea|title|--
     method.isCharData = function( tagName ) {
         return charData.test( tagName );
     };
@@ -212,6 +226,7 @@ var HtmlContextParser = (function() {
 
     method.tagOpenStart = function( tagName ) {
         if( this.inCharData || this.currentAttr ) return;
+        
         if( this.openedTag ) {
             doError("Cannot open '<"+tagName+">', '<"+this.openedTag+">' is waiting for closing or more attributes.", this.getIndex() );
         }

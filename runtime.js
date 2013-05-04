@@ -347,7 +347,7 @@
         
             rattrencode = /['"&]/g,
             
-            rjsencode = /[\u0000-\u001F\u007f-\u00A0\u2028\u2029&<>'"\\\/]+/g,
+            rjsencode = /[\u0000-\u001F\u007f-\u00A0\u2028\u2029&<>'"\\\/\]\[]+/g,
             
             rcssencode = /[^._,!#%\-a-zA-Z0-9\u00A1-\uFFFF]+/g,
 
