@@ -2,7 +2,7 @@ var HtmlContextParser = (function() {
 
     //Broken or unimplemented    
     //TAG_NAME
-    //CSS_QUOTED_URI in style tag
+    //CSS_QUOTED_URI in style tag 
     //CSS_UNQUOTED_URI in style tag
     //CSS_QUOTED_URI in style attr
     //CSS_UNQUOTED URI in style attr
@@ -117,6 +117,24 @@ var HtmlContextParser = (function() {
     var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
     var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
     var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
+
+    method.clone = function() {
+        var ret = new HtmlContextParser();
+        ret.context = this.context;
+        ret.tagStack = this.tagStack;
+        ret.openedTag = this.openedTag;       
+        ret.currentAttr = this.currentAttr; 
+        ret.currentAttrQuote = this.currentAttrQuote;
+        ret.dynamicAttr = this.dynamicAttr; 
+        ret.inMetaRefresh = this.inMetaRefresh;
+        ret.inDataUrl = this.inDataUrl;
+        ret.inCharData = this.inCharData;
+        ret.currentIndex = this.currentIndex; 
+        ret.lastLength = this.lastLength;
+        ret.prev = this.prev;
+        ret.savedBranch = this.savedBranch;
+        return ret;
+    };
     
     function HtmlContextParser() {
         this.context = context.HTML;
@@ -148,6 +166,21 @@ var HtmlContextParser = (function() {
         
         //For parser stack when juggling between sections that are considered completely independent of each other
         this.prev = null;
+        //For parser stack for branches so that the html inside if doesn't affect the parallel else ifs / ifs
+        this.savedBranch = null;
+    };
+    
+    method.saveBranch = function() {
+        var ret = this.clone();
+        ret.savedBranch = this;
+        return ret;
+    };
+    
+    method.restoreBranch = function() {
+        if( !this.savedBranch ) {
+            return this;
+        }
+        return this.savedBranch;
     };
     
     method.pushStack = function() {
@@ -157,29 +190,19 @@ var HtmlContextParser = (function() {
     };
     
     method.popStack = function() {
-        this.close();
         if( !this.prev ) {
             return this;
         }
+        this.close();
         return this.prev;
     };
-    
-    method.clone = function() {
-        var ret = new HtmlContextParser();
-        for( var key in this ) {
-            if( this.hasOwnProperty(key) ) {
-                ret[key] = this[key];
-            }
-        }
-        return ret;
-    };
-    
-
     
     //Needed to escape attributes with dynamic keys
     method.isWaitingForAttr = function() {
         return !!(this.openedTag && !this.currentAttr);
     };
+    
+  
     
     method.dynamicAttribute = function( expr, quote ) {
         this.currentAttr = this.dynamicAttr = expr;

@@ -28,11 +28,10 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
 
         if( typeof escapeFn === "object" ) {
             //Dynamic attr
-            var dynamicAttr = escapeFn.toString();
-            return "___safeString__(" + this.expression.toString()+", null, "+dynamicAttr+")";
+            var escapeFn = escapeFn.toString();
         }
                 
-        return "___safeString__(" + this.expression.toString()+", "+escapeFn+")";
+        return "___safeString__(" + this.expression.toString()+", ___context || "+escapeFn+")";
     };
 
     

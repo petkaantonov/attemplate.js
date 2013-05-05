@@ -8,6 +8,10 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         _super.constructor.apply(this, arguments);
         this.statements = [];
     }
+    
+    method.isBranched = function() {
+            return false;
+    };
         
     method.push = function( statement ) {
         this.statements.push( statement );

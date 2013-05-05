@@ -766,6 +766,19 @@ function setScopeBlock() {
     }
 }
 
+function wasTopLevelBranchInScope() {
+    for( var l = blockStack.length-1; l >= 0; l-- ) {
+        if( blockStack[l] instanceof ScopedBlock ) { //Meeting the scope without having met a branch
+            return true;
+        }
+        if( blockStack[l].isBranched() ) { //Meeting a branch without having met the scope
+            return false;
+        }
+    }
+}
+
+
+
 function inLoopingConstruct() {
     for( var i = 0; i < blockStack.length; ++i ) {
         if( blockStack[i] instanceof ForeachBlock ) {
@@ -972,13 +985,23 @@ function parse( inp, compiledName ) {
                 var snippet = TemplateExpressionParser.parse(value, startIndex, ")");
 
                 switch( blockType ) {
-                    case "if": stackTop = new IfBlock( snippet.getExpression() ); break;
-                    case "else if": stackTop = new IfElseBlock( snippet.getExpression() ); break;
+                    case "if":
+                        stackTop = new IfBlock( snippet.getExpression() );
+                        
+                        break;
+                    case "else if":
+                        stackTop = new IfElseBlock( snippet.getExpression() );
+                        break;
                 }
                 
                 scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
                 blockStack.push( stackTop.setStartIndex( startIndex ) );
                 
+            }
+            
+            if( stackTop.isBranched() ) {
+                stackTop.push(ContextSwitch.DEFAULT);
+                htmlContextParser = htmlContextParser.saveBranch();
             }
         }
         else if( type === KEYWORD_BLOCK_CLOSE ) {
@@ -993,6 +1016,7 @@ function parse( inp, compiledName ) {
             stackTop = blockStack[stackLen-1];
             stackTop.push(block.setEndIndex( startIndex ) );
             
+            
             setScopeBlock();
             
             //Remove reference error guards from current scope for the vars that the block defines
@@ -1001,6 +1025,8 @@ function parse( inp, compiledName ) {
             }
             
             skipWhiteSpace(); //Skip whitespace after block
+            
+            
 
                                             //When closing a if|else if block, the next word could be another without @ prefix
             if( ( block instanceof IfBlock || block instanceof IfElseBlock ) && isNextWord( "else" ) ) {
@@ -1009,7 +1035,16 @@ function parse( inp, compiledName ) {
             }
             else if( block instanceof ScopedBlock ) {
                 htmlContextParser = htmlContextParser.popStack();
+            } //IfBlock or IfElseBlock without else or else if upcoming or an else block which cannot have any more upcoming branches
+            else if( block.isBranched() && wasTopLevelBranchInScope() ) {
+                stackTop.push(ContextSwitch.DEFAULT);
             }
+
+            if( block.isBranched() ) {
+                block.push(new ContextSwitch(htmlContextParser.getContext()));
+                htmlContextParser = htmlContextParser.restoreBranch();
+            }
+            
         }
         else if( type === STRING ) {
             var valueLastChar = value.charAt(value.length - 1 ),

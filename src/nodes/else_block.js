@@ -8,6 +8,10 @@ var ElseBlock = TemplateExpressionParser.yy.ElseBlock = (function() {
         _super.constructor.apply(this, arguments);
     }
     
+    method.isBranched = function() {
+        return true;
+    };
+    
     method.toString = function() {
         return this.getIndentStr() + "else {\n" + _super.toString.call( this ) + "\n"+this.getIndentStr()+"}\n";
     };

@@ -82,6 +82,7 @@ var $1 = (function() {
     function $2($3) {
         $4
         var ___html = '';
+        var ___context = 0;
 $5
         return new ___Safe(___html, $6);
     }

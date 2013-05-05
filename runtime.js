@@ -493,7 +493,7 @@
         
         var passedAsIs = SCRIPT | SCRIPT_IN_ATTR | SCRIPT_IN_URI_PARAM_ATTR | ATTR_NAME;
 
-        return function( string, escapeFn, attrName ) {
+        return function( string, escapeFn) {
             var passAsIs = (escapeFn & passedAsIs) > 0;
         
             if( !passAsIs && ___isArray( string ) ) {
@@ -517,8 +517,8 @@
                 }
             }
         
-            if( escapeFn == null && attrName ) {                
-                escapeFn = getAttrEscapeFunction( attrName );
+            if( typeof escapeFn == STRING ) {                
+                escapeFn = getAttrEscapeFunction( escapeFn );
                 return ___safeString__( string, escapeFn );                
             }
             

@@ -15,9 +15,11 @@ module.exports = function( grunt ) {
             src: [
                 "./src/begin.js",
                 "./src/runtime.js",
+                "./src/html_context_parser.js",
                 "./src/macros.js",
                 "./src/nodes/program_element.js",
                 "./src/nodes/identifier.js",
+                "./src/nodes/context_switch.js",
                 "./src/nodes/snippet.js",
                 "./src/nodes/output_expression.js",
                 "./src/nodes/combined_output_expression.js",
@@ -49,7 +51,7 @@ module.exports = function( grunt ) {
                 "./src/nodes/loop_statement.js",
                 "./src/nodes/boolean_attribute_expression.js",
                 
-                "./src/html_context_parser.js",
+                
                 "./src/closure_body.js",
                 "./src/template_parser.js",
                 "./src/end.js"
