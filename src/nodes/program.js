@@ -157,8 +157,7 @@ function $1() {
         throw new Error('No registered runtime');
     }
     ___self = this;
-    var ___context = 0;
-    var ___html = '';
+    var ___html = '', ___context = null, ___ref, ___ref2;
     $2
 $3
     return ___html;
@@ -181,8 +180,7 @@ return ret;
 $1
     function $2(___data) {
         ___data = ___data || {};
-        var ___context = 0;
-        var ___html = '';
+        var ___html = '', ___context = null, ___ref, ___ref2;
         $3
 $4
         return new ___Safe(___html, $5);

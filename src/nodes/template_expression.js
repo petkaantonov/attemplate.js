@@ -20,6 +20,10 @@ var TemplateExpression = TemplateExpressionParser.yy.TemplateExpression = (funct
     };
  
     method.getCode = function() {
+        if( this.isContextDeterminedAtRuntime() ) {
+            return "(___ref = ___safeString__("+this.expression.toString()+", ___context.getContext().name), ___context.write(___ref), ___ref)";
+        }
+
         var escapeFn = this.escapeFn ? this.escapeFn : this.contextEscapeFn;
 
         if( escapeFn.name ) {

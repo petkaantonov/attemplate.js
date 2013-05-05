@@ -6,7 +6,17 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
     
     function OutputExpression() {
         _super.constructor.apply(this, arguments);
+        this.runtimeContext = false;
     }
+    
+    method.setContextDeterminedAtRuntime = function() {
+        this.runtimeContext = true;
+        return this;
+    };
+    
+    method.isContextDeterminedAtRuntime = function() {
+        return this.runtimeContext;
+    };
 
     //Optimize consecutive output expressions into a concatenation statement
     method.performAnalysis = function( parent ) {

@@ -14,8 +14,15 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     };
 
     method.getCode = function() {
-                //Make it safe to embed in a javascript string literal
-       var ret = this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
+        //Make it safe to embed in a javascript string literal
+        
+        var ret = this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
+        
+        if( this.isContextDeterminedAtRuntime() ) {
+            return "(___ref = "'" + ret +"'", ___context.write(___ref), ___ref)";
+        }
+                
+       
        return "'" + ret +"'";
     };
         

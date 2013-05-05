@@ -21,3 +21,7 @@
  */
 ;(function(global) {
     "use strict";
+    
+    var doError = function() {
+    
+    };

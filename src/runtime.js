@@ -119,6 +119,10 @@ var Runtime = (function() {
         }
     })();
     
+    var ___ctx = method.contextParser = function() {
+        return new HtmlContextParser().disableErrors();
+    };
+    
     var ___ensureNumeric = method.ensureNumeric = function( obj ) {
         if( isFinite( obj ) ) {
             return +obj;
@@ -245,17 +249,17 @@ var Runtime = (function() {
     var ___safeString__ = method.safeString = (function() {
 
         
-        var NO_ESCAPE = 0,
-            HTML = 1,
-            ATTR = 2,
-            ATTR_NAME = 4,
-            URI = 8,
-            URI_PARAM = 16,
-            SCRIPT = 32,
-            SCRIPT_IN_ATTR = 64,
-            CSS = 128,
-            HTML_COMMENT = 256,
-            SCRIPT_IN_URI_PARAM_ATTR = 512,
+        var NO_ESCAPE = HtmlContextParser.context.NO_ESCAPE.name,
+            HTML = HtmlContextParser.context.HTML.name,
+            ATTR = HtmlContextParser.context.ATTR.name,
+            ATTR_NAME = HtmlContextParser.context.ATTR_NAME.name,
+            URI = HtmlContextParser.context.URI.name,
+            URI_PARAM = HtmlContextParser.context.URI_PARAM.name,
+            SCRIPT = HtmlContextParser.context.SCRIPT.name,
+            SCRIPT_IN_ATTR = HtmlContextParser.context.SCRIPT_IN_ATTR.name,
+            CSS = HtmlContextParser.context.CSS.name,
+            HTML_COMMENT = HtmlContextParser.context.HTML_COMMENT.name,
+            SCRIPT_IN_URI_PARAM_ATTR = HtmlContextParser.context.SCRIPT_IN_URI_PARAM_ATTR.name,
             escapes = {};
 
 

@@ -107,10 +107,11 @@ module.exports = function( grunt ) {
     
     grunt.registerTask( "runtimeCode", function() {
         var rtbegin = fs.readFileSync("./src/runtime_begin.js", "utf-8");
+        var htmlcontext = fs.readFileSync("./src/html_context_parser.js", "utf-8");
         var rt = fs.readFileSync("./src/runtime.js", "utf-8");
         var rtend = fs.readFileSync("./src/runtime_end.js", "utf-8");
        
-        var compiled = (rtbegin + rt + rtend).replace( /@VERSION/g, version );
+        var compiled = (rtbegin + htmlcontext + rt + rtend).replace( /@VERSION/g, version );
         fs.writeFileSync( './runtime.js', compiled, "utf-8" );
             
     });

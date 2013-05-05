@@ -111,7 +111,7 @@ var HtmlContextParser = (function() {
     
     
                    //tagopen         //attribute open             //closing tag           //tagclose                   //SCRIPT_IN_URI        //HTML comment end //URL-param characters    
-    var chunker = /(?:<!?([a-z0-9_:-]+)|([:a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/([a-z0-9:_-]+)\s*\/?\s*>|(\/?>)|(["'])|(javascript|data):|(refresh)|(dataurl)|(--)>|([:/?.]))/g; //toLowerCase() is called on the string
+    var chunker = /(?:<!?([a-z0-9_:-]+)|([:a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/([a-z0-9:_-]+)\s*\/?\s*>|(\/?>)|(["'])|(javascript|data):|(refresh)|(dataurl)|(--)>|([:/?.#]))/g; //toLowerCase() is called on the string
                                                                                                  //attrclose     //URI context special cases
 
     var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
@@ -121,7 +121,7 @@ var HtmlContextParser = (function() {
     method.clone = function() {
         var ret = new HtmlContextParser();
         ret.context = this.context;
-        ret.tagStack = this.tagStack;
+        ret.tagStack = this.tagStack.slice(0);
         ret.openedTag = this.openedTag;       
         ret.currentAttr = this.currentAttr; 
         ret.currentAttrQuote = this.currentAttrQuote;
@@ -133,6 +133,7 @@ var HtmlContextParser = (function() {
         ret.lastLength = this.lastLength;
         ret.prev = this.prev;
         ret.savedBranch = this.savedBranch;
+        ret.silentErrors = this.silentErrors;
         return ret;
     };
     
@@ -168,6 +169,12 @@ var HtmlContextParser = (function() {
         this.prev = null;
         //For parser stack for branches so that the html inside if doesn't affect the parallel else ifs / ifs
         this.savedBranch = null;
+        
+        this.silentErrors = false;
+    };
+    
+    method.reset = function() {
+        HtmlContextParser.call(this);
     };
     
     method.saveBranch = function() {
@@ -202,7 +209,15 @@ var HtmlContextParser = (function() {
         return !!(this.openedTag && !this.currentAttr);
     };
     
+    method.enableErrors = function() {
+        this.silentErrors = false;
+        return this;
+    };
   
+    method.disableErrors = function() {
+        this.silentErrors = true;
+        return this;
+    };
     
     method.dynamicAttribute = function( expr, quote ) {
         this.currentAttr = this.dynamicAttr = expr;
@@ -251,7 +266,10 @@ var HtmlContextParser = (function() {
         if( this.inCharData || this.currentAttr ) return;
         
         if( this.openedTag ) {
-            doError("Cannot open '<"+tagName+">', '<"+this.openedTag+">' is waiting for closing or more attributes.", this.getIndex() );
+            if( !this.silentErrors ) {
+                doError("Cannot open '<"+tagName+">', '<"+this.openedTag+">' is waiting for closing or more attributes.", this.getIndex() );
+            }
+            return;
         }
         if( tagName == "--" ) {
             this.inCharData = true;
@@ -290,6 +308,15 @@ var HtmlContextParser = (function() {
             this.tagStack.push(tagName);
         }
     };
+    
+    method.indexOfTagInStack = function( tagName) {
+        for( var l = this.tagStack.length - 1; l >= 0; l-- ) {
+            if( this.tagStack[l] === tagName ) {
+                return l;
+            }
+        }
+        return -1;
+    };
 
     method.tagClose = function( name ) {
         var equalsCurrent = this.currentTagName() === name;
@@ -299,7 +326,7 @@ var HtmlContextParser = (function() {
             this.context = context.HTML;
             this.inCharData = false;
         }
-        else if( this.inCharData || this.currentAttr ) {
+        else if(this.inCharData || this.currentAttr || this.openedTag) {
             return;
         }
         else if( equalsCurrent ) {
@@ -310,7 +337,16 @@ var HtmlContextParser = (function() {
             return;
         }
         else {
-            doError("Cannot close tag '<" + name + ">', the current tag is '<"+this.currentTagName()+">'.", this.getIndex() ); 
+            if( !this.silentErrors ) {
+                doError("Cannot close tag '<" + name + ">', the current tag is '<"+this.currentTagName()+">'.", this.getIndex() ); 
+            }
+            else {
+                var index = this.indexOfTagInStack( name );
+                if( index > -1 ) {
+                    this.tagStack = this.tagStack.slice(index);
+                    this.context = context.HTML;
+                }
+            }
         }
     };
 
@@ -320,7 +356,10 @@ var HtmlContextParser = (function() {
         }
 
         if( quoteType !== "'" && quoteType !== '"' ) {
-            doError( "Attribute '"+attrName+"' in tag '<"+this.openedTag+">' is not quoted.", this.getIndex() );
+            if( !this.silentErrors ) {
+                doError( "Attribute '"+attrName+"' in tag '<"+this.openedTag+">' is not quoted.", this.getIndex() );
+            }
+            return;
         }
         this.currentAttr = attrName;
         this.currentAttrQuote = quoteType;
@@ -385,6 +424,10 @@ var HtmlContextParser = (function() {
             this.inDataUrl = true;
         }
     };
+    
+    method.writeDynamic = function(){
+        //TODO 
+    };
 
     method.write = function( html, index ) {
         if( !html ) {
@@ -438,9 +481,11 @@ var HtmlContextParser = (function() {
     };
 
     method.close = function() {
-        if( this.currentAttr ) doError( "Attribute '"+this.currentAttr+"' in tag '<" + this.openedTag + ">' has not been closed.", this.getIndex() );
-        if( this.openedTag ) doError( "'<" + this.openedTag + ">' has not been closed.", this.getIndex() );
-        if( this.currentTagName() ) doError( "'<" + this.currentTagName() + ">' is still open.", this.getIndex() );
+        if( !this.silentErrors ) {
+            if( this.currentAttr ) doError( "Attribute '"+this.currentAttr+"' in tag '<" + this.openedTag + ">' has not been closed.", this.getIndex() );
+            if( this.openedTag ) doError( "'<" + this.openedTag + ">' has not been closed.", this.getIndex() );
+            if( this.currentTagName() ) doError( "'<" + this.currentTagName() + ">' is still open.", this.getIndex() );
+        }
     };
 
     method.getContext = function() {

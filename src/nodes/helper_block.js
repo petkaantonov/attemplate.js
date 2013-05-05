@@ -81,8 +81,7 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
 var $1 = (function() {
     function $2($3) {
         $4
-        var ___html = '';
-        var ___context = 0;
+        var ___html = '', ___context = null, ___ref, ___ref2;
 $5
         return new ___Safe(___html, $6);
     }

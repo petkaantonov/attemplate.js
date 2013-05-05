@@ -1,8 +1,7 @@
     var ___runtime,
         ___version = "@VERSION",
+        ___ctx,
         ___self,
-        ___ref,
-        ___ref2,
         ___ext,
         ___ensureNumeric, ___trim, ___method,
         ___functionCall, ___inOp, ___hasown,
@@ -13,6 +12,7 @@
         rt.checkVersion( ___version );
         ___runtime = rt;
         ___ext = ___runtime.___getExtensions();
+        ___ctx = ___runtime.contextParser;
         ___trim = ___runtime.trim;
         ___ensureNumeric = ___runtime.ensureNumeric;
         ___ensureArrayLike = ___runtime.ensureArrayLike;
