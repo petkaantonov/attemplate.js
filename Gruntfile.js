@@ -14,8 +14,8 @@ module.exports = function( grunt ) {
 
             src: [
                 "./src/begin.js",
-                "./src/runtime.js",
                 "./src/html_context_parser.js",
+                "./src/runtime.js",
                 "./src/macros.js",
                 "./src/nodes/program_element.js",
                 "./src/nodes/identifier.js",

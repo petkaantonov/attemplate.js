@@ -144,25 +144,29 @@
     var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
     var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
 
+    var copyProps = function( src, target ) {
+        target.context = src.context;
+        target.tagStack = src.tagStack.slice(0);
+        target.openedTag = src.openedTag;       
+        target.currentAttr = src.currentAttr; 
+        target.currentAttrQuote = src.currentAttrQuote;
+        target.dynamicAttr = src.dynamicAttr; 
+        target.inMetaRefresh = src.inMetaRefresh;
+        target.inDataUrl = src.inDataUrl;
+        target.inCharData = src.inCharData;
+        target.currentIndex = src.currentIndex; 
+        target.lastLength = src.lastLength;
+        target.prev = src.prev;
+        target.savedBranch = src.savedBranch;
+        target.silentErrors = src.silentErrors;
+    };
+
     method.clone = function() {
         var ret = new HtmlContextParser();
-        ret.context = this.context;
-        ret.tagStack = this.tagStack.slice(0);
-        ret.openedTag = this.openedTag;       
-        ret.currentAttr = this.currentAttr; 
-        ret.currentAttrQuote = this.currentAttrQuote;
-        ret.dynamicAttr = this.dynamicAttr; 
-        ret.inMetaRefresh = this.inMetaRefresh;
-        ret.inDataUrl = this.inDataUrl;
-        ret.inCharData = this.inCharData;
-        ret.currentIndex = this.currentIndex; 
-        ret.lastLength = this.lastLength;
-        ret.prev = this.prev;
-        ret.savedBranch = this.savedBranch;
-        ret.silentErrors = this.silentErrors;
+        copyProps( this, ret );
         return ret;
     };
-    
+        
     function HtmlContextParser() {
         this.context = context.HTML;
         this.tagStack = []; //Stack of tag names to pop when one gets closed
@@ -201,6 +205,17 @@
     
     method.reset = function() {
         HtmlContextParser.call(this);
+    };
+    
+    method.toJSON = function() {
+        var ret = {};
+        copyProps( this, ret );
+        return JSON.stringify(ret);
+    };
+    
+    method.stateFromJSON = function( json ) {
+        var src = JSON.parse(json);
+        copyProps( src, this );
     };
     
     method.saveBranch = function() {
@@ -590,6 +605,16 @@
         return true;
     };
     
+    //Minimize code inside try-catch to avoid bailouts on V8
+    var tryCallFunction = function( ctx, fn, args ) {
+        try {
+            return args ? fn.apply(ctx, args) : fn.call(ctx);
+        }
+        catch( e ) {
+            return null;
+        }
+    }
+    
 
     function Runtime( compilerVersion ) {
         checkVersion( compilerVersion, version );
@@ -651,62 +676,32 @@
         return 0;
     };
     
-    var ___method = method.method = (function() {
-        
-        var rnocallforarray = /^(?:join|toString|toLocaleString)$/;
-        
-        return function( obj, methodName, args ) {
+    var ___method = method.method = function( obj, methodName, args ) {
+        var method;
+        if( obj == null ) {
+            return null;
+        }
 
-            var method;
-            if( obj == null ) {
-                return null;
-            }
+        method = obj[methodName];
 
-            method = obj[methodName];
-            
-            if( !method || typeof method !== FUNCTION ) {
-                var type = "___" + toType(obj);
-                if( ( method = extensions[type][methodName] ) ) {
-                    try {
-                        return args? method.apply(obj, args): method.call(obj);
-                    }
-                    catch(e) {
-                        return e.toString() + ("stack" in e ? e.stack : "");
-                    }
-                }
-                else {
-                    return null;
-                }
+        if( !method || typeof method !== FUNCTION ) {
+            var type = "___" + toType(obj);
+            if( ( method = extensions[type][methodName] ) ) {
+                return tryCallFunction( obj, method, args);
             }
             else {
- 
-                /*Calling these functions on array screws up auto escaping for them*/
-                if( ___isArray( obj ) && rnocallforarray.test( methodName ) ) {
-                    return obj;
-                }
-            
-                try {
-                    return args? method.apply(obj, args): method.call(obj);
-                }
-                catch(e) {
-                    return e.toString() + ("stack" in e ? e.stack : "");
-                }
+                return null;
             }
-        };
-    })();
+        }
+        else {
+            return tryCallFunction( obj, method, args );
+        }
+    };
+
     
     var ___functionCall = method.functionCall = function( thisp, fn, args ) {
         if( fn && typeof fn === FUNCTION ) {
-            try {
-                var ret = args ? fn.apply(thisp, args) : fn.call(thisp);
-                if( ret == null ) {
-                    return null;
-                }
-                return ret;
-            }
-            catch(e) {
-                return e.toString()  + ("stack" in e ? e.stack : "");;
-            }
+            return tryCallFunction( thisp, fn, args );
         }
         return null;
     };
@@ -768,24 +763,24 @@
     
     
     var ___safeString__ = method.safeString = (function() {
-
+        var context = HtmlContextParser.context;
         
-        var NO_ESCAPE = HtmlContextParser.context.NO_ESCAPE.name,
-            HTML = HtmlContextParser.context.HTML.name,
-            ATTR = HtmlContextParser.context.ATTR.name,
-            ATTR_NAME = HtmlContextParser.context.ATTR_NAME.name,
-            URI = HtmlContextParser.context.URI.name,
-            URI_PARAM = HtmlContextParser.context.URI_PARAM.name,
-            SCRIPT = HtmlContextParser.context.SCRIPT.name,
-            SCRIPT_IN_ATTR = HtmlContextParser.context.SCRIPT_IN_ATTR.name,
-            CSS = HtmlContextParser.context.CSS.name,
-            HTML_COMMENT = HtmlContextParser.context.HTML_COMMENT.name,
-            SCRIPT_IN_URI_PARAM_ATTR = HtmlContextParser.context.SCRIPT_IN_URI_PARAM_ATTR.name,
+        var NO_ESCAPE = context.NO_ESCAPE.name,
+            HTML = context.HTML.name,
+            ATTR = context.ATTR.name,
+            ATTR_NAME = context.ATTR_NAME.name,
+            URI = context.URI.name,
+            URI_PARAM = context.URI_PARAM.name,
+            SCRIPT = context.SCRIPT.name,
+            SCRIPT_IN_ATTR = context.SCRIPT_IN_ATTR.name,
+            CSS = context.CSS.name,
+            HTML_COMMENT = context.HTML_COMMENT.name,
+            SCRIPT_IN_URI_PARAM_ATTR = context.SCRIPT_IN_URI_PARAM_ATTR.name,
             escapes = {};
 
-
+        /*Todo use htmlcontextparser = no duplication*/
         var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
-        
+        /*Todo use htmlcontextparser */
         var getAttrEscapeFunction = function( attrName ) {
             attrName = escapeForAttrName(attrName).toLowerCase();
             
@@ -793,7 +788,7 @@
                 return URI;
             }
             else if( attrName === "style" ) {
-                return CSS
+                return CSS;
             }
             else if( attrName.charAt(0) === "o" && attrName.charAt(1) === "n" ) {
                 return SCRIPT_IN_ATTR;

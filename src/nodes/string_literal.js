@@ -25,6 +25,8 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         this.str = nointerpret ? str : this.interpretString(str);
         this.stringCached = null;
     }
+
+    
     //Interpret strings that have been passed directly from source
     method.interpretString = function( str ) {
         var i = 1, //The source string literal includes quotes so start at 1

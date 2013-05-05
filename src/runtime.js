@@ -69,6 +69,16 @@ var Runtime = (function() {
         return true;
     };
     
+    //Minimize code inside try-catch to avoid bailouts on V8
+    var tryCallFunction = function( ctx, fn, args ) {
+        try {
+            return args ? fn.apply(ctx, args) : fn.call(ctx);
+        }
+        catch( e ) {
+            return null;
+        }
+    }
+    
 
     function Runtime( compilerVersion ) {
         checkVersion( compilerVersion, version );
@@ -130,62 +140,32 @@ var Runtime = (function() {
         return 0;
     };
     
-    var ___method = method.method = (function() {
-        
-        var rnocallforarray = /^(?:join|toString|toLocaleString)$/;
-        
-        return function( obj, methodName, args ) {
+    var ___method = method.method = function( obj, methodName, args ) {
+        var method;
+        if( obj == null ) {
+            return null;
+        }
 
-            var method;
-            if( obj == null ) {
-                return null;
-            }
+        method = obj[methodName];
 
-            method = obj[methodName];
-            
-            if( !method || typeof method !== FUNCTION ) {
-                var type = "___" + toType(obj);
-                if( ( method = extensions[type][methodName] ) ) {
-                    try {
-                        return args? method.apply(obj, args): method.call(obj);
-                    }
-                    catch(e) {
-                        return e.toString() + ("stack" in e ? e.stack : "");
-                    }
-                }
-                else {
-                    return null;
-                }
+        if( !method || typeof method !== FUNCTION ) {
+            var type = "___" + toType(obj);
+            if( ( method = extensions[type][methodName] ) ) {
+                return tryCallFunction( obj, method, args);
             }
             else {
- 
-                /*Calling these functions on array screws up auto escaping for them*/
-                if( ___isArray( obj ) && rnocallforarray.test( methodName ) ) {
-                    return obj;
-                }
-            
-                try {
-                    return args? method.apply(obj, args): method.call(obj);
-                }
-                catch(e) {
-                    return e.toString() + ("stack" in e ? e.stack : "");
-                }
+                return null;
             }
-        };
-    })();
+        }
+        else {
+            return tryCallFunction( obj, method, args );
+        }
+    };
+
     
     var ___functionCall = method.functionCall = function( thisp, fn, args ) {
         if( fn && typeof fn === FUNCTION ) {
-            try {
-                var ret = args ? fn.apply(thisp, args) : fn.call(thisp);
-                if( ret == null ) {
-                    return null;
-                }
-                return ret;
-            }
-            catch(e) {
-                return e.toString()  + ("stack" in e ? e.stack : "");;
-            }
+            return tryCallFunction( thisp, fn, args );
         }
         return null;
     };
@@ -247,24 +227,24 @@ var Runtime = (function() {
     
     
     var ___safeString__ = method.safeString = (function() {
-
+        var context = HtmlContextParser.context;
         
-        var NO_ESCAPE = HtmlContextParser.context.NO_ESCAPE.name,
-            HTML = HtmlContextParser.context.HTML.name,
-            ATTR = HtmlContextParser.context.ATTR.name,
-            ATTR_NAME = HtmlContextParser.context.ATTR_NAME.name,
-            URI = HtmlContextParser.context.URI.name,
-            URI_PARAM = HtmlContextParser.context.URI_PARAM.name,
-            SCRIPT = HtmlContextParser.context.SCRIPT.name,
-            SCRIPT_IN_ATTR = HtmlContextParser.context.SCRIPT_IN_ATTR.name,
-            CSS = HtmlContextParser.context.CSS.name,
-            HTML_COMMENT = HtmlContextParser.context.HTML_COMMENT.name,
-            SCRIPT_IN_URI_PARAM_ATTR = HtmlContextParser.context.SCRIPT_IN_URI_PARAM_ATTR.name,
+        var NO_ESCAPE = context.NO_ESCAPE.name,
+            HTML = context.HTML.name,
+            ATTR = context.ATTR.name,
+            ATTR_NAME = context.ATTR_NAME.name,
+            URI = context.URI.name,
+            URI_PARAM = context.URI_PARAM.name,
+            SCRIPT = context.SCRIPT.name,
+            SCRIPT_IN_ATTR = context.SCRIPT_IN_ATTR.name,
+            CSS = context.CSS.name,
+            HTML_COMMENT = context.HTML_COMMENT.name,
+            SCRIPT_IN_URI_PARAM_ATTR = context.SCRIPT_IN_URI_PARAM_ATTR.name,
             escapes = {};
 
-
+        /*Todo use htmlcontextparser = no duplication*/
         var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
-        
+        /*Todo use htmlcontextparser */
         var getAttrEscapeFunction = function( attrName ) {
             attrName = escapeForAttrName(attrName).toLowerCase();
             
@@ -272,7 +252,7 @@ var Runtime = (function() {
                 return URI;
             }
             else if( attrName === "style" ) {
-                return CSS
+                return CSS;
             }
             else if( attrName.charAt(0) === "o" && attrName.charAt(1) === "n" ) {
                 return SCRIPT_IN_ATTR;

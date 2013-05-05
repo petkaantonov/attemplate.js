@@ -6,7 +6,17 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     
     function LiteralExpression( literal ) {
         _super.constructor.apply(this, arguments);
+        if( typeof literal !== "string" ) {
+            literal = literal.unboxStatic();
+            if( literal instanceof StringLiteral ) {
+                literal = literal.str;
+            }
+            else {
+                literal = literal.toString();
+            }
+        }
         this.literal = literal;
+        
     }
     
     method.concat = function( literal ) {
@@ -16,14 +26,14 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     method.getCode = function() {
         //Make it safe to embed in a javascript string literal
         
-        var ret = this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer );
+        var ret =  "'" + this.literal.replace( rescapequote, "\\$1" ).replace( rlineterminator, lineterminatorReplacer ) + "'";
         
         if( this.isContextDeterminedAtRuntime() ) {
-            return "(___ref = "'" + ret +"'", ___context.write(___ref), ___ref)";
+            return "(___ref = " + ret +", ___context.write(___ref), ___ref)";
         }
                 
        
-       return "'" + ret +"'";
+       return ret;
     };
         
     return LiteralExpression;

@@ -139,6 +139,10 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         
     };
     
+    method.unboxStatic = function() {
+        return this.getStaticResolvedOp().unboxStatic();
+    };
+    
     method.resolveStaticOperation = function( op ) {
         
         if( this.isTernary ) {

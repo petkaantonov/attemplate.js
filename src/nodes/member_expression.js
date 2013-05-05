@@ -37,6 +37,10 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         }
     };
     
+    method.unboxStatic = function() {
+        return this.identifier.unboxStatic();
+    };
+    
     method.getNormalizedAccessIdentifier = function() {
         return this.identifier.toStringQuoted();
     };

@@ -9,6 +9,10 @@ var ProgramElement = TemplateExpressionParser.yy.ProgramElement = (function() {
         this.static = false;
     }
     
+    method.unboxStatic = function() {
+        return this;
+    };
+    
     method.setStatic = function() {
         this.parens = false;
         this.static = true;

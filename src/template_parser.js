@@ -78,7 +78,7 @@ var input,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
     rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
     rinvalidref = /^(?:null|false|true|this)$/,
-    rinvalidprop = /^"(?:charAt|charCodeAt|__proto__|prototype|getPrototypeOf|call|apply|constructor|__defineGetter__|__defineSetter__|__lookupGetter__|__lookupSetter__|valueOf|toString)"$/,
+    rinvalidprop = /^"(?:__proto__|prototype|getPrototypeOf|call|apply|constructor|__defineGetter__|__defineSetter__|__lookupGetter__|__lookupSetter__)"$/,
     rfalsetrue = /^(?:false|true)$/,
     rtripleunderscore = /^___/,
     rjsident = /^[a-zA-Z$_][a-zA-Z$_0-9]*$/,
@@ -1107,6 +1107,7 @@ function parse( inp, compiledName ) {
             scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
             
             
+            
             //Expression is giving attribute name dynamically, escape context needs to be determined at run-time
             if( htmlContextParser.isWaitingForAttr() && lookahead(1) === "=") {
                 var quote = lookahead(1, 1);
@@ -1132,13 +1133,22 @@ function parse( inp, compiledName ) {
                 }
             }
             
-            stackTop.push(
-                new TemplateExpression(
-                    snippet.getExpression(),
-                    htmlContextParser.getContext(),
-                    escapeFn
-                ).setStartIndex( startIndex ).setEndIndex( i - 1 )
-            );
+            var expr = snippet.getExpression();
+            
+            if( expr.isStatic() ) {
+                var literalExpr = new LiteralExpression( expr ).setStartIndex( startIndex ).setEndIndex( i - 1 );
+                htmlContextParser.write( literalExpr.literal, startIndex );
+                stackTop.push( literalExpr );
+            }
+            else {
+                stackTop.push(
+                    new TemplateExpression(
+                        expr,
+                        htmlContextParser.getContext(),
+                        escapeFn
+                    ).setStartIndex( startIndex ).setEndIndex( i - 1 )
+                );
+            }
             
         }
         else if( type === BLOCK ) {

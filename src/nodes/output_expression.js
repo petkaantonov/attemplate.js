@@ -43,8 +43,13 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
             if( prev instanceof LiteralExpression && cur instanceof LiteralExpression ) {
                 newLiteral = prev.concat( cur );
                 parent.replaceChild( prev, newLiteral );
+                if( prev === insertionPoint ) {
+                    insertionPoint = newLiteral;
+                }
                 parent.removeChild( cur );
                 expressions.splice(i-1, 2, newLiteral);
+                i--;
+                
             }            
         }
         
@@ -52,7 +57,7 @@ var OutputExpression = TemplateExpressionParser.yy.OutputExpression = (function(
         //Merge dynamic and literal expressions together
         if( expressions.length > 1 ) {
             parent.removeChildrenAt(expressions[1], expressions.length - 1);
-            parent.replaceChild( this, new CombinedOutputExpression( expressions ) );
+            parent.replaceChild( insertionPoint, new CombinedOutputExpression( expressions ) );
         }
     };
    

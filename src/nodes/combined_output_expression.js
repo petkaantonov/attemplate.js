@@ -7,6 +7,7 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
     function CombinedOutputExpression( outputExpressions ) {
         _super.constructor.apply(this, arguments);
         this.outputExpressions = outputExpressions;
+        
     }
     
     method.performAnalysis = function() {

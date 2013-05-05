@@ -118,25 +118,29 @@ var HtmlContextParser = (function() {
     var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
     var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
 
+    var copyProps = function( src, target ) {
+        target.context = src.context;
+        target.tagStack = src.tagStack.slice(0);
+        target.openedTag = src.openedTag;       
+        target.currentAttr = src.currentAttr; 
+        target.currentAttrQuote = src.currentAttrQuote;
+        target.dynamicAttr = src.dynamicAttr; 
+        target.inMetaRefresh = src.inMetaRefresh;
+        target.inDataUrl = src.inDataUrl;
+        target.inCharData = src.inCharData;
+        target.currentIndex = src.currentIndex; 
+        target.lastLength = src.lastLength;
+        target.prev = src.prev;
+        target.savedBranch = src.savedBranch;
+        target.silentErrors = src.silentErrors;
+    };
+
     method.clone = function() {
         var ret = new HtmlContextParser();
-        ret.context = this.context;
-        ret.tagStack = this.tagStack.slice(0);
-        ret.openedTag = this.openedTag;       
-        ret.currentAttr = this.currentAttr; 
-        ret.currentAttrQuote = this.currentAttrQuote;
-        ret.dynamicAttr = this.dynamicAttr; 
-        ret.inMetaRefresh = this.inMetaRefresh;
-        ret.inDataUrl = this.inDataUrl;
-        ret.inCharData = this.inCharData;
-        ret.currentIndex = this.currentIndex; 
-        ret.lastLength = this.lastLength;
-        ret.prev = this.prev;
-        ret.savedBranch = this.savedBranch;
-        ret.silentErrors = this.silentErrors;
+        copyProps( this, ret );
         return ret;
     };
-    
+        
     function HtmlContextParser() {
         this.context = context.HTML;
         this.tagStack = []; //Stack of tag names to pop when one gets closed
@@ -175,6 +179,17 @@ var HtmlContextParser = (function() {
     
     method.reset = function() {
         HtmlContextParser.call(this);
+    };
+    
+    method.toJSON = function() {
+        var ret = {};
+        copyProps( this, ret );
+        return JSON.stringify(ret);
+    };
+    
+    method.stateFromJSON = function( json ) {
+        var src = JSON.parse(json);
+        copyProps( src, this );
     };
     
     method.saveBranch = function() {
