@@ -17,41 +17,61 @@ module.exports = function( grunt ) {
                 "./src/html_context_parser.js",
                 "./src/runtime.js",
                 "./src/macros.js",
+                
                 "./src/nodes/program_element.js",
+                "./src/nodes/statically_resolveable_element.js",
+                
                 "./src/nodes/identifier.js",
-                "./src/nodes/context_switch.js",
                 "./src/nodes/snippet.js",
-                "./src/nodes/output_expression.js",
-                "./src/nodes/combined_output_expression.js",
-                "./src/nodes/call_expression.js",
-                "./src/nodes/member_expression.js",
-                "./src/nodes/function_call.js",
-                "./src/nodes/operation.js",
-                "./src/nodes/string_literal.js",
-                "./src/nodes/array_literal.js",
-                "./src/nodes/boolean_literal.js",
-                "./src/nodes/numeric_literal.js",
-                "./src/nodes/this_literal.js",
-                "./src/nodes/null_literal.js",
                 "./src/nodes/named_argument.js",
                 "./src/nodes/range.js",
-                
-                "./src/nodes/block.js",
-                "./src/nodes/header_block.js",
-                "./src/nodes/scoped_block.js",
-                "./src/nodes/foreach_block.js",
-                "./src/nodes/helper_block.js",
-                "./src/nodes/if_else_block.js",
-                "./src/nodes/if_block.js",
-                "./src/nodes/else_block.js",
-                "./src/nodes/template_expression.js",
-                "./src/nodes/literal_expression.js",
                 "./src/nodes/literal_javascript_block.js",
-                "./src/nodes/program.js",
                 "./src/nodes/loop_statement.js",
-                "./src/nodes/boolean_attribute_expression.js",
+
+                
+                "./src/nodes/output/output_expression.js",
+                "./src/nodes/output/combined_output_expression.js",
+                "./src/nodes/output/template_expression.js",
+                "./src/nodes/output/literal_expression.js",
+                "./src/nodes/output/boolean_attribute_expression.js",
                 
                 
+                "./src/nodes/expression/call_expression.js",
+                "./src/nodes/expression/member_expression.js",
+                "./src/nodes/expression/function_call.js",
+                
+                "./src/nodes/operation/operation.js",
+                "./src/nodes/operation/conditional_operation.js",
+                "./src/nodes/operation/binary_operation.js",
+                "./src/nodes/operation/unary_operation.js",
+                "./src/nodes/operation/in_operation.js",
+                "./src/nodes/operation/math_operation.js",
+                "./src/nodes/operation/plus_operation.js",
+                "./src/nodes/operation/relational_operation.js",
+                "./src/nodes/operation/equality_operation.js",
+                "./src/nodes/operation/logical_operation.js",
+                
+                
+                "./src/nodes/literal/string_literal.js",
+                "./src/nodes/literal/array_literal.js",
+                "./src/nodes/literal/boolean_literal.js",
+                "./src/nodes/literal/numeric_literal.js",
+                "./src/nodes/literal/this_literal.js",
+                "./src/nodes/literal/null_literal.js",
+                "./src/nodes/literal/map_literal.js",
+                
+                "./src/nodes/block/block.js",
+                "./src/nodes/block/scoped_block.js",
+                "./src/nodes/block/branched_block.js",
+                "./src/nodes/block/header_block.js",
+                "./src/nodes/block/foreach_block.js",
+                "./src/nodes/block/helper_block.js",
+                "./src/nodes/block/if_else_block.js",
+                "./src/nodes/block/if_block.js",
+                "./src/nodes/block/else_block.js",
+                "./src/nodes/block/program.js",
+
+
                 "./src/closure_body.js",
                 "./src/template_parser.js",
                 "./src/end.js"
@@ -65,7 +85,15 @@ module.exports = function( grunt ) {
     
     gruntConfig.watch = {
         scripts: {
-            files: ["./src/*", "./src/nodes/*"],
+            files: [
+                "./src/*",
+                "./src/nodes/*",
+                "./src/nodes/output/*",
+                "./src/nodes/block/*",
+                "./src/nodes/expression/*",
+                "./src/nodes/operation/*",
+                "./src/nodes/literal/*"
+            ],
             tasks: ['build', 'runtimeCode'],
             options: {
               interrupt: true,

@@ -1,4 +1,4 @@
-var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
+var NumericLiteral = StaticallyResolveableElement.yy.NumericLiteral = (function() {
     var _super = ProgramElement.prototype,
         method = NumericLiteral.prototype = Object.create(_super);
     
@@ -10,14 +10,19 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         if( !isFinite(this.num)) {
             this.num = 0;
         }
+        this.setStatic();
     }
     
-    method.memberAccessible = function() {
-        return false;
+    method.equals = function( obj ) {
+        return obj.constructor === NumericLiteral && obj.num === this.num;
     };
-    
+        
     method.toStringQuoted = function() {
         return '"' +this.num+ '"';
+    };
+    
+    method.toNumberValue = function() {
+        return this.num;
     };
     
     method.checkValidForFunctionCall = function() {
@@ -39,11 +44,7 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
     method.isNegative = function() {
         return this.num < 0;
     };
-    
-    method.isStatic = function() {
-        return true;
-    };
-    
+   
     method.toString = function() {
         return ("" + this.num);
     };

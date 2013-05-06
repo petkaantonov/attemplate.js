@@ -185,10 +185,6 @@ var Runtime = (function() {
             return indexOf(obj, str) > -1;
         }
 
-        if( needleIsString ) {
-            return false;
-        }
-
         return ___hasown.call( obj, str );
     };
     

@@ -1,5 +1,5 @@
 var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
-    var _super = Block.prototype,
+    var _super = BranchedBlock.prototype,
         method = ForeachBlock.prototype = Object.create(_super);
 
     var randomId = (function() {

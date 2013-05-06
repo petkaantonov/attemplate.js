@@ -1,5 +1,5 @@
 var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpression = (function() {
-    var _super = OutputExpression.prototype,
+    var _super = ProgramElement.prototype,
         method = CombinedOutputExpression.prototype = Object.create(_super);
     
     method.constructor = CombinedOutputExpression;

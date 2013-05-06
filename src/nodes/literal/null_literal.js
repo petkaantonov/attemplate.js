@@ -1,12 +1,12 @@
 var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = NullLiteral.prototype = Object.create(_super);
     
     method.constructor = NullLiteral;
     
     function NullLiteral() {
         _super.constructor.apply(this, arguments);
-        this.parens = false;
+        this.setStatic();
     }
 
     method.checkValidForFunctionCall = function() {
@@ -17,18 +17,14 @@ var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
         return "number";
     };
     
-    method.truthy = function() {
-        return false;
+    method.equals = function( obj ) {
+        return obj.constructor === NullLiteral;
     };
     
-    method.memberAccessible = function() {
-        return false;
+    method.toNumberValue = function() {
+        return 0;
     };
     
-    method.isStatic = function() {
-        return true;
-    };
-
     method.toStringQuoted = function() {
         return '"null"';
     };

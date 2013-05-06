@@ -1,5 +1,5 @@
 var ElseBlock = TemplateExpressionParser.yy.ElseBlock = (function() {
-    var _super = Block.prototype,
+    var _super = BranchedBlock.prototype,
         method = ElseBlock.prototype = Object.create(_super);
     
     method.constructor = ElseBlock;

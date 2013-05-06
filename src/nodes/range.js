@@ -1,5 +1,5 @@
 var Range = TemplateExpressionParser.yy.Range = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = Range.prototype = Object.create(_super);
     
     method.constructor = Range;

@@ -1,5 +1,5 @@
 var ThisLiteral = TemplateExpressionParser.yy.ThisLiteral = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = ThisLiteral.prototype = Object.create(_super);
     
     method.constructor = ThisLiteral;
@@ -11,11 +11,7 @@ var ThisLiteral = TemplateExpressionParser.yy.ThisLiteral = (function() {
     method.checkValidForFunctionCall = function() {
         this.raiseError("Cannot call this as a function");
     };
-   
-    method.isStatic = function() {
-        return false;
-    };
-    
+       
     method.toString = function() {
         return "this";
     };

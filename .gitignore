@@ -2,3 +2,4 @@ node_modules/*
 attemplate.js
 attemplate.min.js
 todo.txt
+doc/diagram.vsd

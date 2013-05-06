@@ -1,5 +1,5 @@
 var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = BooleanLiteral.prototype = Object.create(_super);
     
     method.constructor = BooleanLiteral;
@@ -7,19 +7,23 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
     function BooleanLiteral( truefalse ) {
         _super.constructor.apply(this, arguments);
         this.value = truefalse === "true" ? true : truefalse === "false" ? false : !!truefalse;
-        this.parens = false;
+        this.setStatic();
     }
 
     method.checkValidForFunctionCall = function() {
         this.raiseError("Cannot call boolean as a function");
     };
     
-    method.memberAccessible = function() {
-        return false;
+    method.equals = function( obj ) {
+        return obj.constructor === BooleanLiteral && obj.value === this.value;
     };
-    
+        
     method.toStringQuoted = function() {
         return '"' +this.value+ '"';
+    };
+    
+    method.toNumberValue = function() {
+        return +this.value;
     };
     
     method.getStaticCoercionType = function() {
@@ -29,11 +33,7 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
     method.truthy = function() {
         return this.value;
     };
-    
-    method.isStatic = function() {
-        return true;
-    };
-    
+        
     method.toString = function() {
         return this.value ? "true" : "false";
     };

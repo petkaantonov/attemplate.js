@@ -1,16 +1,16 @@
 var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = CallExpression.prototype = Object.create(_super);
     
     method.constructor = CallExpression;
     
-    function CallExpression( fn, mem ) {
+    function CallExpression( lhs, rhs ) {
         _super.constructor.apply(this, arguments);
-        this.fn = fn;
-        this.member = mem;
+        this.lhs = lhs;
+        this.rhs = rhs;
         this.staticValue = null;
         if( this.isStatic() ) {
-            this.staticValue = this.fn.accessMapStatically(this.member);
+            this.staticValue = this.lhs.accessMapStatically(this.rhs);
         }
     }
     
@@ -35,7 +35,7 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
     };
     
     method.isStatic = function() {
-        return !!this.staticValue || (this.fn.isMap && this.member.isStatic( true ) && this.fn.isStaticMapAccess(this.member));
+        return !!this.staticValue || (this.lhs.constructor === MapLiteral && this.rhs.isStatic( true ) && this.lhs.isStaticMapAccess(this.rhs));
     };
     
     method.toStringQuoted = function() {
@@ -46,11 +46,11 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
         if( this.staticValue ) {
             return this.staticValue.toString();
         }
-        var quotedMember = this.member.toStringQuoted();
+        var quotedMember = this.rhs.toStringQuoted();
         if( rinvalidprop.test(quotedMember) ) {
-            this.member.raiseError("Illegal property access: "+quotedMember);
+            this.rhs.raiseError("Illegal property access: "+quotedMember);
         }
-        var ret = '(('+this.fn.toString()+') || {})['+quotedMember+']';
+        var ret = '(('+this.lhs.toString()+') || {})['+quotedMember+']';
         return this.parens ? '(' + ret + ')' : ret;
     };
         

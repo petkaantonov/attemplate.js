@@ -44,7 +44,7 @@ var grammar = {
     ],
     
     functionCall: [
-        ["member args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
+        ["member args", "if( $1.lhs.isPureReference() && $1.lhs.toString() === '$' ) {$$ = new yy.MapLiteral($2); $1.removeFromDeclaration(); } else { $$ = new yy.FunctionCall($1, $2); }" + setIndex],
         ["functionCall args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
         ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3); " + setIndex ],
         ["functionCall . propAccessLiteral", "$$ = new yy.CallExpression($1, $3); " + setIndex],
@@ -97,7 +97,7 @@ var grammar = {
         ["literal"],
         ["array"],
         ["identifier"],
-        ["( expression )", "$$ = $2; $2.parens = true;"]
+        ["( expression )", "$$ = $2; $$.setParens();"]
     ],
     
     literal: [
@@ -115,18 +115,18 @@ var grammar = {
     ],
     
     operation: [
-        ["UNARY expression", "$$ = new yy.Operation($1, $2, null); " + setIndex],
-        ["- expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; $$.identifier.flip(); } else{ $$ = new yy.Operation($1, $2, null);}; " + setIndex, {prec: "UNARY"}],
-        ["+ expression", "if( $2.isPureNumber && $2.isPureNumber() ) { $$ = $2; } else{ $$ = new yy.Operation($1, $2, null); }; " + setIndex, {prec: "UNARY"}],
-        ["expression IN expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression MATH expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression RELATION expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression EQUALITY expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression && expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression || expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression + expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression - expression", "$$ = new yy.Operation($2, $1, $3); " + setIndex],
-        ["expression ? expression : expression", "$$ = new yy.Operation($1, $3, $5, true); " + setIndex]
+        ["UNARY expression", "$$ = new yy.UnaryOperation($2, $1); " + setIndex],
+        ["- expression", "var maybeNum = $2.unboxStaticValue(); if( $2.constructor === yy.NumericLiteral ) { maybeNum.flip(); $$ = maybeNum; } else{$$ = new yy.UnaryOperation($2, $1);}; " + setIndex, {prec: "UNARY"}],
+        ["+ expression", "var maybeNum = $2.unboxStaticValue(); if( $2.constructor === yy.NumericLiteral ) { $$ = maybeNum; } else{ $$ = new yy.UnaryOperation($2, $1); }; " + setIndex, {prec: "UNARY"}],
+        ["expression IN expression", "$$ = new yy.InOperation($1, $3, $2); " + setIndex],
+        ["expression MATH expression", "$$ = new yy.MathOperation($1, $3, $2); " + setIndex],
+        ["expression RELATION expression", "var a = new yy.RelationOperation($1, $3, $2); var b = a.getLogicalAndOperationForMathNotation(); $$ = (b || a); " + setIndex],
+        ["expression EQUALITY expression", "$$ = new yy.EqualityOperation($1, $3, $2); " + setIndex],
+        ["expression && expression", "$$ = new yy.LogicalOperation($1, $3, $2); " + setIndex],
+        ["expression || expression", "$$ = new yy.LogicalOperation($1, $3, $2); " + setIndex],
+        ["expression + expression", "$$ = new yy.PlusOperation($1, $3, $2); " + setIndex],
+        ["expression - expression", "$$ = new yy.MathOperation($1, $3, $2); " + setIndex],
+        ["expression ? expression : expression", "$$ = new yy.ConditionalOperation($1, $3, $5); " + setIndex]
     ],
     
     optSign: [
@@ -297,7 +297,6 @@ var lex = {
         ["\\?", "return '?'"],
         [":", "return ':'"],
         ["!", "return 'UNARY';"],
-        ["\\->", "return 'ARROW';"],
         ["\\-", "return '-';"],
         ["\\+", "return '+';"],
         ["\\/|%|\\*", "return 'MATH';"],

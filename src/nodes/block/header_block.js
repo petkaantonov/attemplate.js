@@ -1,6 +1,6 @@
 //A block that has a header like @if( header ) { blockCode }
 var HeaderBlock = TemplateExpressionParser.yy.HeaderBlock = (function() {
-    var _super = Block.prototype,
+    var _super = BranchedBlock.prototype,
         method = HeaderBlock.prototype = Object.create(_super);
     
     method.constructor = HeaderBlock;

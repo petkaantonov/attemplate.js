@@ -1,5 +1,5 @@
 var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = ArrayLiteral.prototype = Object.create(_super);
     
     method.constructor = ArrayLiteral;
@@ -19,7 +19,7 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         if( indexStr === '"length"' ) {
             //Length of array literal
             //is always statically known
-            return new NumericLiteral( this.elements.length );
+            return new NumericLiteral( this.getElementCount() );
         }
         
         var num = +(indexStr.slice(1, -1));
@@ -29,7 +29,7 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
             var len = this.elements.length;
             //Would result in undefined no matter how dynamic contents
             if( num < 0 || num >= len ) {
-                return new NullLiteral();
+                return NullLiteral.INSTANCE;
             }
             else {
                 var elem = this.elements[num];
@@ -44,7 +44,7 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         }
         else {
             //Accessing named array props other than length - results in undefined
-            return new NullLiteral();
+            return NullLiteral.INSTANCE;
         }
     };
     
@@ -52,15 +52,51 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         var elements = this.elements;
         for( var i = 0; i < elements.length; ++i ) {
             if( !elements[i].isStatic() ) {
-                this.static = false;
                 break;
             }
         }
         this.setStatic();
     };
     
-    method.toStringQuoted = function() {
-        return this.toString();
+    method.staticContains = function( obj ) {
+        if( this.getElementCount() === 0 ) {
+            return false;
+        }
+        for( var i = 0; i < this.elements.length; ++i ) {
+            if( obj.equals( this.elements[i] ) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    method.toNumberValue = function() {
+        _super.toNumberValue.call(this);
+        
+        if( this.getElementCount() === 0 ) {
+            return 0;
+        }
+        else if( this.getElementCount() === 1 ) {
+            return this.elements[0].toNumberValue();
+        }
+        return 0;
+    };
+    
+    method.toStringValue = function() {
+        _super.toStringValue.call( this );
+        if( this.getElementCount() === 0 ) {
+            return "";
+        }
+        var ret = [];
+        for( var i = 0; i < this.elements.length; ++i ) {
+            ret.push( this.elements[i].toStringValue() );
+        }
+        return ret.join(",");
+    };
+    
+    method.memberAccessible = function() {
+        return true;
     };
     
     method.checkValidForFunctionCall = function() {
@@ -76,16 +112,9 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
     };
     
     method.truthy = function() {
-        return true;
+        return this.getElementCount() > 0;
     };
     
-    method.isStatic = function() {
-        return this.static;
-    };
-    
-    method.setStatic = function() {
-        this.static = true;
-    };
     
     method.toString = function() {
         if( !this.elements.length ) {

@@ -1,5 +1,5 @@
 var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = NamedArgument.prototype = Object.create(_super);
     
     method.constructor = NamedArgument;
@@ -12,6 +12,10 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
     
     method.checkValidForFunctionCall = function() {
         
+    };
+    
+    method.unboxStaticValue = function() {
+        return this.expr.unboxStaticValue();
     };
     
     method.getValue = function() {
@@ -27,7 +31,7 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
     };
    
     method.isStatic = function() {
-        return this.expr.isStatic && this.expr.isStatic();
+        return this.expr.isStatic();
     };
         
     method.toString = function() {

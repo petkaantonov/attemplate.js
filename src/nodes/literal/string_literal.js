@@ -1,5 +1,5 @@
 var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = StringLiteral.prototype = Object.create(_super);
     
     method.constructor = StringLiteral;
@@ -24,6 +24,7 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         _super.constructor.apply(this, arguments);
         this.str = nointerpret ? str : this.interpretString(str);
         this.stringCached = null;
+        this.setStatic();
     }
 
     
@@ -121,6 +122,18 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         }
     };
     
+    method.equals = function( obj ) {
+        return obj.constructor === StringLiteral && obj.str === this.str;
+    };
+    
+    method.toStringValue = function() {
+        return this.str;
+    };
+    
+    method.toNumberValue = function() {
+        return +this.str;
+    };
+    
     method.memberAccessible = function() {
         return true;
     };
@@ -136,11 +149,7 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
     method.truthy = function() {
         return this.str.length > 0;
     };
-    
-    method.isStatic = function() {
-        return true;
-    };
-    
+        
     method.toStringQuoted = function() {
         return this.toString();
     };

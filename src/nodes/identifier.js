@@ -1,5 +1,5 @@
 var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = Identifier.prototype = Object.create(_super);
     
     method.constructor = Identifier;

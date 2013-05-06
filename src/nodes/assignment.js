@@ -1,5 +1,5 @@
 var Assignment = TemplateExpressionParser.yy.Assignment = (function() {
-    var _super = ProgramElement.prototype,
+    var _super = StaticallyResolveableElement.prototype,
         method = Assignment.prototype = Object.create(_super);
     
     method.constructor = Assignment;
