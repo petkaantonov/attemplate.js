@@ -237,7 +237,9 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     };
     
     method.checkValidForFunctionCall = function() {
-        this.lhs.checkValidForFunctionCall();
+        if( !this.rhs.length ) {
+            this.lhs.checkValidForFunctionCall();
+        }
     }
 
     method.getStaticCoercionType = function() {

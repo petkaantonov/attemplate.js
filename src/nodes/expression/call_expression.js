@@ -16,9 +16,8 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
     
     method.checkValidForFunctionCall = function() {
         if( this.staticValue ) {
-            return this.staticValue.checkValidForFunctionCall();
+            this.staticValue.checkValidForFunctionCall();
         }
-        return true;
     };
     
     method.getStaticCoercionType = function() {

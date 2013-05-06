@@ -10,14 +10,20 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
         this.cachedStaticResult = null;
     }
 
-
- 
     method.getStaticResolvedOp = function() {
         if( this.cachedStaticResult ) {
             return this.cachedStaticResult;
         }
-        return this.resolveStaticOperation();
+        var ret = this.resolveStaticOperation();
+        this.cachedStaticResult = ret;
+        return ret;
         
+    };
+    
+    method.checkValidForFunctionCall = function() {
+        if( this.isStatic() ) {
+            this.getStaticResolvedOp().unboxStaticValue().checkValidForFunctionCall();
+        }
     };
 
     method.toStringQuoted = function() {

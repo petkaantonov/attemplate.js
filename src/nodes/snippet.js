@@ -7,6 +7,9 @@ var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
     function Snippet( expr ) {
         _super.constructor.apply(this, arguments);
         this.expr = expr;
+        if( this.expr.isStatic && this.expr.isStatic() ) {
+            this.expr = this.expr.unboxStaticValue();
+        }
     }
     
     method.getExpression = function() {

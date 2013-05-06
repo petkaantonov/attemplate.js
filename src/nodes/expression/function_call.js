@@ -8,6 +8,7 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         _super.constructor.apply(this, arguments);
         this.lhs = lhs;
         this.args = args || [];
+        this.lhs.checkValidForFunctionCall();
     }
 
     method.getDirectRefName = function() {
@@ -61,8 +62,9 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
                 return '___method('+this.lhs.lhs+', '+memberQuoted+')';
             } 
         }
-
-        if( (last = ( this.lhs.getLast && this.lhs.getLast() ) ) ) {
+        
+       
+        if( (last = this.lhs.getLast() ) ) {
             var memberQuoted = last.toStringQuoted();
             if( rinvalidprop.test(memberQuoted)) {
                 last.raiseError( "Illegal method call "+memberQuoted+"." );
@@ -73,10 +75,6 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
             else {
                 return '___method('+this.lhs.toStringNoLast()+', '+memberQuoted+')';
             }
-        }
-        else {
-            this.lhs.checkValidForFunctionCall();
-
         }
         var expr = this.lhs.toStringQuoted();
   
