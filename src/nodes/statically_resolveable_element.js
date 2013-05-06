@@ -1,4 +1,4 @@
-var StaticallyResolveableElement = TemplateExpressionParser.yy.StaticallyResolveableElement (function() {
+var StaticallyResolveableElement = TemplateExpressionParser.yy.StaticallyResolveableElement = (function() {
     var _super = ProgramElement.prototype,
         method = StaticallyResolveableElement.prototype = Object.create(_super);
     

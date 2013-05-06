@@ -10,7 +10,7 @@ var MathOperation = TemplateExpressionParser.yy.MathOperation = (function() {
     
     method.resolveStaticOperation = function() {
         var left = this.operandLeft.unboxStaticValue().toNumberValue(),
-            right =  = this.operandRight.unboxStaticValue().toNumberValue();
+            right = this.operandRight.unboxStaticValue().toNumberValue();
 
 
         switch( this.operator ) {

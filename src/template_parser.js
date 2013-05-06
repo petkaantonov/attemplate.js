@@ -1136,8 +1136,9 @@ function parse( inp, compiledName ) {
             var expr = snippet.getExpression();
             
             if( expr.isStatic() ) {
+                expr = expr.unboxStaticValue().toStringValue();
                 var literalExpr = new LiteralExpression( expr ).setStartIndex( startIndex ).setEndIndex( i - 1 );
-                htmlContextParser.write( literalExpr.literal, startIndex );
+                htmlContextParser.write( expr, startIndex );
                 stackTop.push( literalExpr );
             }
             else {

@@ -50,6 +50,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             if( len === 1 ) {
                 this.rhs = [];
                 this.setStatic();
+                this.lhs = staticResult.unboxStaticValue();
             }   //Have Further accesses
             else if( !staticResult.memberAccessible() ) {
                 //Further access would result in undefined or error
@@ -71,6 +72,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             len = members.length;
             
         if( !len ) {
+            this.lhs = lhs.unboxStaticValue();
             this.setStatic();
         }
         else {
@@ -97,6 +99,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
                 
                 if( len === 1 ) {
                     this.rhs = [];
+                    this.lhs = staticResult.unboxStaticValue();
                     this.setStatic();
                 }
                 else {

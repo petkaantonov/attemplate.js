@@ -8,14 +8,14 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
         _super.constructor.apply(this, arguments);
         this.namedArgs = namedArgs;
         
-        var static = true;
+        var isStatic = true;
         for( var i = 0; i < namedArgs.length; ++i ) {
             if( !namedArgs[i].isStatic() ) {
-                static = false;
+                isStatic = false;
                 break;
             }
         }
-        if( static ) {
+        if( isStatic ) {
             this.setStatic();
         }
     }
@@ -121,7 +121,7 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
                 namedArgs.push( args[i].toString());
             }
             else {//Force correct object literal even if not all args are named
-                namedArgs.push( "'" + (j++) + "': " + args[i].toString() ) :
+                namedArgs.push( "'" + (j++) + "': " + args[i].toString() );
             }
         }
         return this.parens ? "({" + namedArgs.join(", ") + "})" : "{" + namedArgs.join(", ") + "}";         

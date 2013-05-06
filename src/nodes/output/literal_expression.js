@@ -6,15 +6,6 @@ var LiteralExpression = TemplateExpressionParser.yy.LiteralExpression = (functio
     
     function LiteralExpression( literal ) {
         _super.constructor.apply(this, arguments);
-        if( typeof literal !== "string" ) {
-            literal = literal.unboxStatic();
-            if( literal instanceof StringLiteral ) {
-                literal = literal.str;
-            }
-            else {
-                literal = literal.toString();
-            }
-        }
         this.literal = literal;
         
     }

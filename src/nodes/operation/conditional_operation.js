@@ -13,7 +13,7 @@ var ConditionalOperation = TemplateExpressionParser.yy.ConditionalOperation = (f
         if( this.condition.isStatic() &&
             this.ifTrue.isStatic() &&
             this.ifFalse.isStatic() ) {
-            this.setStatic();   
+            this.setStatic();
         }
     }
     
@@ -25,7 +25,7 @@ var ConditionalOperation = TemplateExpressionParser.yy.ConditionalOperation = (f
                 this.condition.toString() + " ? " + this.ifTrue.toString() + " : " + this.ifFalse.toString() :
                 boolOp(this.condition) + " ? " + this.ifTrue.toString() + " : " + this.ifFalse.toString());
                 
-        return return this.parens ? '(' + ret + ')' : ret;
+        return this.parens ? '(' + ret + ')' : ret;
     };
     
     method.resolveStaticOperation = function() {

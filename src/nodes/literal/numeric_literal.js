@@ -1,5 +1,5 @@
-var NumericLiteral = StaticallyResolveableElement.yy.NumericLiteral = (function() {
-    var _super = ProgramElement.prototype,
+var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
+    var _super = StaticallyResolveableElement.prototype,
         method = NumericLiteral.prototype = Object.create(_super);
     
     method.constructor = NumericLiteral;

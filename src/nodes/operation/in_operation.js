@@ -24,7 +24,7 @@ var InOperation = TemplateExpressionParser.yy.InOperation = (function() {
         else if( right.constructor === ArrayLiteral ) {
             return new BooleanLiteral( right.staticContains(left) );
         }
-        else if( right.constructor MapLiteral ) {
+        else if( right.constructor === MapLiteral ) {
             //TODO
         }
         else {
