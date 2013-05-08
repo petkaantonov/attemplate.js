@@ -21,13 +21,16 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         return this.aliasedImportName;
     };
     
+    method.putCloneProps = function( clonedObj ) {
+        _super.putCloneProps.call( this, clonedObj );
+        clonedObj.importName = this.importName;
+        clonedObj.aliasedImportName = this.aliasedImportName;
+        clonedObj.isBeingImported = this.isBeingImported;
+    };
+    
     method.asHelper = function( importName, aliasedImportName ) {
         var ret = new Program();
-        for( var key in this ) {
-            if( this.hasOwnProperty( key ) ) {
-                ret[key] = this[key];
-            }
-        }
+        this.putCloneProps( ret );
         ret.aliasedImportName = aliasedImportName || null;
         ret.importName = importName;
         ret.isBeingImported = true;
@@ -35,16 +38,6 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
     };
 
     method.performAnalysis = function( parent ) {
-        var vars = this.getVariables();
-        for( var key in vars ) {
-            if( vars.hasOwnProperty(key) && !this.hasHelper(key) ) {
-                vars[key].setReferenceMode(
-                    this.isBeingImported ?
-                    MemberExpression.referenceMode.DATA_ARGUMENT : 
-                    MemberExpression.referenceMode.SELF_ONLY
-                );
-            }
-        }
         _super.performAnalysis.call( this, parent );
     };
     
@@ -65,7 +58,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
     method.toImportCode = function() {
         this.isBeingImported = true;
         var ret,
-            references = this.getReferences();
+            nonHelperReferences = this.getNonHelperReferences();
             
             
         var indent = this.getIndentStr();
@@ -73,7 +66,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         ret = this._toStringHelper(
             this.getHelperCode(),
             idName,
-            (references.length ? "var " + references.join(", \n" +indent + "            ") + ";\n" : ""),
+            (nonHelperReferences.length ? "var " + nonHelperReferences.join(", \n" +indent + "            ") + ";\n" : ""),
             this.getCode(),
             HtmlContextParser.context.HTML.name
         );
@@ -110,7 +103,6 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         }
         
         var ret = [],
-            references = this.getReferences(),
             importCodes = [];
                 
 
@@ -118,36 +110,54 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         ret.push( this.getHelperCode() );
         var indent = this.getIndentStr();
         
-        for( var primaryName in imports ) {
-            if( imports.hasOwnProperty( primaryName ) ) {
-
-                if( imports[primaryName] == null ) { //Continue with regular helpers
-                    continue;
-                }
-                var program = exported[primaryName],
-                    aliases = imports[primaryName],
-                    code = program.toImportCode(),
-
-                    vars = indent + "var "+ primaryName + (aliases.length ? ",\n    " + indent + aliases.join(",\n    " + indent)+";\n" : ";\n"),
-                    assignment = "\n" + indent + primaryName + 
-                        (aliases.length ? " = "+ aliases.join(" = " )+ " = " 
-                        + code : " = " + code);
-
-                importCodes.push( vars, assignment );
-            }
-        }
+        
+        imports.forEach( function( primaryExportName, aliasedNames ) {
+            if( aliasedNames != null ) { //Continue with regular helpers
+                var importCode = exported.get( primaryExportName ).toImportCode();
+                    
+                var varDeclarationCode = indent + "var "+ primaryExportName + (aliasedNames.length ? ",\n    " +
+                        indent + aliasedNames.join(",\n    " + indent)+";\n" : ";\n");
+                        
+                var assignmentCode = "\n" + indent + primaryExportName + 
+                            (aliasedNames.length ? " = "+ aliasedNames.join(" = " )+ " = " 
+                            + importCode : " = " + importCode);
+                    
+                    
+                importCodes.push( varDeclarationCode, assignmentCode );
                 
+            }
+        });
+
         ret.push( importCodes.join("\n") );
         
         ret.push( this._toStringProgram(
             idName,
-            (references.length ? "var " + references.join(", \n" + indent + "        ") + ";\n" : ""),
+            this.referenceAssignmentMainScope( this.getNonHelperReferences() ),
             this.getCode()
         ));
                 
         return ret.join("\n");
     };
     
+    method.referenceAssignmentMainScope = function( references ) {
+        var indent = this.getIndentStr();
+        var ret = "";
+        for( var i = 0; i < references.length; ++i ) {
+            var ref = references[i];
+            ret += indent + "var " + ref + " = ___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.get("+ref+");\n";
+        }
+        return ret;
+    };
+    
+    method.referenceAssignmentHelper = function( references ) {
+        var indent = this.getIndentStr();
+        var ret = "";
+        for( var i = 0; i < references.length; ++i ) {
+            var ref = references[i];
+            ret += indent + "var " + ref + " = ___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.ref;\n";
+        }
+        return ret;
+    };
 
     
     method._toStringProgram = MACRO.create(function(){
@@ -204,7 +214,7 @@ $4
     
     //Clean static state that becomes corrupted in case of errors
     Program.cleanStaticState = function() {
-        MemberExpression.identifiers = {};
+        Identifier.refreshReferenceMap();
     };
     
     return Program;

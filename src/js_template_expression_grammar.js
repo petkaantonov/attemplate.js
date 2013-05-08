@@ -44,7 +44,7 @@ var grammar = {
     ],
     
     functionCall: [
-        ["member args", "if( $1.isPureReference() && $1.lhs.toString() === '$' ) {$$ = new yy.MapLiteral($2); $1.removeFromDeclaration(); } else { $$ = new yy.FunctionCall($1, $2); }" + setIndex],
+        ["member args", "if( $1 instanceof yy.Identifier && $1.toString() === '$' ) {$$ = new yy.MapLiteral($2); $1.removeFromReferences(); } else { $$ = new yy.FunctionCall($1, $2); }" + setIndex],
         ["functionCall args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
         ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3); " + setIndex ],
         ["functionCall . propAccessLiteral", "$$ = new yy.CallExpression($1, $3); " + setIndex],
@@ -83,7 +83,7 @@ var grammar = {
     ],
     
     member: [
-        ["memberExpression", "$$ = new yy.MemberExpression($1); " + setIndex]
+        ["memberExpression", "if( $1.length === 1 ) { $$ = $1[0]; if( $$ instanceof yy.Identifier ) {$$.usedAsReference();} } else{ $$ = new yy.MemberExpression($1);}" + setIndex]
     ],
     
     memberExpression: [

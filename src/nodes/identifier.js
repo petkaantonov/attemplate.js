@@ -9,6 +9,11 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
         this.identifier = identifier;
     }
     
+    method.usedAsReference = function() {
+        this.checkValid();
+        Identifier.references.set( this.toString(), this );
+    };
+    
     method.checkValid = function() {
         if( !rjsident.test( this.identifier ) ) {
             this.raiseError( "'" + this.identifier + "' is not a valid identifier.");    
@@ -19,6 +24,10 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
         else if( rtripleunderscore.test(this.identifier) ) {
             this.raiseError( "Identifiers starting with ___ are reserved for internal use." );
         }
+    };
+    
+    method.removeFromReferences = function() {
+        Identifier.references.remove( this.toString() );
     };
     
     method.checkValidForFunctionCall = function() {
@@ -37,6 +46,18 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
         return !!usedAsPropertyAccess;
     };
 
+    Identifier.references = new Map();
+    
+    Identifier.refreshReferenceMap = function() {
+        Identifier.references = new Map();
+    };
+    
+    //TODO Seems hacky
+    Identifier.getSeenReferences = function() {
+        var ret = Identifier.references;
+        Identifier.refreshReferenceMap();
+        return ret;
+    };
     
     return Identifier;
 })();

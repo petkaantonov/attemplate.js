@@ -7,6 +7,12 @@ var BranchedBlock = TemplateExpressionParser.yy.BranchedBlock = (function() {
     function BranchedBlock() {
         _super.constructor.apply(this, arguments);
     }
+    
+    method.getDeclaredReferences = function() {
+        return Map.EMPTY;
+    };
+  
+    
   
     return BranchedBlock;
 })();

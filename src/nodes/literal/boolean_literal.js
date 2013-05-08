@@ -4,9 +4,10 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
     
     method.constructor = BooleanLiteral;
     
-    function BooleanLiteral( truefalse ) {
+    function BooleanLiteral( value ) {
         _super.constructor.apply(this, arguments);
-        this.value = truefalse === "true" ? true : truefalse === "false" ? false : !!truefalse;
+        console.assert( value === "true" || value === "false", "invalid argument to boolean literal" ) 
+        this.value = value === "true" && true || false;
         this.setStatic();
     }
 
@@ -14,7 +15,7 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
         this.raiseError("Cannot call boolean as a function");
     };
     
-    method.equals = function( obj ) {
+    method.staticallyEquals = function( obj ) {
         return obj.constructor === BooleanLiteral && obj.value === this.value;
     };
         
@@ -22,7 +23,7 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
         return '"' +this.value+ '"';
     };
     
-    method.toNumberValue = function() {
+    method.getStaticNumberValue = function() {
         return +this.value;
     };
     
@@ -30,13 +31,16 @@ var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
         return "number";
     };
     
-    method.truthy = function() {
+    method.isStaticallyTruthy = function() {
         return this.value;
     };
         
     method.toString = function() {
         return this.value ? "true" : "false";
     };
+    
+    BooleanLiteral.TRUE = new BooleanLiteral( "true" );
+    BooleanLiteral.FALSE = new BooleanLiteral( "false" );
     
     return BooleanLiteral;
 })();

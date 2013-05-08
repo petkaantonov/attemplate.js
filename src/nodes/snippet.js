@@ -19,14 +19,13 @@ var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
     method.toString = function() {
         return this.expr ? this.expr.toString() : "";
     };
+
    
     //Capture naked var accesses so we can declare them
     //Declared vars avoids reference errors and we can just output empty string
         
-    method.getNakedVarReferences = function() {
-        var ret = MemberExpression.identifiers;
-        MemberExpression.identifiers = {};
-        return ret;
+    method.getSeenReferences = function() {
+        return Identifier.getSeenReferences();
     };
        
     return Snippet;

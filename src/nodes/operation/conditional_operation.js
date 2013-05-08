@@ -29,7 +29,7 @@ var ConditionalOperation = TemplateExpressionParser.yy.ConditionalOperation = (f
     };
     
     method.resolveStaticOperation = function() {
-        if( this.condition.unboxStaticValue().truthy() ) {
+        if( this.condition.unboxStaticValue().isStaticallyTruthy() ) {
             return this.ifTrue.unboxStaticValue();
         }
         return this.ifFalse.unboxStaticValue();

@@ -9,6 +9,9 @@ var ProgramElement = TemplateExpressionParser.yy.ProgramElement = (function() {
         this.static = false;
     }
     
+    method.putCloneProps = function( clonedObj ) {
+    };
+    
     method.unboxStatic = function() {
         return this;
     };

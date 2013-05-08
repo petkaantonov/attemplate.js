@@ -20,13 +20,13 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
         }
     }
     
-    method.toNumberValue = function() {
-        _super.toNumberValue.call( this );
+    method.getStaticNumberValue = function() {
+        _super.getStaticNumberValue.call( this );
         return 0;
     };
     
-    method.toStringValue = function() {
-        _super.toStringValue.call( this );
+    method.getStaticStringValue = function() {
+        _super.getStaticStringValue.call( this );
         return '[object Map]';
     };
     
@@ -34,7 +34,7 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
         return '"[object Map]"';
     }
     
-    method.truthy = function() {
+    method.isStaticallyTruthy = function() {
         return true;
     };
     

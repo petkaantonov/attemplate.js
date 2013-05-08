@@ -11,7 +11,6 @@ var CombinedOutputExpression = TemplateExpressionParser.yy.CombinedOutputExpress
     }
     
     method.performAnalysis = function() {
-        //Noop override
     };
     
     method.toString = function() {

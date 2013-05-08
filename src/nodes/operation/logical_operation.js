@@ -13,10 +13,11 @@ var LogicalOperation = TemplateExpressionParser.yy.LogicalOperation = (function(
             right = this.operandRight.unboxStaticValue();
 
         switch( this.operator ) {
-            case LogicalOperation.AND: return !left.truthy() ? left : right;
-            case LogicalOperation.OR: return left.truthy() ? left : right;
+            case "&&": return !left.isStaticallyTruthy() ? left : right;
+            case "||": return left.isStaticallyTruthy() ? left : right;
 
-            default: throw new Error("Illegal operator value for relational operation");
+            default:
+                console.assert( false, "Illegal operator value for relational operation");
         }
     };
     

@@ -13,7 +13,7 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         this.setStatic();
     }
     
-    method.equals = function( obj ) {
+    method.staticallyEquals = function( obj ) {
         return obj.constructor === NumericLiteral && obj.num === this.num;
     };
         
@@ -21,7 +21,7 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         return '"' +this.num+ '"';
     };
     
-    method.toNumberValue = function() {
+    method.getStaticNumberValue = function() {
         return this.num;
     };
     
@@ -33,7 +33,7 @@ var NumericLiteral = TemplateExpressionParser.yy.NumericLiteral = (function() {
         return "number";
     };
     
-    method.truthy = function() {
+    method.isStaticallyTruthy = function() {
         return this.num !== 0;
     };
     

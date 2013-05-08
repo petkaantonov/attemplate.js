@@ -17,12 +17,12 @@ var EqualityOperation = TemplateExpressionParser.yy.EqualityOperation = (functio
     method.resolveStaticOperation = function() {
         var left = this.operandLeft.unboxStaticValue(),
             right = this.operandRight.unboxStaticValue(),
-            result = left.equals(right);
+            result = left.staticallyEquals(right);
 
         if( this.operator === EqualityOperation.NEQ_STRICT ) {
             result = !result;
         }
-        return new BooleanLiteral( result );
+        return result ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
     };
     
     EqualityOperation.EQ = "==";

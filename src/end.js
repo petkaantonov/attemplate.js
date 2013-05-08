@@ -29,14 +29,15 @@ var ret = {
             data,
             tmpl;
 
-        if( compiledTemplates[name] ) {
-            return compiledTemplates[name];
+        if( compiledTemplates.has( name ) ) {
+            return compiledTemplates.get( name );
         }
 
         data = require("fs").readFileSync( name, "utf8" );
 
         tmpl = fromString( data, compiledName );
-        return compiledTemplates[name] = tmpl;
+        compiledTemplates.set( name, tmpl );
+        return tmpl;
     },
 
     getById: function( id, compiledName  ) {
@@ -44,8 +45,8 @@ var ret = {
 
         id = id + "";
 
-        if( compiledTemplates[id] ) {
-            return compiledTemplates[id];
+        if( compiledTemplates.has( id ) ) {
+            return compiledTemplates.get( id );
         }
 
         template = document.getElementById(id);
@@ -53,8 +54,9 @@ var ret = {
         if( template == null ) {
             throw new TypeError( "Cannot find template by id: " +id);
         }
-
-        return (compiledTemplates[id] = this.fromString( template.innerHTML, compiledName  ) );
+        var tmpl = this.fromString( template.innerHTML, compiledName  );
+        compiledTemplates.set( id, tmpl );
+        return tmpl;
     }
 };
 

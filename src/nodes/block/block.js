@@ -9,8 +9,13 @@ var Block = TemplateExpressionParser.yy.Block = (function() {
         this.statements = [];
     }
     
+    method.putCloneProps = function( clonedObj ) {
+        _super.putCloneProps.call( this, clonedObj );
+        clonedObj.statements = this.statements.slice(0);
+    };
+    
     method.isBranched = function() {
-            return false;
+        return false;
     };
         
     method.push = function( statement ) {

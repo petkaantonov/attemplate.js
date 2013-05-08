@@ -14,21 +14,9 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
     }
       
     method.performAnalysis = function( parent ) {
-        var vars = this.getVariables();
-        for( var key in vars ) {
-            if( vars.hasOwnProperty(key) && !this.hasHelper(key)) {
-                vars[key].setReferenceMode( MemberExpression.referenceMode.SELF_ONLY );
-            }
-        }
         var statement;
         for( var i = 0; i < this.statements.length; ++i ) {
-            statement = this.statements[i];
-            if( statement instanceof Block ) {
-                statement.performAnalysis( this );
-            }
-            else if( statement.performAnalysis ) {
-                statement.performAnalysis( this );
-            }
+            this.statements[i].performAnalysis( this );
         }
     };
     
@@ -40,22 +28,21 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
     };
     //No need to merge the variabls that are declared in parameters
     //Other helper names cannot be known at this time
-    method.mergeVariables = function( referenceExpressionMap ) {
-        var vars = this.getVariables();
-        
-        for( var key in referenceExpressionMap ) {
-            if( referenceExpressionMap.hasOwnProperty( key ) &&
-                this.parameterNames.indexOf( key ) < 0 &&
-                !vars.hasOwnProperty(key) ) {
-                vars[key] = referenceExpressionMap[key];
-            }
-        }
+    method.mergeReferences = function( referenceExpressionMap ) {
+        var self = this,
+            references = this.getReferences();
+            
+        referenceExpressionMap.forEach( function( key, value ) {
+            if( self.parameterNames.indexOf( key ) < 0 ) {
+                references.setIfAbsent( key, value );
+            }                
+        });
     };
     
     method.toString = function() {
         var codes = [],
             ret,
-            references = this.getReferences();
+            nonHelperReferences = this.getNonHelperReferences();
         
         var indent = this.getIndentStr();
         
@@ -67,7 +54,7 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             this.name,
             id,
             this.parameterNames.join(", "),
-            ( references.length ? "var " + references.join(", \n" + indent + "        ") + ";\n" : ""),
+            ( nonHelperReferences.length ? "var " + nonHelperReferences.join(", \n" + indent + "        ") + ";\n" : ""),
             codes.join("\n"),
             HtmlContextParser.context.HTML.name
         

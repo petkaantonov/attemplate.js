@@ -35,21 +35,22 @@ var RelationalOperation = TemplateExpressionParser.yy.RelationalOperation = (fun
         
         if( leftType === "string" &&
             rightType === "string" ) {
-            left = this.operandLeft.unboxStaticValue().toStringValue(),
-            right = this.operandRight.unboxStaticValue().toStringValue();
+            left = this.operandLeft.unboxStaticValue().getStaticStringValue(),
+            right = this.operandRight.unboxStaticValue().getStaticStringValue();
         }
         else {
-            left = this.operandLeft.unboxStaticValue().toNumberValue();
-            right = this.operandRight.unboxStaticValue().toNumberValue();
+            left = this.operandLeft.unboxStaticValue().getStaticNumberValue();
+            right = this.operandRight.unboxStaticValue().getStaticNumberValue();
         }
             
         switch( this.operator ) {
-            case RelationalOperation.GT: return new BooleanLiteral( left > right );
-            case RelationalOperation.LT: return new BooleanLiteral( left < right );
-            case RelationalOperation.GTE: return new BooleanLiteral( left >= right );
-            case RelationalOperation.LTE: return new BooleanLiteral( left <= right );
+            case ">": return left > right ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
+            case "<": return left < right ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
+            case ">=": return left >= right ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
+            case "<=": return left <= right ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
             
-            default: throw new Error("Illegal operator value for relational operation");
+            default:
+                console.assert(false, "Illegal operator value for relational operation");
         }
     };
     

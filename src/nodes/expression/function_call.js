@@ -8,20 +8,8 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         _super.constructor.apply(this, arguments);
         this.lhs = lhs;
         this.args = args || [];
-        this.lhs.checkValidForFunctionCall();
+        this.checkValid();
     }
-
-    method.getDirectRefName = function() {
-        if( this.lhs.constructor === CallExpression ) {
-            return null;
-        }
-        else if( this.lhs.isPureReference() ) {
-            return null;
-        }
-
-        return this.lhs.lhs.toString();
-        
-    };
                                 
     method.convertArgs = function() {
         if( this.args.length ) {
@@ -45,50 +33,56 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         return [];
     };
     
-    method.toString = function() {
-        var ret = this.convertArgs(),
-            last,
-            context = 'this';
-        
+    method.checkValid = function() {
+        this.lhs.checkValidForFunctionCall();
         if( this.lhs.constructor === CallExpression ) {
             var memberQuoted = this.lhs.rhs.toStringQuoted();
             if( rinvalidprop.test(memberQuoted)) {
                 this.lhs.rhs.raiseError( "Illegal method call "+memberQuoted+"." );
             }
-            if( ret.length ) {
-                return '___method('+this.lhs.lhs+', '+memberQuoted+', ['+ret.join(", ") + '])';
+        }
+        else if( this.lhs.constructor === MemberExpression ) {
+            var memberQuoted = this.lhs.getLast().toStringQuoted();
+            if( rinvalidprop.test(memberQuoted)) {
+                this.lhs.getLast().raiseError( "Illegal method call "+memberQuoted+"." );
+            }
+        }
+    };
+    
+    method.toString = function() {
+        var argumentsCodeArray = this.convertArgs(),
+            last,
+            retCode,
+            context = 'this';
+        
+        if( this.lhs.constructor === CallExpression ) {
+            var memberQuoted = this.lhs.rhs.toStringQuoted();
+            if( argumentsCodeArray.length ) {
+                retCode = '___method('+this.lhs.lhs+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
             }
             else {
-                return '___method('+this.lhs.lhs+', '+memberQuoted+')';
+                retCode = '___method('+this.lhs.lhs+', '+memberQuoted+')';
             } 
         }
-        
-       
-        if( (last = this.lhs.getLast() ) ) {
-            var memberQuoted = last.toStringQuoted();
-            if( rinvalidprop.test(memberQuoted)) {
-                last.raiseError( "Illegal method call "+memberQuoted+"." );
-            }
-            if( ret.length ) {
-                return '___method('+this.lhs.toStringNoLast()+', '+memberQuoted+', ['+ret.join(", ") + '])';
+        else if( this.lhs.constructor === MemberExpression ) {
+            var memberQuoted = this.lhs.getLast().toStringQuoted();
+            if( argumentsCodeArray.length ) {
+                retCode = '___method('+this.lhs.toString( true )+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
             }
             else {
-                return '___method('+this.lhs.toStringNoLast()+', '+memberQuoted+')';
+                retCode = '___method('+this.lhs.toString( true )+', '+memberQuoted+')';
             }
         }
-        var expr = this.lhs.toStringQuoted();
-  
-        if( rinvalidprop.test(expr)) {
-            this.lhs.raiseError( "Illegal function call "+expr +"." );
-        }
-        if( ret.length ) {
-            return '___functionCall(this, '+expr+', ['+ret.join(", ") + '])';
-        }
         else {
-            return '___functionCall(this, '+expr+')';
+            if( argumentsCodeArray.length ) {
+                return '___functionCall(this, '+this.lhs+', ['+argumentsCodeArray.join(", ") + '])';
+            }
+            else {
+                return '___functionCall(this, '+this.lhs+')';
+            }
         }
 
-        
+        return (this.parens ? "(" + retCode + ")" : retCode);
     };
         
     return FunctionCall;

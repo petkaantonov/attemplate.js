@@ -29,25 +29,25 @@ var ForeachBlock = TemplateExpressionParser.yy.ForeachBlock = (function() {
     //secured against reference errros
     
     //TODO do this after AST has been done so nested loops can be done
-    method.definesVars = function() {
-        var ret = {};
+    method.getDeclaredReferences = function() {
+        var ret = new Map();
        
         if( this.collection instanceof Range ) {
-            ret[this.key] = true;
-            ret.count = true;
+            ret.set( this.key.toString(), true );
+            ret.set( "count", true );
         }
         else if( !this.value ) {
-            ret.count = true;
-            ret.index = true;
-            ret.isLast = true;
-            ret.isFirst = true;
-            ret.prev = true;
-            ret.next = true;
-            ret[this.key] = true;
+            ret.set( "count", true );
+            ret.set( "index", true );
+            ret.set( "isLast", true );
+            ret.set( "isFirst", true );
+            ret.set( "prev", true );
+            ret.set( "next", true );
+            ret.set( this.key.toString(), true );
         }
         else {
-            ret[this.key] = true;
-            ret[this.value] = true;
+            ret.set( this.key.toString(), true );
+            ret.set( this.value.toString(), true );
         }
         return ret;
     };

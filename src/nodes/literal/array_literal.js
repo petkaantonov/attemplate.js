@@ -63,7 +63,7 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
             return false;
         }
         for( var i = 0; i < this.elements.length; ++i ) {
-            if( obj.equals( this.elements[i] ) ) {
+            if( obj.staticallyEquals( this.elements[i] ) ) {
                 return true;
             }
         }
@@ -71,26 +71,26 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         return false;
     };
     
-    method.toNumberValue = function() {
-        _super.toNumberValue.call(this);
+    method.getStaticNumberValue = function() {
+        _super.getStaticNumberValue.call(this);
         
         if( this.getElementCount() === 0 ) {
             return 0;
         }
         else if( this.getElementCount() === 1 ) {
-            return this.elements[0].toNumberValue();
+            return this.elements[0].getStaticNumberValue();
         }
         return 0;
     };
     
-    method.toStringValue = function() {
-        _super.toStringValue.call( this );
+    method.getStaticStringValue = function() {
+        _super.getStaticStringValue.call( this );
         if( this.getElementCount() === 0 ) {
             return "";
         }
         var ret = [];
         for( var i = 0; i < this.elements.length; ++i ) {
-            ret.push( this.elements[i].toStringValue() );
+            ret.push( this.elements[i].getStaticStringValue() );
         }
         return ret.join(",");
     };
@@ -111,7 +111,7 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         return this.elements.length;
     };
     
-    method.truthy = function() {
+    method.isStaticallyTruthy = function() {
         return this.getElementCount() > 0;
     };
     

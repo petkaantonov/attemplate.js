@@ -7,8 +7,15 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
     function NamedArgument( name, expr) {
         _super.constructor.apply(this, arguments);
         this.name = name;
-        this.expr = expr;        
+        this.expr = expr;
+        this.checkValid();
     }
+    
+    method.checkValid = function() {
+        if( this.name.toString() === "__proto__" ) {
+            this.raiseError("Cannot use __proto__ as a key");
+        }
+    };
     
     method.checkValidForFunctionCall = function() {
         

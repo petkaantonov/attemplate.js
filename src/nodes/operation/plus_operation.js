@@ -17,13 +17,13 @@ var PlusOperation = TemplateExpressionParser.yy.PlusOperation = (function() {
         
         if( leftType === "number" &&
             rightType === "number" ) {
-            left = this.operandLeft.unboxStaticValue().toNumberValue();
-            right = this.operandRight.unboxStaticValue().toNumberValue();
+            left = this.operandLeft.unboxStaticValue().getStaticNumberValue();
+            right = this.operandRight.unboxStaticValue().getStaticNumberValue();
             return new NumericLiteral( left + right );
         }
         else {
-            left = this.operandLeft.unboxStaticValue().toStringValue(),
-            right = this.operandRight.unboxStaticValue().toStringValue();
+            left = this.operandLeft.unboxStaticValue().getStaticStringValue(),
+            right = this.operandRight.unboxStaticValue().getStaticStringValue();
             return StringLiteral.fromRaw( left + right );
         }
     };

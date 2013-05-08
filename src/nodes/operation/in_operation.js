@@ -19,16 +19,17 @@ var InOperation = TemplateExpressionParser.yy.InOperation = (function() {
             
         if( left.constructor === StringLiteral &&
             right.constructor === StringLiteral ) {
-            return new BooleanLiteral( right.toStringValue().indexOf( left.toStringValue() ) > -1 );
+            return right.getStaticStringValue().indexOf( left.getStaticStringValue() ) > -1 ? 
+                BooleanLiteral.TRUE : BooleanLiteral.FALSE;
         }
         else if( right.constructor === ArrayLiteral ) {
-            return new BooleanLiteral( right.staticContains(left) );
+            return right.staticContains(left) ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
         }
         else if( right.constructor === MapLiteral ) {
             //TODO
         }
         else {
-            return new BooleanLiteral( false );
+            return BooleanLiteral.FALSE;
         }
     };
     

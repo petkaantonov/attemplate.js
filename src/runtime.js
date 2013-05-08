@@ -8,6 +8,10 @@ var Runtime = (function() {
         OBJECT_ARRAY = "[object Array]",
         toString = Object.prototype.toString;
         
+    function isFunctionNative(f) {
+        return /^\s*function\s*(\b[a-z$_][a-z0-9$_]*\b)*\s*\((|([a-z$_][a-z0-9$_]*)(\s*,[a-z$_][a-z0-9$_]*)*)\)\s*{\s*\[native code\]\s*}\s*$/i.test(String(f));
+    }
+    
     function parseVersion( versionString ) {
     
         if( typeof versionString !== STRING ) {
@@ -79,7 +83,7 @@ var Runtime = (function() {
         }
     }
     
-
+    //TODO use sandboxing
     function Runtime( compilerVersion ) {
         checkVersion( compilerVersion, version );
     }
@@ -141,24 +145,33 @@ var Runtime = (function() {
     };
     
     var ___method = method.method = function( obj, methodName, args ) {
-        var method;
+
         if( obj == null ) {
             return null;
         }
+        
 
-        method = obj[methodName];
-
-        if( !method || typeof method !== FUNCTION ) {
-            var type = "___" + toType(obj);
-            if( ( method = extensions[type][methodName] ) ) {
-                return tryCallFunction( obj, method, args);
+        var method = obj[methodName];
+        
+        if( isFunctionNative( method ) ) {
+            var type = "___" + toType(obj),
+                typeMap = extensions.get(type);
+                
+            if( !typeMap ) {
+                throw new Error( "Unqualified use of a native method.");
             }
-            else {
-                return null;
+            method = typeMap.get( methodName );
+            
+            if( !method ) {
+                throw new Error( "Unqualified use of a native method.");
             }
+            return tryCallFunction( obj, method, args);
+        }
+        else if( typeof method === FUNCTION ) {
+            return tryCallFunction( obj, method, args);
         }
         else {
-            return tryCallFunction( obj, method, args );
+            return null;
         }
     };
 
@@ -501,17 +514,20 @@ var Runtime = (function() {
         };
     })();
     
-    var extensions = {
-        ___Array: {},
-        ___String: {},
-        ___Number: {},
-        ___Boolean: {},
-        ___Object: {},
-        ___RegExp: {},
-        ___Date: {},
+    var extensions = new Map();
+    extensions.setAll({
+        ___Array: new Map(),
+        ___String: new Map(),
+        ___Number: new Map(),
+        ___Boolean: new Map(),
+        ___Object: new Map(),
+        ___RegExp: new Map(),
+        ___Date: new Map(),
         Math: Math,
         Date: Date
-    };
+    });
+    
+    
     method.___getExtensions = function() {
         return extensions;
     };
@@ -531,7 +547,6 @@ var Runtime = (function() {
     var toType = function(obj) {
         return toString.call(obj).slice(8, -1);
     };
-    var validMethodExtensions = "Array String Number Boolean Object RegExp Date".split(" ");
 
     var rinvalidname = /^___/;
 
@@ -543,19 +558,21 @@ var Runtime = (function() {
         if( rinvalidname.test(name) ) {
             throw new Error("Names starting with ___ are reserved for internal use");
         }
+        if( name === "__proto__" ) {
+            throw new Error("Cannot use __proto__ as a name");
+        }
         if( ( split = name.split(".") ).length > 1 ) {
-            if( indexOf( validMethodExtensions, split[0] ) > -1 ) {
-                if( typeof value !== FUNCTION ) {
-                    throw new Error( "Native extensions must be functions.");
-                }
-                extensions[ "___" + split[0]][split[1]] = value;
+            if( typeof value !== FUNCTION ) {
+                throw new Error( "Methods must be of function type");
             }
-            else {
-                throw new Error( "Valid native extensions are: " + validMethodExtensions.join(", ") + ". Given: '"+split[0]+"'.");
+            var typeMap = "___" + split[0];
+            if( !extensions.has( typeMap ) ) {
+                extensions.set( typeMap, new Map() );
             }
+            extensions.get( typeMap ).set( split[1], value );
         }
         else {
-            extensions[name] = value;
+            extensions.set(name, value);
         }
     };
     

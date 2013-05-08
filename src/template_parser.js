@@ -1,4 +1,5 @@
-var compiledTemplates = {};
+var compiledTemplates = new Map();
+
 function trimRight( str ) {
     return str.replace(/\s\s*$/, "");
 }
@@ -40,7 +41,7 @@ var input,
     nextCharForced = null,
     htmlContextParser = null,
 
-    exported = {},
+    exported = new Map(),
 
     /* constants / helpers */
     
@@ -74,7 +75,7 @@ var input,
     rexport = /(?:^|[^\\])@export\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*)/,
     rimport = /(?:^|[^\\])@import\x20([A-Za-z$_][0-9A-Za-z$_]*)(?:\x20as\x20([A-Za-z$_][0-9A-Za-z$_]*))?/g,
     rprop = /(?:\[\s*(?:('(?:[^']|\\')*')|("(?:[^"]|\\")*")|([A-Za-z$_][0-9A-Za-z$_]*))\s*\]|\s*\.\s*([A-Za-z$_][0-9A-Za-z$_]*))/g,
-    rkeyword = /^(?:undefined|NaN|Infinity|this|false|true|null|eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,
+    rkeyword = /^(?:__proto__|undefined|NaN|Infinity|this|false|true|null|eval|arguments|break|case|catch|continue|debugger|default|delete|do|else|finally|for|function|if|in|instanceof|new|return|switch|throw|try|typeof|var|void|while|with|class|enum|export|extends|import|super|implements|interface|let|package|private|protected|public|static|yield)$/,
     rtrailingattrname = /(?:([a-zA-Z0-9_-][a-zA-Z0-9_:-]*)\s*=\s*["'])$/g,
     rbooleanattr = /^(?:checked|selected|autofocus|autoplay|async|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|ismap|declare|noresize|nowrap|noshade|compact|formnovalidate|reversed|muted|seamless|default|novalidate|open|typemustmatch|truespeed)$/,
     rinvalidref = /^(?:null|false|true|this)$/,
@@ -286,7 +287,7 @@ var parseHelperHeader = (function() {
             argString,
             len,
             args = [],
-            uniqueArgs = {};
+            uniqueArgs = new Map();
 
         startIndex += name[0].length;
         name = name[1];
@@ -310,10 +311,10 @@ var parseHelperHeader = (function() {
                 
                 new Identifier( arg ).setStartIndex( startIndex ).checkValid();
                                 
-                if( uniqueArgs.hasOwnProperty( args ) ) {
+                if( uniqueArgs.has( arg ) ) {
                     doError( "Duplicate helper parameter name, '"+arg+"' was already declared.", startIndex );
                 }
-                uniqueArgs[arg] = true;
+                uniqueArgs.set( arg, true );
                 args[i] = arg;
             }            
         }
@@ -766,19 +767,6 @@ function setScopeBlock() {
     }
 }
 
-function wasTopLevelBranchInScope() {
-    for( var l = blockStack.length-1; l >= 0; l-- ) {
-        if( blockStack[l] instanceof ScopedBlock ) { //Meeting the scope without having met a branch
-            return true;
-        }
-        if( blockStack[l].isBranched() ) { //Meeting a branch without having met the scope
-            return false;
-        }
-    }
-}
-
-
-
 function inLoopingConstruct() {
     for( var i = 0; i < blockStack.length; ++i ) {
         if( blockStack[i] instanceof ForeachBlock ) {
@@ -788,26 +776,16 @@ function inLoopingConstruct() {
     return false;
 }
 
-function merge(src, dst) {
-    for( var key in src ) { if( src.hasOwnProperty(key) ) {
-        dst[key] = src[key];
-    }}
-}
-
 function isImported( imports, helperName ) {
-    for( var key in imports ) {
-        if( imports.hasOwnProperty(key) ) {
-            
-            if( key === helperName ) {
-                return true;
-            }
-            else if( imports[key] && imports[key].indexOf(helperName) > -1 ) {
-                return true;
-            }
-            
+    var ret = false;
+    imports.forEach( function( key, value ) {
+        if( key === helperName ||
+            ( value !== null  && value.indexOf( helperName ) > -1 ) ) {
+            ret = true;
+            return false;
         }
-    }
-    return false;
+    });
+    return ret;
 }
 
 function getImports( importProgram, imports ) {    
@@ -822,14 +800,14 @@ function getImports( importProgram, imports ) {
         if( helper instanceof Program ) {
             name = helper.getImportName();
             
-            if( imports.hasOwnProperty(name) ) {
+            if( imports.has( name ) ) {
                 alias = helper.getAliasedImportName();
                 if( alias ) {
-                    imports[name].push( alias );
+                    imports.get( name ).push( alias );
                 }
             }
             else {
-                imports[name] = [];
+                imports.set( name, [] );
                 getImports( helper, imports );
             }
         }
@@ -847,7 +825,7 @@ function parse( inp, compiledName ) {
     var r, matchExport, matchImport, block,
         stackTop, stackLen,
         helpers = [], program, statements,  name, output,
-        imports = {},
+        imports = new Map(),
         statement,
         prevType,
         startIndex;
@@ -861,25 +839,25 @@ function parse( inp, compiledName ) {
 
     while( ( matchImport = rimport.exec( input ) ) ) {
 
-        if( !exported.hasOwnProperty( matchImport[1] ) ) {
+        if( !exported.has( matchImport[1] ) ) {
             doError( "Cannot import '" + matchImport[1] + "' , no template has been exported with that name.", rimport.lastIndex - matchImport[0].length );
         }
         var alias = matchImport[2],
             importedProgram,
             name = matchImport[1];
 
-        if( imports.hasOwnProperty( name ) ) {
+        if( imports.has( name ) ) {
             doError( "Cannot import the template '"+name+"' more than once in a single template." );
         }
         else {
-            imports[name] = [];
+            imports.set( name, [] );
             
             if( alias ) {
-                imports[name].push( alias );
+                imports.get( name ).push( alias );
             }
         }
         
-        importedProgram = exported[name].asHelper( name, alias );
+        importedProgram = exported.get(name).asHelper( name, alias );
         helpers.push( importedProgram );
         
     }
@@ -892,8 +870,8 @@ function parse( inp, compiledName ) {
     
     
 
-    if( matchExport[1] && !exported.hasOwnProperty( matchExport[1] ) ) {
-        exported[matchExport[1]] = program;
+    if( matchExport[1] && !exported.has( matchExport[1] ) ) {
+        exported.set(matchExport[1], program);
     }
 
     rimport.lastIndex = 0;
@@ -965,7 +943,7 @@ function parse( inp, compiledName ) {
                     doError( "Cannot use '"+helperName+"', for a helper name - a helper or an import with that name already exists.", startIndex);
                 }
 
-                imports[helperName] = null;
+                imports.set(helperName, null);
                 stackTop = new HelperBlock( helperName, helperArgs ).setStartIndex( startIndex ) ;
                 blockStack.push( stackTop );
                 setScopeBlock();
@@ -973,7 +951,7 @@ function parse( inp, compiledName ) {
             }
             else if( blockType === "foreach" || blockType === "for" ) {
                 var snippet = TemplateExpressionParser.parse( blockType + token[5] + value, startIndex, ")" );
-                scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+                scopeBlock.mergeReferences( snippet.getSeenReferences() );
                 stackTop = snippet.getExpression().setStartIndex( startIndex );
                 blockStack.push( stackTop );
             }
@@ -994,15 +972,12 @@ function parse( inp, compiledName ) {
                         break;
                 }
                 
-                scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+                scopeBlock.mergeReferences( snippet.getSeenReferences() );
                 blockStack.push( stackTop.setStartIndex( startIndex ) );
                 
             }
             
-            if( stackTop.isBranched() ) {
-                stackTop.push(ContextSwitch.DEFAULT);
-                htmlContextParser = htmlContextParser.saveBranch();
-            }
+
         }
         else if( type === KEYWORD_BLOCK_CLOSE ) {
             if( stackTop instanceof Program ) {
@@ -1020,8 +995,8 @@ function parse( inp, compiledName ) {
             setScopeBlock();
             
             //Remove reference error guards from current scope for the vars that the block defines
-            if( block.definesVars ) {
-                scopeBlock.unmergeVariables( block.definesVars() );
+            if( block instanceof BranchedBlock ) {
+                scopeBlock.unmergeReferences( block.getDeclaredReferences() );
             }
             
             skipWhiteSpace(); //Skip whitespace after block
@@ -1036,14 +1011,6 @@ function parse( inp, compiledName ) {
             else if( block instanceof ScopedBlock ) {
                 htmlContextParser = htmlContextParser.popStack();
             } //IfBlock or IfElseBlock without else or else if upcoming or an else block which cannot have any more upcoming branches
-            else if( block.isBranched() && wasTopLevelBranchInScope() ) {
-                stackTop.push(ContextSwitch.DEFAULT);
-            }
-
-            if( block.isBranched() ) {
-                block.push(new ContextSwitch(htmlContextParser.getContext()));
-                htmlContextParser = htmlContextParser.restoreBranch();
-            }
             
         }
         else if( type === STRING ) {
@@ -1104,7 +1071,7 @@ function parse( inp, compiledName ) {
         }
         else if( type === EXPRESSION ) {
             var snippet = TemplateExpressionParser.parse( value, startIndex, blockType === LONG_EXPRESSION ? ")" : lookahead(1) );
-            scopeBlock.mergeVariables( snippet.getNakedVarReferences() );
+            scopeBlock.mergeReferences( snippet.getSeenReferences() );
             
             
             
@@ -1136,7 +1103,7 @@ function parse( inp, compiledName ) {
             var expr = snippet.getExpression();
             
             if( expr.isStatic() ) {
-                expr = expr.toStringValue();
+                expr = expr.getStaticStringValue();
                 var literalExpr = new LiteralExpression( expr ).setStartIndex( startIndex ).setEndIndex( i - 1 );
                 htmlContextParser.write( expr, startIndex );
                 stackTop.push( literalExpr );

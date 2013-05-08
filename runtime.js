@@ -24,7 +24,170 @@
     
     var doError = function() {
     
-    };var HtmlContextParser = (function() {
+    };var Map = (function() {
+    var method = Map.prototype,
+        hasProp = {}.hasOwnProperty;
+
+    function Map() {
+        this._map = {};      
+    }
+    
+    method.clear = function() {
+        this._map = {};
+    };
+    
+    method.has = function( key ) {
+        return hasProp.call( this._map, key );
+    };
+    
+    method.remove = function( key ) {
+        if( this.has( key ) ) {
+            delete this._map[key];
+        }
+    };
+    
+    method.set = function( key, value ) {
+        this._map[key] = value;
+    };
+    
+    method.setIfAbsent = function( key, value ) {
+        if( !this.has( key ) ) {
+            this.set( key, value );
+        }
+    };
+    
+    var clone = function( key, value ) {this.set(key, value);}
+    method.clone = function() {
+        var ret = new Map();
+        this.forEachCtx( clone, ret );
+        return ret;
+    };
+    
+    method.setAll = function( keys ) {
+        for( var key in keys ) {
+            if( hasProp.call( keys, key ) ) {
+                this.set( key, keys[key] );
+            }
+        }
+    };
+    
+    method.get = function( key ) {
+        if( this.has( key ) ) {
+            return this._map[key];
+        }
+        return null;
+    };
+    
+    method.forEach = function( fn ) {
+        var i = 0;
+        for( var key in this._map ) {
+            if( this.has( key ) ) {
+                if( fn( key, this._map[key], i++ ) === false ) {
+                    break;
+                }
+            }
+        }
+    };
+    
+    //TODO Macro
+    method.forEach$1 = function( fn, $1 ) {
+        var i = 0;
+        for( var key in this._map ) {
+            if( this.has( key ) ) {
+                if( fn( $1, key, this._map[key], i++ ) === false ) {
+                    break;
+                }
+            }
+        }
+    };
+
+    method.forEach$2 = function( fn, $1, $2 ) {
+        var i = 0;
+        for( var key in this._map ) {
+            if( this.has( key ) ) {
+                if( fn( $1, $2, key, this._map[key], i++ ) === false ) {
+                    break;
+                }
+            }
+        }
+    };
+    
+    method.forEach$3 = function( fn, $1, $2, $3 ) {
+        var i = 0;
+        for( var key in this._map ) {
+            if( this.has( key ) ) {
+                if( fn( $1, $2, $3, key, this._map[key], i++ ) === false ) {
+                    break;
+                }
+            }
+        }
+    };
+    
+    method.forEachCtx = function( fn, ctx ) {
+        var i = 0;
+        for( var key in this._map ) {
+            if( this.has( key ) ) {
+                if( fn.call( ctx, key, this._map[key], i++ ) === false ) {
+                    break;
+                }
+            }
+        }
+    };
+
+    var removeAll = function( key ) { this.remove( key ); };
+    method.removeAll = function( map ) {
+        map.forEachCtx( removeAll, this );
+    };
+    
+    var merge = function( key, value ) { this.set( key, value ); };
+    method.merge = function( map ) {
+        map.forEachCtx( merge, this );
+    };
+    
+  
+    var mergeIfNotExists = function( key, value ) { 
+        if( !this.has(key) ) {
+            this.set( key, value ); 
+        }
+    };
+    
+    method.mergeIfNotExists = function( map ) {
+        map.forEachCtx( mergeIfNotExists, this );
+    };
+    
+    method.immutableView = function() {
+        var ret = new ImmutableMap();
+        ret._map = this._map;
+        return ret;
+    };
+    
+    var ImmutableMap = (function() {
+        var _super = Map.prototype,
+            method = ImmutableMap.prototype = Object.create(_super);
+        
+        method.constructor = ImmutableMap;
+        
+        function ImmutableMap() {
+            _super.constructor.apply(this, arguments);
+        }
+        
+        method.clear = method.set = method.setAll = method.remove = 
+            method.removeAll = method.merge = method.mergeIfNotExists = 
+            method.setIfAbsent = function() {
+            throw new Error("immutable map");
+        };
+        
+        return ImmutableMap;
+    })();
+
+    
+    Map.EMPTY = new ImmutableMap();
+    
+    Map.Immutable = ImmutableMap;
+    
+    return Map;
+})();
+var HtmlContextParser = (function() {
 
     //Broken or unimplemented    
     //TAG_NAME
@@ -360,9 +523,9 @@
     };
 
     method.tagClose = function( name ) {
-        var equalsCurrent = this.currentTagName() === name;
+        var staticallyEqualsCurrent = this.currentTagName() === name;
         
-        if( this.inCharData && equalsCurrent ) {
+        if( this.inCharData && staticallyEqualsCurrent ) {
             this.tagStack.pop();
             this.context = context.HTML;
             this.inCharData = false;
@@ -370,7 +533,7 @@
         else if(this.inCharData || this.currentAttr || this.openedTag) {
             return;
         }
-        else if( equalsCurrent ) {
+        else if( staticallyEqualsCurrent ) {
             this.tagStack.pop();
             this.context = context.HTML;
         }
@@ -544,6 +707,10 @@
         OBJECT_ARRAY = "[object Array]",
         toString = Object.prototype.toString;
         
+    function isFunctionNative(f) {
+        return /^\s*function\s*(\b[a-z$_][a-z0-9$_]*\b)*\s*\((|([a-z$_][a-z0-9$_]*)(\s*,[a-z$_][a-z0-9$_]*)*)\)\s*{\s*\[native code\]\s*}\s*$/i.test(String(f));
+    }
+    
     function parseVersion( versionString ) {
     
         if( typeof versionString !== STRING ) {
@@ -615,7 +782,7 @@
         }
     }
     
-
+    //TODO use sandboxing
     function Runtime( compilerVersion ) {
         checkVersion( compilerVersion, version );
     }
@@ -677,24 +844,33 @@
     };
     
     var ___method = method.method = function( obj, methodName, args ) {
-        var method;
+
         if( obj == null ) {
             return null;
         }
+        
 
-        method = obj[methodName];
-
-        if( !method || typeof method !== FUNCTION ) {
-            var type = "___" + toType(obj);
-            if( ( method = extensions[type][methodName] ) ) {
-                return tryCallFunction( obj, method, args);
+        var method = obj[methodName];
+        
+        if( isFunctionNative( method ) ) {
+            var type = "___" + toType(obj),
+                typeMap = extensions.get(type);
+                
+            if( !typeMap ) {
+                throw new Error( "Unqualified use of a native method.");
             }
-            else {
-                return null;
+            method = typeMap.get( methodName );
+            
+            if( !method ) {
+                throw new Error( "Unqualified use of a native method.");
             }
+            return tryCallFunction( obj, method, args);
+        }
+        else if( typeof method === FUNCTION ) {
+            return tryCallFunction( obj, method, args);
         }
         else {
-            return tryCallFunction( obj, method, args );
+            return null;
         }
     };
 
@@ -1037,17 +1213,20 @@
         };
     })();
     
-    var extensions = {
-        ___Array: {},
-        ___String: {},
-        ___Number: {},
-        ___Boolean: {},
-        ___Object: {},
-        ___RegExp: {},
-        ___Date: {},
+    var extensions = new Map();
+    extensions.setAll({
+        ___Array: new Map(),
+        ___String: new Map(),
+        ___Number: new Map(),
+        ___Boolean: new Map(),
+        ___Object: new Map(),
+        ___RegExp: new Map(),
+        ___Date: new Map(),
         Math: Math,
         Date: Date
-    };
+    });
+    
+    
     method.___getExtensions = function() {
         return extensions;
     };
@@ -1067,7 +1246,6 @@
     var toType = function(obj) {
         return toString.call(obj).slice(8, -1);
     };
-    var validMethodExtensions = "Array String Number Boolean Object RegExp Date".split(" ");
 
     var rinvalidname = /^___/;
 
@@ -1079,19 +1257,21 @@
         if( rinvalidname.test(name) ) {
             throw new Error("Names starting with ___ are reserved for internal use");
         }
+        if( name === "__proto__" ) {
+            throw new Error("Cannot use __proto__ as a name");
+        }
         if( ( split = name.split(".") ).length > 1 ) {
-            if( indexOf( validMethodExtensions, split[0] ) > -1 ) {
-                if( typeof value !== FUNCTION ) {
-                    throw new Error( "Native extensions must be functions.");
-                }
-                extensions[ "___" + split[0]][split[1]] = value;
+            if( typeof value !== FUNCTION ) {
+                throw new Error( "Methods must be of function type");
             }
-            else {
-                throw new Error( "Valid native extensions are: " + validMethodExtensions.join(", ") + ". Given: '"+split[0]+"'.");
+            var typeMap = "___" + split[0];
+            if( !extensions.has( typeMap ) ) {
+                extensions.set( typeMap, new Map() );
             }
+            extensions.get( typeMap ).set( split[1], value );
         }
         else {
-            extensions[name] = value;
+            extensions.set(name, value);
         }
     };
     

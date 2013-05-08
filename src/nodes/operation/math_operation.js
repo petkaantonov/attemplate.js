@@ -9,17 +9,18 @@ var MathOperation = TemplateExpressionParser.yy.MathOperation = (function() {
     }
     
     method.resolveStaticOperation = function() {
-        var left = this.operandLeft.unboxStaticValue().toNumberValue(),
-            right = this.operandRight.unboxStaticValue().toNumberValue();
+        var left = this.operandLeft.unboxStaticValue().getStaticNumberValue(),
+            right = this.operandRight.unboxStaticValue().getStaticNumberValue();
 
 
         switch( this.operator ) {
-            case MathOperation.MINUS: return new NumericLiteral( left - right );
-            case MathOperation.MUL: return new NumericLiteral( left * right );
-            case MathOperation.DIV: return new NumericLiteral( right === 0 ? 0 : left / right );
-            case MathOperation.MOD: return new NumericLiteral( left % right );
+            case "-": return new NumericLiteral( left - right );
+            case "*": return new NumericLiteral( left * right );
+            case "/": return new NumericLiteral( right === 0 ? 0 : left / right );
+            case "%": return new NumericLiteral( left % right );
 
-            default: throw new Error("Illegal operator value for math operation operation");
+            default: 
+                console.assert( false, "Illegal operator value for math operation operation");
         }
     };
     

@@ -8,19 +8,26 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
     function ScopedBlock() {
         _super.constructor.apply(this, arguments);
         this.helpers = [];
-        this.variables = {};
-        this.helperNames = {};
+        this.references = new Map();
+        this.helperNames = new Map();
     }
+    
+    method.putCloneProps = function( clonedObj ) {
+        _super.putCloneProps.call( this, clonedObj );
+        clonedObj.helpers = this.helpers.slice(0);
+        clonedObj.references = this.references.clone();
+        clonedObj.helperNames = this.helperNames.clone();
+    };
 
     method.setHelpers = function( helpers ) {
         this.helpers = helpers;
         for( var i = 0; i < helpers.length; ++i ) {
-            this.helperNames[helpers[i].getName()] = true;
+            this.helperNames.set(helpers[i].getName(), true);
         }
     };
     
     method.hasHelper = function( name ) {
-        return this.helperNames.hasOwnProperty( name );
+        return this.helperNames.has( name );
     };
 
     method.getHelpers = function() {
@@ -48,40 +55,27 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
     };
 
     
-    method.unmergeVariables = function( referenceExpressionMap ) {
-        for( var key in referenceExpressionMap ) {
-            if( referenceExpressionMap.hasOwnProperty(key) && this.variables.hasOwnProperty(key) ) {
-                delete this.variables[key];
-            }
-        }
+    method.unmergeReferences = function( referenceExpressionMap ) {
+        this.references.removeAll( referenceExpressionMap );
     };
     
-    method.mergeVariables = function( referenceExpressionMap ) {
-        var vars = this.getVariables();
-        for( var key in referenceExpressionMap ) { 
-            if( referenceExpressionMap.hasOwnProperty( key ) &&
-                !vars.hasOwnProperty(key) ) {
-                vars[key] = referenceExpressionMap[key];
-            } 
-        }
+    method.mergeReferences = function( referenceExpressionMap ) {
+        this.references.mergeIfNotExists( referenceExpressionMap );
     };
             
-    method.getVariables = function() {
-        return this.variables;
+    method.getReferences = function() {
+        return this.references;
     };
     
     //Get references that don't refer to a helper call
-    method.getReferences = function() {
-        var vars = this.getVariables(),
-            references = [];
-
-        for( var key in vars ) {
-            if( vars.hasOwnProperty( key ) && //Don't override helpers
-                !this.helperNames.hasOwnProperty( key ) ) {
-                    references.push(key);   
-             }
-        }
-        return references;
+    method.getNonHelperReferences = function() {
+        var self = this, nonHelperReferences = [];
+        this.references.forEach(function( key ){
+            if( !self.helperNames.has( key ) ) {
+                nonHelperReferences.push(key);
+            }
+        }, this );
+        return nonHelperReferences;
     };
     
     return ScopedBlock;

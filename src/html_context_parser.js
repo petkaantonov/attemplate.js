@@ -334,9 +334,9 @@ var HtmlContextParser = (function() {
     };
 
     method.tagClose = function( name ) {
-        var equalsCurrent = this.currentTagName() === name;
+        var staticallyEqualsCurrent = this.currentTagName() === name;
         
-        if( this.inCharData && equalsCurrent ) {
+        if( this.inCharData && staticallyEqualsCurrent ) {
             this.tagStack.pop();
             this.context = context.HTML;
             this.inCharData = false;
@@ -344,7 +344,7 @@ var HtmlContextParser = (function() {
         else if(this.inCharData || this.currentAttr || this.openedTag) {
             return;
         }
-        else if( equalsCurrent ) {
+        else if( staticallyEqualsCurrent ) {
             this.tagStack.pop();
             this.context = context.HTML;
         }

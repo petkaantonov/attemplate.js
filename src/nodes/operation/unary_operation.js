@@ -20,11 +20,12 @@ var UnaryOperation = TemplateExpressionParser.yy.UnaryOperation = (function() {
 
     method.resolveStaticOperation = function() {
         switch( this.operator ) {
-            case UnaryOperation.PLUS: return new NumericLiteral( this.operand.unboxStaticValue().toNumberValue() );
-            case UnaryOperation.MINUS: return new NumericLiteral( this.operand.unboxStaticValue().toNumberValue() );
-            case UnaryOperation.NOT: return new BooleanLiteral( this.operand.unboxStaticValue().truthy() );
+            case UnaryOperation.PLUS: return new NumericLiteral( this.operand.unboxStaticValue().getStaticNumberValue() );
+            case UnaryOperation.MINUS: return new NumericLiteral( this.operand.unboxStaticValue().getStaticNumberValue() );
+            case UnaryOperation.NOT: return this.operand.unboxStaticValue().isStaticallyTruthy() ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
             
-            default: throw new Error("Illegal operator value for unary operation");
+            default:
+                console.assert( false, "Illegal operator value for unary operation" );
         }
     };
     

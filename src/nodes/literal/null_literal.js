@@ -17,11 +17,11 @@ var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
         return "number";
     };
     
-    method.equals = function( obj ) {
+    method.staticallyEquals = function( obj ) {
         return obj.constructor === NullLiteral;
     };
     
-    method.toNumberValue = function() {
+    method.getStaticNumberValue = function() {
         return 0;
     };
     

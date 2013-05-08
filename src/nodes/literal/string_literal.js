@@ -122,15 +122,15 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         }
     };
     
-    method.equals = function( obj ) {
+    method.staticallyEquals = function( obj ) {
         return obj.constructor === StringLiteral && obj.str === this.str;
     };
     
-    method.toStringValue = function() {
+    method.getStaticStringValue = function() {
         return this.str;
     };
     
-    method.toNumberValue = function() {
+    method.getStaticNumberValue = function() {
         return +this.str;
     };
     
@@ -146,7 +146,7 @@ var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
         return "string";
     };
     
-    method.truthy = function() {
+    method.isStaticallyTruthy = function() {
         return this.str.length > 0;
     };
         
