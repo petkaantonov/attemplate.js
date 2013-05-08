@@ -114,9 +114,9 @@ var HtmlContextParser = (function() {
     var chunker = /(?:<!?([a-z0-9_:-]+)|([:a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/([a-z0-9:_-]+)\s*\/?\s*>|(\/?>)|(["'])|(javascript|data):|(refresh)|(dataurl)|(--)>|([:/?.#]))/g; //toLowerCase() is called on the string
                                                                                                  //attrclose     //URI context special cases
 
-    var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
-    var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
-    var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
+    var uriAttr = /^(?:action|archive|background|cite|classid|codebase|data|dynsrc|formaction|href|icon|longdesc|lowsrc|manifest|poster|profile|src|usemap|xmlns)$/;
+    var selfClosing = /^(?:area|base|br|col|command|doctype|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
+    var charData = /^(?:--|script|style|textarea|title)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
 
     var copyProps = function( src, target ) {
         target.context = src.context;

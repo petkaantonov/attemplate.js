@@ -12,6 +12,7 @@ var BinaryOperation = TemplateExpressionParser.yy.BinaryOperation = (function() 
         
         if( operandLeft.isStatic() &&
             operandRight.isStatic() ) {
+            
             this.setStatic();
         }
     }

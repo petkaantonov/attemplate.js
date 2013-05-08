@@ -57,16 +57,11 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
 
     method.toImportCode = function() {
         this.isBeingImported = true;
-        var ret,
-            nonHelperReferences = this.getNonHelperReferences();
-            
-            
-        var indent = this.getIndentStr();
-        
-        ret = this._toStringHelper(
+    
+        var ret = this._toStringHelper(
             this.getHelperCode(),
             idName,
-            (nonHelperReferences.length ? "var " + nonHelperReferences.join(", \n" +indent + "            ") + ";\n" : ""),
+            this.referenceAssignment(),
             this.getCode(),
             HtmlContextParser.context.HTML.name
         );
@@ -144,22 +139,11 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         var ret = "";
         for( var i = 0; i < references.length; ++i ) {
             var ref = references[i];
-            ret += indent + "var " + ref + " = ___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.get("+ref+");\n";
+            ret += indent + "var " + ref + " = (___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.get('"+ref+"'));\n";
         }
         return ret;
     };
-    
-    method.referenceAssignmentHelper = function( references ) {
-        var indent = this.getIndentStr();
-        var ret = "";
-        for( var i = 0; i < references.length; ++i ) {
-            var ref = references[i];
-            ret += indent + "var " + ref + " = ___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.ref;\n";
-        }
-        return ret;
-    };
-
-    
+        
     method._toStringProgram = MACRO.create(function(){
     
 function $1() {

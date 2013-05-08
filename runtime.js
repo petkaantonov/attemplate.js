@@ -303,9 +303,9 @@ var HtmlContextParser = (function() {
     var chunker = /(?:<!?([a-z0-9_:-]+)|([:a-z0-9_-]+)\s*=\s*(["']|[^"']|$)|<\/([a-z0-9:_-]+)\s*\/?\s*>|(\/?>)|(["'])|(javascript|data):|(refresh)|(dataurl)|(--)>|([:/?.#]))/g; //toLowerCase() is called on the string
                                                                                                  //attrclose     //URI context special cases
 
-    var uriAttr = /^(?:src|lowsrc|dynsrc|longdesc|usemap|href|codebase|classid|cite|archive|background|poster|action|formaction|data)$/;
-    var selfClosing = /^(?:doctype|area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
-    var charData = /^(?:script|style|textarea|title|--)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
+    var uriAttr = /^(?:action|archive|background|cite|classid|codebase|data|dynsrc|formaction|href|icon|longdesc|lowsrc|manifest|poster|profile|src|usemap|xmlns)$/;
+    var selfClosing = /^(?:area|base|br|col|command|doctype|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
+    var charData = /^(?:--|script|style|textarea|title)$/; //Elements that will only be closed by the sequence </elementName\s*\/?\s*> or --> in case of a comment
 
     var copyProps = function( src, target ) {
         target.context = src.context;
@@ -842,8 +842,34 @@ var HtmlContextParser = (function() {
         }
         return 0;
     };
-    
+
     var ___method = method.method = function( obj, methodName, args ) {
+
+        if( obj == null ) {
+            return null;
+        }
+
+
+        var method = obj[methodName],
+        isFunc = typeof method === FUNCTION;
+
+        if( !isFunc ) {
+            var type = "___" + toType(obj);
+            
+            if( ( ( method = extensions.get(type)) && (method = method.get(methodName)) ) ) {
+                return tryCallFunction( obj, method, args);
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            return tryCallFunction( obj, method, args );
+        }
+    };
+
+    
+    var ___safeMethod = method.safeMethod = function( obj, methodName, args ) {
 
         if( obj == null ) {
             return null;
@@ -1083,7 +1109,49 @@ var HtmlContextParser = (function() {
             }
             return ret;
         };
-             
+        
+        var encodeUriComponent = (function(){
+            var radditional = /[!'()*]/g,
+                map = {
+                    "!": "%21",
+                    "'": "%27",
+                    "(": "%28",
+                    ")": "%29",
+                    "*": "%2A"
+                },
+                radditionalesc = function( m ) {
+                    return map[m];
+                };
+        
+            return function( str ) {
+                return encodeURIComponent(str).replace(radditional, radditionalesc);
+            };
+            
+        })();
+
+        var encodeUri = (function(){
+            var rvalidscheme = /^(?:https|http|mailto|ftps|ftp)$/,
+                rextractscheme = /^([^:]*):/;
+            
+            
+            return function( str ) {
+                var scheme = rextractscheme.exec(str);
+                
+                if( !scheme ) {
+                    return str;
+                }
+                else {
+                    if( !rvalidscheme.test( scheme[1] ) ) {
+                        return "#";
+                    }
+                    else {
+                        return str;
+                    }
+                }
+            };
+        
+        })();
+                     
         var escapeForNothing = function( str ) {
                 return str;
             },
@@ -1114,17 +1182,12 @@ var HtmlContextParser = (function() {
             },
 
             escapeForUri = function( str ) {
-                var scheme;
-                if( rurlstart.test(str)) {
-                    //TODO this isn't good
-                    return escapeForAttr(encodeURI(str));
-                }
-                return "#";
+                return escapeForAttr(encodeUri(str));
             },
             
             /*TODO: does attribute escaping too although not necessary in style tags*/
             escapeForUriParam = function( str ) {
-                return escapeForAttr(encodeURIComponent(str));
+                return escapeForAttr(encodeUriComponent(str));
             },
             
             escapeForScript = function( obj ) {

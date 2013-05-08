@@ -29,7 +29,7 @@ var grammar = {
     ],
     
     assignment: [
-        ["identifier = expression", "$$ = new yy.Assignment($1, $3); " + setIndex]
+        ["identifierRef = expression", "$$ = new yy.Assignment($1, $3); " + setIndex]
     ],
     
     expression: [
@@ -172,7 +172,7 @@ var grammar = {
     identifier: [
         ["IDENTIFIER", "$$ = new yy.Identifier($1); " + setIndex + ";" ]
     ],
-       
+           
     string: [
         ["STRING", "$$ = new yy.StringLiteral($1); " + setIndex]
     ],

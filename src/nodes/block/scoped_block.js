@@ -67,6 +67,17 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
         return this.references;
     };
     
+    method.referenceAssignment = function() {
+        var indent = this.getIndentStr(),
+            references = this.getNonHelperReferences();
+        var ret = "";
+        for( var i = 0; i < references.length; ++i ) {
+            var ref = references[i];
+            ret += indent + "var " + ref + " = (___hasown.call(this, '"+ref+"') ? this."+ref+" : (___hasown.call(___data, '"+ref+"') ? ___data."+ref+" : ___ext.get('"+ref+"')));\n";
+        }
+        return ret;
+    };
+    
     //Get references that don't refer to a helper call
     method.getNonHelperReferences = function() {
         var self = this, nonHelperReferences = [];

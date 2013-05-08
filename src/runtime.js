@@ -143,8 +143,34 @@ var Runtime = (function() {
         }
         return 0;
     };
-    
+
     var ___method = method.method = function( obj, methodName, args ) {
+
+        if( obj == null ) {
+            return null;
+        }
+
+
+        var method = obj[methodName],
+        isFunc = typeof method === FUNCTION;
+
+        if( !isFunc ) {
+            var type = "___" + toType(obj);
+            
+            if( ( ( method = extensions.get(type)) && (method = method.get(methodName)) ) ) {
+                return tryCallFunction( obj, method, args);
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            return tryCallFunction( obj, method, args );
+        }
+    };
+
+    
+    var ___safeMethod = method.safeMethod = function( obj, methodName, args ) {
 
         if( obj == null ) {
             return null;
@@ -384,7 +410,49 @@ var Runtime = (function() {
             }
             return ret;
         };
-             
+        
+        var encodeUriComponent = (function(){
+            var radditional = /[!'()*]/g,
+                map = {
+                    "!": "%21",
+                    "'": "%27",
+                    "(": "%28",
+                    ")": "%29",
+                    "*": "%2A"
+                },
+                radditionalesc = function( m ) {
+                    return map[m];
+                };
+        
+            return function( str ) {
+                return encodeURIComponent(str).replace(radditional, radditionalesc);
+            };
+            
+        })();
+
+        var encodeUri = (function(){
+            var rvalidscheme = /^(?:https|http|mailto|ftps|ftp)$/,
+                rextractscheme = /^([^:]*):/;
+            
+            
+            return function( str ) {
+                var scheme = rextractscheme.exec(str);
+                
+                if( !scheme ) {
+                    return str;
+                }
+                else {
+                    if( !rvalidscheme.test( scheme[1] ) ) {
+                        return "#";
+                    }
+                    else {
+                        return str;
+                    }
+                }
+            };
+        
+        })();
+                     
         var escapeForNothing = function( str ) {
                 return str;
             },
@@ -415,17 +483,12 @@ var Runtime = (function() {
             },
 
             escapeForUri = function( str ) {
-                var scheme;
-                if( rurlstart.test(str)) {
-                    //TODO this isn't good
-                    return escapeForAttr(encodeURI(str));
-                }
-                return "#";
+                return escapeForAttr(encodeUri(str));
             },
             
             /*TODO: does attribute escaping too although not necessary in style tags*/
             escapeForUriParam = function( str ) {
-                return escapeForAttr(encodeURIComponent(str));
+                return escapeForAttr(encodeUriComponent(str));
             },
             
             escapeForScript = function( obj ) {

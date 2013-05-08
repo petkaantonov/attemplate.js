@@ -27,6 +27,9 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
     };
 
     method.toStringQuoted = function() {
+        if( !this.isStatic() ) {
+            return this.toString();
+        }
         return this.getStaticResolvedOp().toStringQuoted();
     };
     
@@ -43,6 +46,9 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
     };
     
     method.unboxStaticValue = function() {
+        if( !this.isStatic() ) {
+            return this;
+        }
         return this.getStaticResolvedOp().unboxStaticValue();
     };
     

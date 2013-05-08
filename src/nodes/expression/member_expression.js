@@ -80,6 +80,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     };
     
     method.checkMemberStaticness = function() {
+        console.log("checking member", this );
         var members = this.rhs,
             member,
             lhs = this.lhs,
@@ -128,9 +129,11 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     
     method.checkValid = function() {
         for( var i = 0; i < this.rhs.length; ++i ) {
-            var quotedMember = this.rhs[i].toStringQuoted();
-            if( rinvalidprop.test(quotedMember) ) {
-                this.rhs[i].raiseError("Illegal property access: "+quotedMember);
+            if( this.rhs[i].isStatic() ) {
+                var quotedMember = this.rhs[i].toStringQuoted();
+                if( rinvalidprop.test(quotedMember) ) {
+                    this.rhs[i].raiseError("Illegal property access: "+quotedMember);
+                }
             }
         }
     };
@@ -147,7 +150,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         var quotedMember,
             length = noLast ? this.rhs.length - 2 : this.rhs.length - 1;
             
-            if( length < 1 ) {
+            if( length < 0 ) {
                 return this.lhs.toString();
             }
             var ret = ["("];

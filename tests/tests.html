@@ -387,7 +387,9 @@ var o = {
                 '            <li>\n' +
                 '                <ul>\n' +
                 '                    <li>If i don\'t know anything</li><li>about them</li></ul>\n' +
-                '            </li></ul></div>'
+                '            </li></ul></div>',
+                
+                '<a href="#"></a>'
                 
             ];
             
@@ -397,7 +399,7 @@ var o = {
                     expect = expected[index];
                 
                 if( given !== expect ) {
-                    console.log( "Expecting", expect, "Given", given );
+                    console.log( "Expecting", expect, "Given", given, "Compiles",  template.compileStandaloneFromString(str));
                     throwError();
                 }
             

@@ -7,9 +7,11 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
     function Identifier( identifier ) {
         _super.constructor.apply(this, arguments);
         this.identifier = identifier;
+        this.isReference = false;
     }
     
     method.usedAsReference = function() {
+        this.isReference = true;
         this.checkValid();
         Identifier.references.set( this.toString(), this );
     };
@@ -31,10 +33,12 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
     };
     
     method.checkValidForFunctionCall = function() {
-        return true;
     };
     
     method.toStringQuoted = function() {
+        if( this.isReference ) {
+            return this.toString();
+        }
         return '"' +this.identifier+ '"';
     };
     
@@ -42,8 +46,8 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
         return this.identifier;
     };
     
-    method.isStatic = function( usedAsPropertyAccess ) {
-        return !!usedAsPropertyAccess;
+    method.isStatic = function( usedAsMemberAccess ) {
+        return !this.isReference && !!usedAsMemberAccess;
     };
 
     Identifier.references = new Map();

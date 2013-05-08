@@ -35,16 +35,19 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
     
     method.checkValid = function() {
         this.lhs.checkValidForFunctionCall();
-        if( this.lhs.constructor === CallExpression ) {
-            var memberQuoted = this.lhs.rhs.toStringQuoted();
-            if( rinvalidprop.test(memberQuoted)) {
-                this.lhs.rhs.raiseError( "Illegal method call "+memberQuoted+"." );
+        if( this.lhs.isStatic() ) {
+            if( this.lhs.constructor === CallExpression ) {
+
+                var memberQuoted = this.lhs.rhs.toStringQuoted();
+                if( rinvalidprop.test(memberQuoted)) {
+                    this.lhs.rhs.raiseError( "Illegal method call "+memberQuoted+"." );
+                }
             }
-        }
-        else if( this.lhs.constructor === MemberExpression ) {
-            var memberQuoted = this.lhs.getLast().toStringQuoted();
-            if( rinvalidprop.test(memberQuoted)) {
-                this.lhs.getLast().raiseError( "Illegal method call "+memberQuoted+"." );
+            else if( this.lhs.constructor === MemberExpression ) {
+                var memberQuoted = this.lhs.getLast().toStringQuoted();
+                if( rinvalidprop.test(memberQuoted)) {
+                    this.lhs.getLast().raiseError( "Illegal method call "+memberQuoted+"." );
+                }
             }
         }
     };
@@ -75,10 +78,10 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         }
         else {
             if( argumentsCodeArray.length ) {
-                return '___functionCall(this, '+this.lhs+', ['+argumentsCodeArray.join(", ") + '])';
+                return '___functionCall(this, '+this.lhs.toStringQuoted()+', ['+argumentsCodeArray.join(", ") + '])';
             }
             else {
-                return '___functionCall(this, '+this.lhs+')';
+                return '___functionCall(this, '+this.lhs.toStringQuoted()+')';
             }
         }
 

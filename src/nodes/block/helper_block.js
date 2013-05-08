@@ -41,11 +41,8 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
     
     method.toString = function() {
         var codes = [],
-            ret,
-            nonHelperReferences = this.getNonHelperReferences();
-        
-        var indent = this.getIndentStr();
-        
+            ret;
+                
         for( var i = 0; i < this.statements.length; ++i ) {
             codes.push( this.statements[i].toString() );
         }
@@ -54,7 +51,7 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             this.name,
             id,
             this.parameterNames.join(", "),
-            ( nonHelperReferences.length ? "var " + nonHelperReferences.join(", \n" + indent + "        ") + ";\n" : ""),
+            this.referenceAssignment(),
             codes.join("\n"),
             HtmlContextParser.context.HTML.name
         
