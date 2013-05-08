@@ -33,5 +33,9 @@ var InOperation = TemplateExpressionParser.yy.InOperation = (function() {
         }
     };
     
+    method.toString = function() {
+        return "___r.inOp( "+this.operandRight+", "+this.operandLeft+")"
+    };
+    
     return InOperation;
 })();

@@ -51,7 +51,7 @@ var HelperBlock = TemplateExpressionParser.yy.HelperBlock = (function() {
             this.name,
             id,
             this.parameterNames.join(", "),
-            this.referenceAssignment(),
+            this.referenceAssignment( true ),
             codes.join("\n"),
             HtmlContextParser.context.HTML.name
         
@@ -67,12 +67,10 @@ var $1 = (function() {
         $4
         var ___html = '', ___context = null, ___ref, ___ref2;
 $5
-        return new ___Safe(___html, $6);
+        return new ___r.Safe(___html, $6);
     }
     
-    return function() {
-        return $2.apply(___self, arguments);
-    };
+    return $2;
 })();
 
 

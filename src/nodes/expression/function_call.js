@@ -9,6 +9,8 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         this.lhs = lhs;
         this.args = args || [];
         this.checkValid();
+        this.isHelperCall = false;
+        FunctionCall.calls.push( this );
     }
                                 
     method.convertArgs = function() {
@@ -35,21 +37,6 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
     
     method.checkValid = function() {
         this.lhs.checkValidForFunctionCall();
-        if( this.lhs.isStatic() ) {
-            if( this.lhs.constructor === CallExpression ) {
-
-                var memberQuoted = this.lhs.rhs.toStringQuoted();
-                if( rinvalidprop.test(memberQuoted)) {
-                    this.lhs.rhs.raiseError( "Illegal method call "+memberQuoted+"." );
-                }
-            }
-            else if( this.lhs.constructor === MemberExpression ) {
-                var memberQuoted = this.lhs.getLast().toStringQuoted();
-                if( rinvalidprop.test(memberQuoted)) {
-                    this.lhs.getLast().raiseError( "Illegal method call "+memberQuoted+"." );
-                }
-            }
-        }
     };
     
     method.toString = function() {
@@ -58,34 +45,80 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
             retCode,
             context = 'this';
         
-        if( this.lhs.constructor === CallExpression ) {
-            var memberQuoted = this.lhs.rhs.toStringQuoted();
+        
+        if( this.isHelperCall ) {
             if( argumentsCodeArray.length ) {
-                retCode = '___method('+this.lhs.lhs+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
+                retCode = this.lhs+'(' + argumentsCodeArray.join(", ") + ')'
             }
             else {
-                retCode = '___method('+this.lhs.lhs+', '+memberQuoted+')';
+                retCode = this.lhs + '()'
+            }
+        }
+        else if( this.lhs.constructor === CallExpression ) {
+            var memberQuoted = this.lhs.rhs.toStringQuoted();
+            if( argumentsCodeArray.length ) {
+                retCode = '___r.method('+this.lhs.lhs+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
+            }
+            else {
+                retCode = '___r.method('+this.lhs.lhs+', '+memberQuoted+')';
             } 
         }
         else if( this.lhs.constructor === MemberExpression ) {
             var memberQuoted = this.lhs.getLast().toStringQuoted();
             if( argumentsCodeArray.length ) {
-                retCode = '___method('+this.lhs.toString( true )+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
+                retCode = '___r.method('+this.lhs.toString( true )+', '+memberQuoted+', ['+argumentsCodeArray.join(", ") + '])';
             }
             else {
-                retCode = '___method('+this.lhs.toString( true )+', '+memberQuoted+')';
+                retCode = '___r.method('+this.lhs.toString( true )+', '+memberQuoted+')';
             }
         }
         else {
             if( argumentsCodeArray.length ) {
-                return '___functionCall(this, '+this.lhs.toStringQuoted()+', ['+argumentsCodeArray.join(", ") + '])';
+                retCode = '___r.functionCall(this, '+this.lhs.toStringQuoted()+', ['+argumentsCodeArray.join(", ") + '])';
             }
             else {
-                return '___functionCall(this, '+this.lhs.toStringQuoted()+')';
+                retCode = '___r.functionCall(this, '+this.lhs.toStringQuoted()+')';
             }
         }
 
         return (this.parens ? "(" + retCode + ")" : retCode);
+    };
+    
+    method.markAsHelperCall = function() {
+        this.isHelperCall = true;
+    };
+    
+    
+    FunctionCall.calls = [];
+    
+    var it = function( key, value ) {
+        if( value === null ) {
+            var name = key;
+        }
+        else {
+            var name = value.length ? value[0] : key;
+        }
+        var calls = FunctionCall.calls;
+
+        for( var i = 0; i < calls.length; ++i ) {
+            var call = calls[i];
+
+            if( call.lhs instanceof Identifier &&
+                call.lhs.toString() === name
+            ) {
+                call.markAsHelperCall();
+            }
+
+        }
+    };
+    
+    //TODO: Horrible, horrible
+    FunctionCall.markHelperCalls = function( importMap ) {        
+        importMap.forEach( it );
+    };
+    
+    FunctionCall.flush = function() {
+        FunctionCall.calls = [];
     };
         
     return FunctionCall;

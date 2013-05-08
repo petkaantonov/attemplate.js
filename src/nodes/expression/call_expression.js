@@ -12,12 +12,6 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
         if( this.isStatic() ) {
             this.staticValue = this.lhs.accessMapStatically(this.rhs);
         }
-        else {
-            var quotedMember = this.rhs.toStringQuoted();
-            if( rinvalidprop.test( this.rhs.toStringQuoted() ) ) {
-                this.rhs.raiseError("Illegal property access: "+this.rhs.toStringQuoted() );
-            }
-        }
     }
     
     method.checkValidForFunctionCall = function() {
@@ -49,6 +43,7 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
             return this.staticValue.toString();
         }
         var quotedMember = this.rhs.toStringQuoted();
+        /*todo need to check slowaccess here too */
         var ret = '(('+this.lhs.toString()+') || {})['+quotedMember+']';
         return this.parens ? '(' + ret + ')' : ret;
     };

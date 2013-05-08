@@ -3,10 +3,7 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         method = MemberExpression.prototype = Object.create(_super);
     
     method.constructor = MemberExpression;
-    
-    //Slow because a runtime method needs to be called to check the hasOwnProperty
-    var rslowpropaccess = /__proto__|__defineGetter|__defineSetter|__lookupGetter|__lookupSetter|constructor|hasOwnProperty|isPrototypeOf|propertyIsEnumerable|toLocaleString|toString|valueOf/;
-            
+                
     function MemberExpression( members ) {
         _super.constructor.apply(this, arguments);
         this.lhs = members[0];
@@ -21,27 +18,8 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         else if( this.lhs.isStatic()) {
             this.checkMemberStaticness();
         }
-        this.checkValid();
     };
-    
-    method.isSlowJsPropAccess = function() {
 
-        for( var i = 0; i < this.rhs.length; ++i ) {
-            var prop = this.rhs[i];
-            if( prop.isStatic(true) ) {
-                if( rslowpropaccess.test( prop.getStaticStringValue() ) ) {
-                    return true;
-                }
-                //Otherwise static is ok
-            }
-            else {
-                //Dynamic access might resolve to "__proto__" or such which need to be checked thorougly
-                return true;
-            }
-        }
-
-        return false;
-    };
     
     method.checkArrayAccessStaticness = function() {
         var members = this.rhs,
@@ -80,7 +58,6 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
     };
     
     method.checkMemberStaticness = function() {
-        console.log("checking member", this );
         var members = this.rhs,
             member,
             lhs = this.lhs,
@@ -125,26 +102,12 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         return this.lhs.boolify ? this.lhs.boolify() : Operation.boolify( this );
     };
         
-
-    
-    method.checkValid = function() {
-        for( var i = 0; i < this.rhs.length; ++i ) {
-            if( this.rhs[i].isStatic() ) {
-                var quotedMember = this.rhs[i].toStringQuoted();
-                if( rinvalidprop.test(quotedMember) ) {
-                    this.rhs[i].raiseError("Illegal property access: "+quotedMember);
-                }
-            }
-        }
-    };
-
             //Get Last
     method.getLast = function() {
         return this.rhs[this.rhs.length-1];
     };
 
-    //TODO check jsslow
-        
+
                             //Excludes the last member from the result
     method.toString = function( noLast ) {
         var quotedMember,
@@ -153,19 +116,17 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             if( length < 0 ) {
                 return this.lhs.toString();
             }
-            var ret = ["("];
-                        
+            
+            var lhs = this.lhs.toString(),
+                members = [];
+
             for( var i = 0; i < length; ++i ) {
-                ret.push("(");
+                members.push( this.rhs[i].toStringQuoted() );
             }
-            ret.push("(" + this.lhs + ") || {})");
-            for( var i = 0; i < length; ++i ) {
-                quotedMember = this.rhs[i].toStringQuoted();
-                ret.push( "[" + quotedMember + "] || {})" );
-            }
-            quotedMember = this.rhs[i].toStringQuoted();
-            ret.push( "[" + quotedMember + "]" );
-            return (this.parens ? '(' + ret.join("") + ')' : ret.join(""));
+            members.push( this.rhs[i].toStringQuoted() );
+            
+            var ret = "___r.propAccess$"+members.length+"("+lhs+", "+members.join(",") + ")";
+            return (this.parens ? '(' + ret + ')' : ret);
         
     };
     

@@ -65,7 +65,7 @@ var Operation = TemplateExpressionParser.yy.Operation = (function() {
     };
     
     Operation.boolify = function( expr ) {
-        return '((___ref = '+expr+'), ___isArray(___ref) ? ___ref.length > 0 : ___ref)';
+        return '((___ref = '+expr+'), ___r.isArray(___ref) ? ___ref.length > 0 : ___ref)';
     };
     
     return Operation;

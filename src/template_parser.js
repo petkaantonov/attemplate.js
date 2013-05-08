@@ -1134,13 +1134,11 @@ function parse( inp, compiledName ) {
     program = stackTop;
     statements = program.getStatements();
         
-    
     for( var j = 0; j < statements.length; ++j ) {
         statement = statements[j];
         
         if( statement instanceof HelperBlock || 
             statement instanceof Program ) {
-            
             helpers.push( statement );
             statements.splice(j--, 1);
         }
@@ -1157,7 +1155,7 @@ function parse( inp, compiledName ) {
     }
     //This is why in the above loop we don't need to check for instanceof Program
     program.setHelpers( helpers );
-    
+    FunctionCall.markHelperCalls( imports );
     
     program.performAnalysis();
     program.setIndentLevel(1);

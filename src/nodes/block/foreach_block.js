@@ -167,7 +167,7 @@ $3
     method._arrayBody = MACRO.create(function(){
    
 var ___collection$1 = $3;
-___collection$1 = ___isArray(___collection$1) ? ___collection$1 : [];
+___collection$1 = ___r.isArray(___collection$1) ? ___collection$1 : [];
 var ___count$1 = ___collection$1.length;
 
 var ___prevKey$1,
@@ -217,7 +217,7 @@ $4
     method._mapBody = MACRO.create(function(){
 
 var ___collection$1 = $4;
-___collection$1 = ___isObject(___collection$1) ? ___collection$1 : {};
+___collection$1 = ___r.isObject(___collection$1) ? ___collection$1 : {};
 
 var ___prevKey$1,
     ___prevValue$1,
@@ -225,7 +225,7 @@ var ___prevKey$1,
    
 var $2, $3;
 for (___key$1 in ___collection$1) {
-    if (___hasown.call(___collection$1, ___key$1)) {
+    if (___r.hasown.call(___collection$1, ___key$1)) {
         ___prevKey$1 = $2;
         ___prevValue$1 = $3;
         $2 = ___key$1;

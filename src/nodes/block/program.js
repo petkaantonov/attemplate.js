@@ -61,7 +61,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         var ret = this._toStringHelper(
             this.getHelperCode(),
             idName,
-            this.referenceAssignment(),
+            this.referenceAssignment( false ),
             this.getCode(),
             HtmlContextParser.context.HTML.name
         );
@@ -111,7 +111,7 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
                 var importCode = exported.get( primaryExportName ).toImportCode();
                     
                 var varDeclarationCode = indent + "var "+ primaryExportName + (aliasedNames.length ? ",\n    " +
-                        indent + aliasedNames.join(",\n    " + indent)+";\n" : ";\n");
+                        indent + aliasedNames.join(",\n    " + indent)+";" : ";");
                         
                 var assignmentCode = "\n" + indent + primaryExportName + 
                             (aliasedNames.length ? " = "+ aliasedNames.join(" = " )+ " = " 
@@ -127,62 +127,48 @@ var Program = TemplateExpressionParser.yy.Program = (function() {
         
         ret.push( this._toStringProgram(
             idName,
-            this.referenceAssignmentMainScope( this.getNonHelperReferences() ),
+            this.referenceAssignment( true ),
             this.getCode()
         ));
                 
         return ret.join("\n");
     };
     
-    method.referenceAssignmentMainScope = function( references ) {
-        var indent = this.getIndentStr();
-        var ret = "";
-        for( var i = 0; i < references.length; ++i ) {
-            var ref = references[i];
-            ret += indent + "var " + ref + " = (___hasown.call(this, '"+ref+"') ? this."+ref+" : ___ext.get('"+ref+"'));\n";
-        }
-        return ret;
-    };
-        
+    
     method._toStringProgram = MACRO.create(function(){
     
-function $1() {
-    if( !___runtime ) {
+function $1( ___data ) {
+    if( !___r ) {
         throw new Error('No registered runtime');
     }
-    ___self = this;
+    ___self = ___r.Object(___data);
+    ___r.setCallContext(___self);
     var ___html = '', ___context = null, ___ref, ___ref2;
     $2
 $3
     return ___html;
 }
 
-var ret = function(data) {
-    return $1.call(data || {});
-};
-
-ret.registerRuntime = function(rt) {
+$1.registerRuntime = function(rt) {
     ___setRuntime(rt);
 };
 
-return ret;
+return $1;
 
 });
 
     method._toStringHelper = MACRO.create(function(){
 (function() {
 $1
-    function $2(___data) {
-        ___data = ___data || {};
+    function $2(____data) {
+        var ___data = ___r.Object( ____data );
         var ___html = '', ___context = null, ___ref, ___ref2;
         $3
 $4
-        return new ___Safe(___html, $5);
+        return new ___r.Safe(___html, $5);
     }
     
-    return function(data) {
-        return $2.call(___self, data || {});
-    };
+    return $2;
 })();
 });
     
@@ -199,6 +185,7 @@ $4
     //Clean static state that becomes corrupted in case of errors
     Program.cleanStaticState = function() {
         Identifier.refreshReferenceMap();
+        FunctionCall.flush();
     };
     
     return Program;

@@ -785,13 +785,15 @@ var HtmlContextParser = (function() {
     //TODO use sandboxing
     function Runtime( compilerVersion ) {
         checkVersion( compilerVersion, version );
+        this.callContext = null;
     }
     
+
     method.checkVersion = function( ver ) {
         return checkVersion( ver, version );
     };
     
-    var ___trim = method.trim = (function() {
+    method.trim = (function() {
         /*From es5-shim*/
         var ws = "\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003" +
             "\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028" +
@@ -832,26 +834,31 @@ var HtmlContextParser = (function() {
         }
     })();
     
-    var ___ctx = method.contextParser = function() {
+    method.contextParser = function() {
         return new HtmlContextParser().disableErrors();
     };
     
-    var ___ensureNumeric = method.ensureNumeric = function( obj ) {
+    method.ensureNumeric = function( obj ) {
         if( isFinite( obj ) ) {
             return +obj;
         }
         return 0;
     };
 
-    var ___method = method.method = function( obj, methodName, args ) {
+    method.setCallContext = function( obj ) {
+        this.callContext = obj;
+    };
+    
 
-        if( obj == null ) {
+    method.method = function( obj, methodName, args ) {
+
+        if( obj == null || methodName === "__proto__") {
             return null;
         }
 
 
         var method = obj[methodName],
-        isFunc = typeof method === FUNCTION;
+            isFunc = typeof method === FUNCTION;
 
         if( !isFunc ) {
             var type = "___" + toType(obj);
@@ -869,9 +876,9 @@ var HtmlContextParser = (function() {
     };
 
     
-    var ___safeMethod = method.safeMethod = function( obj, methodName, args ) {
+    method.safeMethod = function( obj, methodName, args ) {
 
-        if( obj == null ) {
+        if( obj == null || methodName === "__proto__") {
             return null;
         }
         
@@ -900,15 +907,18 @@ var HtmlContextParser = (function() {
         }
     };
 
+    method.Object = {}.constructor;
     
-    var ___functionCall = method.functionCall = function( thisp, fn, args ) {
+    
+    
+    method.functionCall = function( thisp, fn, args ) {
         if( fn && typeof fn === FUNCTION ) {
             return tryCallFunction( thisp, fn, args );
         }
         return null;
     };
     
-    var ___inOp = method.inOp = function( obj, str ) {
+    method.inOp = function( obj, str ) {
         var needleIsString = typeof str === STRING;
         
         if( needleIsString && typeof obj === STRING ) {
@@ -919,35 +929,35 @@ var HtmlContextParser = (function() {
             return false;
         }
 
-        if( ___isArray( obj ) ) {
+        if( this.isArray( obj ) ) {
             return indexOf(obj, str) > -1;
         }
 
         return ___hasown.call( obj, str );
     };
     
-    var ___hasown = method.hasOwn = Object.prototype.hasOwnProperty;
+    method.hasown = Object.prototype.hasOwnProperty;
     
-    var ___isArray = method.isArray = Array.isArray || function( obj ) {
+    method.isArray = Array.isArray || function( obj ) {
         return !!(obj && toString.call(obj) === OBJECT_ARRAY);
     };
     
-    var ___isObject = method.isObject = function( obj ) {
+    method.isObject = function( obj ) {
         return !!(obj && Object(obj) === obj && typeof obj === OBJECT );
     };
     
-    var ___ensureArrayLike = method.ensureArrayLike = function(obj) {
-        if( ___isArray( obj ) && isFinite(obj.length) ) {
+    method.ensureArrayLike = function(obj) {
+        if( this.isArray( obj ) && isFinite(obj.length) ) {
             return obj;
         }
         
         return [];
     };
     
-    var ___Safe = method.Safe = (function() {
-        var method = ___Safe.prototype;
+    method.Safe = (function() {
+        var method = Safe.prototype;
         
-        function ___Safe(string, safeFor) {
+        function Safe(string, safeFor) {
             this.string = string;
             this.safeFor = safeFor;
         }
@@ -956,11 +966,11 @@ var HtmlContextParser = (function() {
             return this.string;
         };
         
-        return ___Safe;
+        return Safe;
     })();
     
     
-    var ___safeString__ = method.safeString = (function() {
+    method.safeString = (function() {
         var context = HtmlContextParser.context;
         
         var NO_ESCAPE = context.NO_ESCAPE.name,
@@ -1229,17 +1239,17 @@ var HtmlContextParser = (function() {
         return function( string, escapeFn ) {
             var passAsIs = (escapeFn & passedAsIs) > 0;
         
-            if( !passAsIs && ___isArray( string ) ) {
+            if( !passAsIs && this.isArray( string ) ) {
                 //Convert arrays to a string by joining them
                 if( string.length ) {
-                    if( string[0] instanceof ___Safe ) { //Assumption: If one item in an array is a ___Safe - others are too
+                    if( string[0] instanceof this.Safe ) { //Assumption: If one item in an array is a Safe - others are too
                         var r = [],
                             safeFor = string[0].safeFor;
                         
                         for( var i = 0, l = string.length; i < l; ++i ) {
                             r.push( string[i].string );
                         }
-                        string = new ___Safe( r.join(""), safeFor );
+                        string = new this.Safe( r.join(""), safeFor );
                     }
                     else {
                         string = string.join("");
@@ -1252,10 +1262,10 @@ var HtmlContextParser = (function() {
         
             if( typeof escapeFn == STRING ) {                
                 escapeFn = getAttrEscapeFunction( escapeFn );
-                return ___safeString__( string, escapeFn );                
+                return this.safeString( string, escapeFn );                
             }
             
-            if( string instanceof ___Safe ) { /*wat, TODO: account for raw*/
+            if( string instanceof this.Safe ) { /*wat, TODO: account for raw*/
                 if( string.safeFor !== escapeFn ) {
                     string.string = escapes[escapeFn](string.string);
                     string.safeFor = escapeFn;
@@ -1293,6 +1303,9 @@ var HtmlContextParser = (function() {
     method.___getExtensions = function() {
         return extensions;
     };
+    
+    var ___isObject = method.isObject,
+        ___hasown = method.hasown;
     
     Runtime.registerExtensions = function( obj ) {
         if( !___isObject( arr ) ) {
@@ -1337,6 +1350,34 @@ var HtmlContextParser = (function() {
             extensions.set(name, value);
         }
     };
+    
+
+    var makePropAccess = function( count ) {
+        var params = ["obj"];
+        for( var i = 0; i < count; ++i ) {
+            params.push( "$" + i );
+        }
+        var body = "";
+        body += "return function("+params.join(",")+") {";
+        body += "if( !obj ) return null; var cur = obj; ";
+        
+        for( var i = 0; i < count-1; ++i ) {
+            body += "if( hasown.call(cur, $"+i+") ) { cur = cur[$"+i+"];";
+        }
+        body += "if( hasown.call(cur, $"+i+") ) {return cur[$"+i+"];";
+        
+        for( var i = 0; i < count; ++i ) {
+            body += "}";
+        }
+        
+        body += "return null;};";
+        
+        return new Function("hasown", body)(___hasown);
+    };
+    
+    for( var i = 0; i < 5; ++i ) {
+        method["propAccess$"+(i+1)] = makePropAccess(i+1);
+    }
     
     return Runtime;
 })();

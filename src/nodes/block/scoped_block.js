@@ -67,13 +67,21 @@ var ScopedBlock = TemplateExpressionParser.yy.ScopedBlock = (function() {
         return this.references;
     };
     
-    method.referenceAssignment = function() {
+    method.referenceAssignment = function( noData ) {
         var indent = this.getIndentStr(),
             references = this.getNonHelperReferences();
         var ret = "";
-        for( var i = 0; i < references.length; ++i ) {
-            var ref = references[i];
-            ret += indent + "var " + ref + " = (___hasown.call(this, '"+ref+"') ? this."+ref+" : (___hasown.call(___data, '"+ref+"') ? ___data."+ref+" : ___ext.get('"+ref+"')));\n";
+        if( noData ) {
+            for( var i = 0; i < references.length; ++i ) {
+                var ref = references[i];
+                ret += "var " + ref + " = (___r.hasown.call(___self, '"+ref+"') ? ___self."+ref+" : ___ext.get('"+ref+"'));\n" + indent + "    ";
+            }
+        }
+        else {
+            for( var i = 0; i < references.length; ++i ) {
+                var ref = references[i];
+                ret += "var " + ref + " = (___r.hasown.call(___data, '"+ref+"') ? ___data."+ref+" : (___r.hasown.call(___self, '"+ref+"') ? ___self."+ref+" : ___ext.get('"+ref+"')));\n" + indent + "    ";
+            }
         }
         return ret;
     };

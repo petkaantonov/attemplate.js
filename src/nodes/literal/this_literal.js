@@ -13,7 +13,7 @@ var ThisLiteral = TemplateExpressionParser.yy.ThisLiteral = (function() {
     };
        
     method.toString = function() {
-        return "this";
+        return "___self";
     };
     
     method.toStringQuoted = function() {

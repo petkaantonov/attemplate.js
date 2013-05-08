@@ -36,7 +36,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
 
         }
         else {
-            minExpr = "___ensureNumeric("+minExpr+");";
+            minExpr = "___r.ensureNumeric("+minExpr+");";
         }
   
         if( maxExpr.isStatic() ) {
@@ -47,7 +47,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
             maxExpr = +maxExpr.toString();
         }
         else {
-            maxExpr = "___ensureNumeric("+maxExpr+");";
+            maxExpr = "___r.ensureNumeric("+maxExpr+");";
         }
         
         if( !stepExpr ) {
@@ -61,7 +61,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
             stepExpr = +stepExpr.toString();
         }
         else {
-            stepExpr = "___ensureNumeric("+stepExpr+") || 1;";
+            stepExpr = "___r.ensureNumeric("+stepExpr+") || 1;";
         }
         
         if( isFinite( minExpr ) && isFinite( maxExpr ) && isFinite( stepExpr ) ) {
