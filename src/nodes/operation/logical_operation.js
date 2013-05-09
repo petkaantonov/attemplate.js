@@ -21,6 +21,8 @@ var LogicalOperation = TemplateExpressionParser.yy.LogicalOperation = (function(
         }
     };
     
+
+    
     method.boolify = function() {
         var ret = Operation.boolify( this.operandLeft ) + " " + this.operator + " "+ Operation.boolify( this.operandRight );
         return this.parens ? '(' + ret + ')' : ret;

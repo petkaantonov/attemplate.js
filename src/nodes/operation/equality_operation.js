@@ -14,6 +14,10 @@ var EqualityOperation = TemplateExpressionParser.yy.EqualityOperation = (functio
         }
     }
     
+    method.isCommutative = function() {
+        return true;
+    };
+    
     method.resolveStaticOperation = function() {
         var left = this.operandLeft.unboxStaticValue(),
             right = this.operandRight.unboxStaticValue(),

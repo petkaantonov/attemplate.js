@@ -1,5 +1,5 @@
 var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = FunctionCall.prototype = Object.create(_super);
     
     method.constructor = FunctionCall;
@@ -12,6 +12,21 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         this.isHelperCall = false;
         FunctionCall.calls.push( this );
     }
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.lhs.traverse( this, depth + 1, visitorFn );
+        var args = this.args,
+            len = args.length;
+            
+        for( var i = 0; i < len; ++i ) {
+            args[i].traverse( this, depth + 1, visitorFn );
+        }
+        visitorFn( this, parent, depth );
+    };
+    
+    method.children = function() {
+        return [this.lhs].concat(this.args);
+    };
                                 
     method.convertArgs = function() {
         if( this.args.length ) {

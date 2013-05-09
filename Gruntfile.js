@@ -21,7 +21,10 @@ module.exports = function( grunt ) {
                 "./src/macros.js",
                 
                 "./src/nodes/program_element.js",
-                "./src/nodes/statically_resolveable_element.js",
+                "./src/nodes/node.js",
+                "./src/nodes/terminal_node.js",
+                
+                "./src/traversals/combiner.js",
                 
                 "./src/nodes/identifier.js",
                 "./src/nodes/snippet.js",
@@ -94,7 +97,8 @@ module.exports = function( grunt ) {
                 "./src/nodes/block/*",
                 "./src/nodes/expression/*",
                 "./src/nodes/operation/*",
-                "./src/nodes/literal/*"
+                "./src/nodes/literal/*",
+                "./src/traversals/*"
             ],
             tasks: ['build', 'runtimeCode'],
             options: {

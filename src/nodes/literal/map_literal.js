@@ -1,5 +1,5 @@
 var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = MapLiteral.prototype = Object.create(_super);
     
     method.constructor = MapLiteral;
@@ -19,6 +19,18 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
             this.setStatic();
         }
     }
+    
+    method.children = function() {
+        return this.namedArgs.slice(0);
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        var len = this.namedArgs.length;
+        for( var i = 0; i < len; ++i ) {
+            this.namedArgs[i].traverse( this, depth+1, visitorFn );
+        }
+        visitorFn( this, parent, depth );
+    };
     
     method.getStaticNumberValue = function() {
         _super.getStaticNumberValue.call( this );
@@ -47,8 +59,8 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
             arg,
             j = 0;
         
-        for( var i = 0; i < this.args.length; ++i ) {
-            arg = this.args[i];
+        for( var i = 0; i < this.namedArgs.length; ++i ) {
+            arg = this.namedArgs[i];
             if( arg.constructor === NamedArgument ) {
                 if( arg.getNameQuoted() !== name ) {
                     continue;
@@ -81,8 +93,8 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
             arg,
             j = 0;
                     
-        for( var i = 0; i < this.args.length; ++i ) {
-            arg = this.args[i];
+        for( var i = 0; i < this.namedArgs.length; ++i ) {
+            arg = this.namedArgs[i];
             
             if( arg.constructor === NamedArgument ) {
                 if( arg.getNameQuoted() !== name ) {

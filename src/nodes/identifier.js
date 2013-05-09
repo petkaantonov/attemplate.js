@@ -1,5 +1,5 @@
 var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = TerminalNode.prototype,
         method = Identifier.prototype = Object.create(_super);
     
     method.constructor = Identifier;
@@ -7,11 +7,9 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
     function Identifier( identifier ) {
         _super.constructor.apply(this, arguments);
         this.identifier = identifier;
-        this.isReference = false;
     }
     
     method.usedAsReference = function() {
-        this.isReference = true;
         this.checkValid();
         Identifier.references.set( this.toString(), this );
     };
@@ -35,21 +33,15 @@ var Identifier = TemplateExpressionParser.yy.Identifier = (function() {
     method.checkValidForFunctionCall = function() {
     };
     
-    method.toStringQuoted = function() {
-        if( this.isReference ) {
-            return this.toString();
-        }
-        return '"' +this.identifier+ '"';
-    };
-    
+
     method.toString = function() {
         return this.identifier;
     };
     
-    method.isStatic = function( usedAsMemberAccess ) {
-        return !this.isReference && !!usedAsMemberAccess;
+    method.asStringLiteral = function() {
+        return StringLiteral.fromRaw( this.identifier );
     };
-
+    
     Identifier.references = new Map();
     
     Identifier.refreshReferenceMap = function() {

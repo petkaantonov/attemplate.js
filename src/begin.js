@@ -33,6 +33,7 @@
     })( parser.parse );
     
     TemplateExpressionParser.yy.parseError = function( str, hash ) {
+        console.log( str, hash );
         var token;
         var index = this.lexer.offset - hash.text.length + this.yy.templateParserIndex;
         if( hash.token === "EOF" ) {

@@ -17,6 +17,17 @@ var ConditionalOperation = TemplateExpressionParser.yy.ConditionalOperation = (f
         }
     }
     
+    method.children = function() {
+        return [this.condition, this.ifTrue, this.ifFalse];
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.condition.traverse( this, depth + 1, visitorFn );
+        this.ifTrue.traverse( this, depth + 1, visitorFn );
+        this.ifFalse.traverse( this, depth + 1, visitorFn );
+        visitorFn( this, parent, depth );
+    };
+    
     method.toString = function() {
         if( this.isStatic() ) {
             return this.unboxStaticValue().toString();

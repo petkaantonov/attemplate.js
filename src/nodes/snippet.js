@@ -12,6 +12,14 @@ var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
         }
     }
     
+    method.children = function() {
+        return [this.expr];
+    };
+    
+    method.traverse = function( visitorFn ) {
+        this.expr.traverse( this, 0, visitorFn );
+    };
+    
     method.getExpression = function() {
         return this.expr;
     };

@@ -1,5 +1,5 @@
 var BooleanLiteral = TemplateExpressionParser.yy.BooleanLiteral = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = TerminalNode.prototype,
         method = BooleanLiteral.prototype = Object.create(_super);
     
     method.constructor = BooleanLiteral;

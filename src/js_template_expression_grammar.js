@@ -44,16 +44,23 @@ var grammar = {
     ],
     
     functionCall: [
-        ["member args", "if( $1 instanceof yy.Identifier && $1.toString() === '$' ) {$$ = new yy.MapLiteral($2); $1.removeFromReferences(); } else { $$ = new yy.FunctionCall($1, $2); }" + setIndex],
+        ["member args", "$$ = new yy.FunctionCall($1, $2);" + setIndex],
         ["functionCall args", "$$ = new yy.FunctionCall($1, $2); " + setIndex],
         ["functionCall [ expression ]", "$$ = new yy.CallExpression($1, $3); " + setIndex ],
         ["functionCall . propAccessLiteral", "$$ = new yy.CallExpression($1, $3); " + setIndex],
-        ["functionCall . identifier", "$$ = new yy.CallExpression($1, $3); " + setIndex]
+        ["functionCall . identifier", "$3 = $3.asStringLiteral(); $$ = new yy.CallExpression($1, $3);" + setIndex]
     ],
+    
+
 
     args: [
         ["( )", "$$ = [];"],
         ["( argList optComma )", "$$ = $2;"]
+    ],
+    
+    mapItems: [
+        ["{ }", "$$ = [];"],
+        ["{ argList optComma }", "$$ = $2;"]
     ],
 
     argList: [
@@ -63,7 +70,7 @@ var grammar = {
     
     arg: [
         ["literal : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
-        ["identifier : expression", "$$ = new yy.NamedArgument($1, $3); " + setIndex],
+        ["identifier : expression", "$$ = new yy.NamedArgument($1.asStringLiteral(), $3); " + setIndex],
         ["expression"]
     ],
     
@@ -89,15 +96,20 @@ var grammar = {
     memberExpression: [
         ["primary", "$$ = [$1];"],
         ["memberExpression . propAccessLiteral", "$$ = $1.concat($3);"],
-        ["memberExpression . identifier", "$$ = $1.concat($3);"],
+        ["memberExpression . identifier", "$$ = $1.concat($3.asStringLiteral());"],
         ["memberExpression [ expression ]", "$$ = $1.concat($3);"]
     ],
             
     primary: [
         ["literal"],
         ["array"],
+        ["map"],
         ["identifier"],
         ["( expression )", "$$ = $2; $$.setParens();"]
+    ],
+
+    map: [
+        ["MAP mapItems", "$$ = new yy.MapLiteral($2); " + setIndex]
     ],
     
     literal: [
@@ -120,7 +132,7 @@ var grammar = {
         ["+ expression", "var maybeNum = $2.unboxStaticValue(); if( $2.constructor === yy.NumericLiteral ) { $$ = maybeNum; } else{ $$ = new yy.UnaryOperation($2, $1); }; " + setIndex, {prec: "UNARY"}],
         ["expression IN expression", "$$ = new yy.InOperation($1, $3, $2); " + setIndex],
         ["expression MATH expression", "$$ = new yy.MathOperation($1, $3, $2); " + setIndex],
-        ["expression RELATION expression", "var a = new yy.RelationOperation($1, $3, $2); var b = a.getLogicalAndOperationForMathNotation(); $$ = (b || a); " + setIndex],
+        ["expression RELATION expression", "var a = new yy.RelationalOperation($1, $3, $2); var b = a.getLogicalAndOperationForMathNotation(); $$ = (b || a); " + setIndex],
         ["expression EQUALITY expression", "$$ = new yy.EqualityOperation($1, $3, $2); " + setIndex],
         ["expression && expression", "$$ = new yy.LogicalOperation($1, $3, $2); " + setIndex],
         ["expression || expression", "$$ = new yy.LogicalOperation($1, $3, $2); " + setIndex],
@@ -251,16 +263,6 @@ for( var key in tmp ) {
     tokens.push(key);
 }
 
-function delimited( token ) {
-
-   return "if(yytext.charAt(yyleng-1) == '\\\\') {\
-       this.more();\
-   } else {\
-       yytext += this.input();\
-       return '"+token+"';\
-   }";
-}
-
 var lex = {
 
     rules: [
@@ -274,7 +276,6 @@ var lex = {
         
         ["0[xX][a-fA-F0-9]+", "return 'HEX';"],
         ["[1-9][0-9]*\\b", "return 'DECIMAL';"],
-        ["[0-9]+\\b", "return 'DIGITS';"],
         ["\\s+", "/* skip whitespace */"],
         ["\\ufeff", "/* skip boms */"],
         ["'[^\\\\']*(?:\\\\.[^\\\\']*)*'", "return 'STRING';"],
@@ -284,7 +285,7 @@ var lex = {
         ["this\\b", "return 'THIS';"],
         ["(?:[a-zA-Z_$][a-zA-Z$_0-9]*)", "return 'IDENTIFIER';"],
         ["&&", "return '&&';"],
-        
+        ["#", "return 'MAP';"],
         [">=|<=|>|<", "return 'RELATION';"],
         ["\\|\\|", "return '||';"],
         ["===|!==|==|!=", "return 'EQUALITY';"],
@@ -293,6 +294,8 @@ var lex = {
         ["\\(", "return '(';"],
         ["\\[", "return '[';"],
         ["\\]", "return ']';"],
+        ["\\{", "return '{';"],
+        ["\\}", "return '}';"],
         [",", "return ',';"],
         ["\\?", "return '?'"],
         [":", "return ':'"],

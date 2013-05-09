@@ -5,7 +5,7 @@ var MathOperation = TemplateExpressionParser.yy.MathOperation = (function() {
     method.constructor = MathOperation;
     
     function MathOperation() {
-        _super.constructor.apply(this, arguments);
+        _super.constructor.apply(this, arguments);            
     }
     
     method.resolveStaticOperation = function() {
@@ -22,6 +22,10 @@ var MathOperation = TemplateExpressionParser.yy.MathOperation = (function() {
             default: 
                 console.assert( false, "Illegal operator value for math operation operation");
         }
+    };
+    
+    method.isCommutative = function() {
+        return this.operator === MathOperation.MUL;
     };
     
     MathOperation.MINUS = "-";

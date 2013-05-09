@@ -1,5 +1,5 @@
 var NullLiteral = TemplateExpressionParser.yy.NullLiteral = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = TerminalNode.prototype,
         method = NullLiteral.prototype = Object.create(_super);
     
     method.constructor = NullLiteral;

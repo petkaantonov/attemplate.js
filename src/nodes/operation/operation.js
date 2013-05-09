@@ -1,5 +1,5 @@
 var Operation = TemplateExpressionParser.yy.Operation = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = Operation.prototype = Object.create(_super);
     
     method.constructor = Operation;

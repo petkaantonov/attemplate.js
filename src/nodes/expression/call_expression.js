@@ -1,5 +1,5 @@
 var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = CallExpression.prototype = Object.create(_super);
     
     method.constructor = CallExpression;
@@ -13,6 +13,16 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
             this.staticValue = this.lhs.accessMapStatically(this.rhs);
         }
     }
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.lhs.traverse( this, depth + 1, visitorFn );
+        this.rhs.traverse( this, depth + 1, visitorFn );
+        visitorFn( this, parent, depth );
+    };
+    
+    method.children = function() {
+        return [this.lhs, this.rhs];
+    };
     
     method.checkValidForFunctionCall = function() {
         if( this.staticValue ) {

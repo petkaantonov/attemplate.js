@@ -1,5 +1,5 @@
 var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = MemberExpression.prototype = Object.create(_super);
     
     method.constructor = MemberExpression;
@@ -10,6 +10,10 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         this.rhs = members.length > 1 ? members.slice(1) : [];
         this.init();
     }
+
+    method.children = function() {
+            return [this.lhs].concat(this.rhs);
+    };
     
     method.init = function() {
         if( this.lhs.constructor === ArrayLiteral ) {
@@ -20,6 +24,16 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         }
     };
 
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.lhs.traverse( this, depth + 1, visitorFn );
+        var rhs = this.rhs,
+            len = rhs.length;
+            
+        for( var i = 0; i < len; ++i ) {
+            rhs[i].traverse( this, depth + 1, visitorFn );
+        }
+        visitorFn( this, parent, depth );
+    };
     
     method.checkArrayAccessStaticness = function() {
         var members = this.rhs,
@@ -80,6 +94,9 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
 
             if( lhs instanceof Operation ) {
                 staticResult = this.lhs = lhs.getStaticResolvedOp().accessStringStatically(member);
+            }
+            else if( lhs instanceof MapLiteral ) {
+                staticResult = this.lhs = lhs.accessMapStatically(member);
             }
             else {
                 staticResult = this.lhs = lhs.accessStringStatically(member);

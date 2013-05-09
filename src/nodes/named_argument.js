@@ -1,5 +1,5 @@
 var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = NamedArgument.prototype = Object.create(_super);
     
     method.constructor = NamedArgument;
@@ -10,6 +10,16 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
         this.expr = expr;
         this.checkValid();
     }
+    
+    method.children = function() {
+        return [this.name, this.expr];
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.name.traverse( this, depth + 1, visitorFn );
+        this.expr.traverse( this, depth + 1, visitorFn );
+        visitorFn( this, parent, depth );
+    };
     
     method.checkValid = function() {
         if( this.name.toString() === "__proto__" ) {

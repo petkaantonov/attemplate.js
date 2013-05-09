@@ -14,6 +14,15 @@ var UnaryOperation = TemplateExpressionParser.yy.UnaryOperation = (function() {
         }
     }
     
+    method.children = function() {
+        return [this.operand];
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.operand.traverse( this, depth + 1, visitorFn );
+        visitorFn( this, parent, depth );
+    };
+    
     method.isBooleanOperation = function() {
         return this.operator = UnaryOperation.NOT;
     };
@@ -31,7 +40,7 @@ var UnaryOperation = TemplateExpressionParser.yy.UnaryOperation = (function() {
     
     method.toString = function() {
         if( this.isStatic() ) {
-            return this.unboxStaticValue.toString();
+            return this.unboxStaticValue().toString();
         }
         var ret = this.operator.toString() + 
             (this.operator === UnaryOperation.NOT && !this.operand.isBooleanOperation() ? boolOp(this.operand) : this.operand.toString());

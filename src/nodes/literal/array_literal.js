@@ -1,5 +1,5 @@
 var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = ArrayLiteral.prototype = Object.create(_super);
     
     method.constructor = ArrayLiteral;
@@ -9,6 +9,18 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         this.elements = elements || [];
         this.init();
     }
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        var len = this.elements.length;
+        for( var i = 0; i < len; ++i ) {
+            this.elements[i].traverse( this, depth+1, visitorFn );
+        }
+        visitorFn( this, parent, depth );
+    };
+    
+    method.children = function() {
+        return this.elements.slice(0);
+    };
     
     method.accessArrayStatically = function( index ) {
         if( !index.isStatic( true ) ) {

@@ -1,5 +1,5 @@
 var StringLiteral = TemplateExpressionParser.yy.StringLiteral = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = TerminalNode.prototype,
         method = StringLiteral.prototype = Object.create(_super);
     
     method.constructor = StringLiteral;

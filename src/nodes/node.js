@@ -1,14 +1,26 @@
-var StaticallyResolveableElement = TemplateExpressionParser.yy.StaticallyResolveableElement = (function() {
+var Node = TemplateExpressionParser.yy.Node = (function() {
     var _super = ProgramElement.prototype,
-        method = StaticallyResolveableElement.prototype = Object.create(_super);
+        method = Node.prototype = Object.create(_super);
     
-    method.constructor = StaticallyResolveableElement;
+    method.constructor = Node;
     
-    function StaticallyResolveableElement() {
+    function Node() {
         _super.constructor.apply(this, arguments);
         this.static = false;
         this.parens = false;
     }
+    
+    method.children = function() {
+        console.assert( false, "no implementation");
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        console.assert( false, "no implementation");
+    };
+    
+    method.extract = function() {
+        return this;
+    };
     
     method.isBooleanOperation = function() {
         return false;
@@ -75,5 +87,5 @@ var StaticallyResolveableElement = TemplateExpressionParser.yy.StaticallyResolve
 
     
     
-    return StaticallyResolveableElement;
+    return Node;
 })();

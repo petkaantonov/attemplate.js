@@ -1,5 +1,5 @@
 var AssignmentList = TemplateExpressionParser.yy.AssignmentList = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = AssignmentList.prototype = Object.create(_super);
     
     method.constructor = AssignmentList;

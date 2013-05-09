@@ -1,5 +1,5 @@
 var Range = TemplateExpressionParser.yy.Range = (function() {
-    var _super = StaticallyResolveableElement.prototype,
+    var _super = Node.prototype,
         method = Range.prototype = Object.create(_super);
     
     method.constructor = Range;
@@ -12,6 +12,17 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
         this.static = false;
         this.checkExpr();
     }
+    
+    method.children = function() {
+        return [this.minExpr, this.maxExpr, this.stepExpr];
+    };
+    
+    method.traverse = function( parent, depth, visitorFn ) {
+        this.minExpr.traverse( parent, depth + 1, visitorFn );
+        this.maxExpr.traverse( parent, depth + 1, visitorFn );
+        this.stepExpr.traverse( parent, depth + 1, visitorFn );
+        visitorFn( this, parent, depth );
+    };
     
     method.setStatic = function() {
         this.static = true;
