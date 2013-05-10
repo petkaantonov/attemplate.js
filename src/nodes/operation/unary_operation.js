@@ -18,13 +18,23 @@ var UnaryOperation = TemplateExpressionParser.yy.UnaryOperation = (function() {
         return [this.operand];
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.operand.traverse( this, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.operand.traverse( this, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
     };
     
     method.isBooleanOperation = function() {
         return this.operator = UnaryOperation.NOT;
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( oldChild === this.operand ) {
+            this.operand = newChild;
+            return true;
+        }
+        else {
+            return false;
+        }
     };
 
     method.resolveStaticOperation = function() {

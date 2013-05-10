@@ -25,6 +25,20 @@ var BinaryOperation = TemplateExpressionParser.yy.BinaryOperation = (function() 
         this.operandRight = tmp;
     };
     
+    method.replaceChild = function( oldChild, newChild ) {
+        if( oldChild === this.operandLeft ) {
+            this.operandLeft = newChild;
+            return true;
+        }
+        else if( oldChild === this.operandRight ) {
+            this.operandRight = newChild;
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    
     method.isCommutative = function() {
         return false;
     };
@@ -33,10 +47,10 @@ var BinaryOperation = TemplateExpressionParser.yy.BinaryOperation = (function() 
         return [this.operandLeft, this.operandRight];
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.operandLeft.traverse( this, depth + 1, visitorFn );
-        this.operandRight.traverse( this, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.operandLeft.traverse( this, depth + 1, visitorFn, data );
+        this.operandRight.traverse( this, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
     };
         
     method.toString = function() {

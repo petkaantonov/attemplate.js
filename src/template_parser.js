@@ -1071,6 +1071,7 @@ function parse( inp, compiledName ) {
         }
         else if( type === EXPRESSION ) {
             var snippet = TemplateExpressionParser.parse( value, startIndex, blockType === LONG_EXPRESSION ? ")" : lookahead(1) );
+            Simplification.run( snippet );
             scopeBlock.mergeReferences( snippet.getSeenReferences() );
             
             
@@ -1081,7 +1082,6 @@ function parse( inp, compiledName ) {
                 
                 if( quote === doubleQuote || quote === singleQuote ) {
                     var expr = snippet.getExpression();
-
                     stackTop.push(
                         new TemplateExpression(
                             expr,
@@ -1101,7 +1101,6 @@ function parse( inp, compiledName ) {
             }
             
             var expr = snippet.getExpression();
-            
             if( expr.isStatic() ) {
                 expr = expr.getStaticStringValue();
                 var literalExpr = new LiteralExpression( expr ).setStartIndex( startIndex ).setEndIndex( i - 1 );

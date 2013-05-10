@@ -10,12 +10,26 @@ var ArrayLiteral = TemplateExpressionParser.yy.ArrayLiteral = (function() {
         this.init();
     }
     
-    method.traverse = function( parent, depth, visitorFn ) {
+    method.traverse = function( parent, depth, visitorFn, data ) {
         var len = this.elements.length;
         for( var i = 0; i < len; ++i ) {
-            this.elements[i].traverse( this, depth+1, visitorFn );
+            this.elements[i].traverse( this, depth+1, visitorFn, data );
         }
         visitorFn( this, parent, depth );
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        var elements = this.elements,
+            len = elements.length;
+
+        for( var i = 0; i < len; ++i ) {
+            if( elements[i] === oldChild ) {
+                elements[i] = newChild;
+                return true;
+            }
+        }
+        
+        return false;
     };
     
     method.children = function() {

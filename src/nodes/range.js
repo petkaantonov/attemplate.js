@@ -17,21 +17,36 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
         return [this.minExpr, this.maxExpr, this.stepExpr];
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.minExpr.traverse( parent, depth + 1, visitorFn );
-        this.maxExpr.traverse( parent, depth + 1, visitorFn );
-        this.stepExpr.traverse( parent, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.minExpr.traverse( parent, depth + 1, visitorFn, data );
+        this.maxExpr.traverse( parent, depth + 1, visitorFn, data );
+        this.stepExpr.traverse( parent, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( oldChild === this.minExpr ) {
+            this.minExpr = newChild;
+            return true;
+        }
+        else if( oldChild === this.maxExpr ) {
+            this.maxExpr = newChild;
+            return true;
+        }
+        else if( oldChild === this.stepExpr ) {
+            this.stepExpr = newChild;
+            return true;
+        }
+        else {
+            return false;
+        }
     };
     
     method.setStatic = function() {
         this.static = true;
     };
-    
-    method.isStatic = function() {
-        return this.static;
-    };
-    
+
+    //TODO Really fix this, it should give code     
     //Do some checks on static types, evaluate static expressions to their values and assign
     method.checkExpr = function() {
         var minExpr = this.minExpr,
@@ -65,7 +80,7 @@ var Range = TemplateExpressionParser.yy.Range = (function() {
             stepExpr = 1;
         }
         else if( stepExpr.isStatic() ) {
-            steoExpr = stepExpr.unboxStaticValue();
+            stepExpr = stepExpr.unboxStaticValue();
             if( !(stepExpr instanceof NumericLiteral) ) {
                 stepExpr.raiseError("Range step can only be a number type." );
             }

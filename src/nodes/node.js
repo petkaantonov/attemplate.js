@@ -18,8 +18,8 @@ var Node = TemplateExpressionParser.yy.Node = (function() {
         console.assert( false, "no implementation");
     };
     
-    method.extract = function() {
-        return this;
+    method.replaceChild = function( oldChild, newChild ) {
+        console.assert( false, "no implementation");
     };
     
     method.isBooleanOperation = function() {

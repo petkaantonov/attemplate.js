@@ -154,7 +154,7 @@ var grammar = {
     ],
     
     range: [
-        ["FROM expression TO expression", "$$ = new yy.Range($2, $4); " + setIndex ],
+        ["FROM expression TO expression", "$$ = new yy.Range($2, $4, new yy.NumericLiteral(1)); " + setIndex ],
         ["FROM expression TO expression BY expression", "$$ = new yy.Range($2, $4, $6); " + setIndex ]
     ],
     

@@ -24,7 +24,8 @@ module.exports = function( grunt ) {
                 "./src/nodes/node.js",
                 "./src/nodes/terminal_node.js",
                 
-                "./src/traversals/combiner.js",
+                "./src/traversals/simplification.js",
+                "./src/traversals/concatenations.js",
                 
                 "./src/nodes/identifier.js",
                 "./src/nodes/snippet.js",

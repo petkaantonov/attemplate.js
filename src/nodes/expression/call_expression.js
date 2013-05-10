@@ -14,10 +14,10 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
         }
     }
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.lhs.traverse( this, depth + 1, visitorFn );
-        this.rhs.traverse( this, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.lhs.traverse( this, depth + 1, visitorFn, data );
+        this.rhs.traverse( this, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
     };
     
     method.children = function() {
@@ -27,6 +27,20 @@ var CallExpression = TemplateExpressionParser.yy.CallExpression = (function() {
     method.checkValidForFunctionCall = function() {
         if( this.staticValue ) {
             this.staticValue.checkValidForFunctionCall();
+        }
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( oldChild === this.lhs ) {
+            this.lhs = newChild;
+            return true;
+        }
+        else if( oldChild === this.rhs ) {
+            this.rhs = newChild;
+            return true;
+        }
+        else {
+            return false;
         }
     };
     

@@ -15,6 +15,25 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
             return [this.lhs].concat(this.rhs);
     };
     
+    method.replaceChild = function( oldChild, newChild ) {
+        if( this.lhs === oldChild ) {
+            this.lhs = newChild;
+            return true;
+        }
+        else {
+            var rhs = this.rhs,
+                len = rhs.length;
+
+            for( var i = 0; i < len; ++i ) {
+                if( rhs[i] === oldChild ) {
+                    rhs[i] = newChild;
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    
     method.init = function() {
         if( this.lhs.constructor === ArrayLiteral ) {
             this.checkArrayAccessStaticness();
@@ -24,15 +43,15 @@ var MemberExpression = TemplateExpressionParser.yy.MemberExpression = (function(
         }
     };
 
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.lhs.traverse( this, depth + 1, visitorFn );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.lhs.traverse( this, depth + 1, visitorFn, data );
         var rhs = this.rhs,
             len = rhs.length;
             
         for( var i = 0; i < len; ++i ) {
-            rhs[i].traverse( this, depth + 1, visitorFn );
+            rhs[i].traverse( this, depth + 1, visitorFn, data );
         }
-        visitorFn( this, parent, depth );
+        visitorFn( this, parent, depth, data );
     };
     
     method.checkArrayAccessStaticness = function() {

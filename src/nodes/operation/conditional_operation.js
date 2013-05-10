@@ -20,12 +20,30 @@ var ConditionalOperation = TemplateExpressionParser.yy.ConditionalOperation = (f
     method.children = function() {
         return [this.condition, this.ifTrue, this.ifFalse];
     };
+
+    method.replaceChild = function( oldChild, newChild ) {
+        if( oldChild === this.condition ) {
+            this.condition = newChild;
+            return true;
+        }
+        else if( oldChild === this.ifTrue ) {
+            this.ifTrue = newChild;
+            return true;
+        }
+        else if( oldChild === this.ifFalse ) {
+            this.ifFalse = newChild;
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.condition.traverse( this, depth + 1, visitorFn );
-        this.ifTrue.traverse( this, depth + 1, visitorFn );
-        this.ifFalse.traverse( this, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.condition.traverse( this, depth + 1, visitorFn, data );
+        this.ifTrue.traverse( this, depth + 1, visitorFn, data );
+        this.ifFalse.traverse( this, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
     };
     
     method.toString = function() {

@@ -15,16 +15,28 @@ var NamedArgument = TemplateExpressionParser.yy.NamedArgument = (function() {
         return [this.name, this.expr];
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.name.traverse( this, depth + 1, visitorFn );
-        this.expr.traverse( this, depth + 1, visitorFn );
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.name.traverse( this, depth + 1, visitorFn, data );
+        this.expr.traverse( this, depth + 1, visitorFn, data );
+        visitorFn( this, parent, depth, data );
     };
     
     method.checkValid = function() {
         if( this.name.toString() === "__proto__" ) {
             this.raiseError("Cannot use __proto__ as a key");
         }
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( this.name === oldChild ) {
+            this.name = newChild;
+            return true;
+        }
+        else if( this.expr === oldChild ) {
+            this.expr = newChild;
+            return true;
+        }
+        return false;
     };
     
     method.checkValidForFunctionCall = function() {

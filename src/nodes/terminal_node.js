@@ -12,15 +12,13 @@ var TerminalNode = TemplateExpressionParser.yy.TerminalNode = (function() {
         return children;
     };
     
-    method.extract = function() {
-        return this;
+    method.replaceChild = function() {
+        console.assert(false, "terminal nodes don't have children");
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        visitorFn( this, parent, depth );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        visitorFn( this, parent, depth, data );
     };
-    
-    var children = [];
-    
+        
     return TerminalNode;
 })();

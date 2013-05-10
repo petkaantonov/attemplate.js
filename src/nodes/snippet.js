@@ -7,21 +7,26 @@ var Snippet = TemplateExpressionParser.yy.Snippet = (function() {
     function Snippet( expr ) {
         _super.constructor.apply(this, arguments);
         this.expr = expr;
-        if( this.expr.isStatic && this.expr.isStatic() ) {
-            this.expr = this.expr.unboxStaticValue();
-        }
     }
     
     method.children = function() {
         return [this.expr];
     };
     
-    method.traverse = function( visitorFn ) {
-        this.expr.traverse( this, 0, visitorFn );
+    method.traverse = function( visitorFn, data ) {
+        this.expr.traverse( this, 0, visitorFn, data || {} );
     };
     
     method.getExpression = function() {
         return this.expr;
+    };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( this.expr === oldChild ) {
+            this.expr = newChild;
+            return true;
+        }
+        return false;
     };
     
     method.toString = function() {

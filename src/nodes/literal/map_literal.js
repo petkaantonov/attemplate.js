@@ -24,12 +24,27 @@ var MapLiteral = TemplateExpressionParser.yy.MapLiteral = (function() {
         return this.namedArgs.slice(0);
     };
     
-    method.traverse = function( parent, depth, visitorFn ) {
+    method.replaceChild = function( oldChild, newChild ) {
+
+        var args = this.namedArgs,
+            len = args.length;
+
+        for( var i = 0; i < len; ++i ) {
+            if( args[i] === oldChild ) {
+                args[i] = newChild;
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    method.traverse = function( parent, depth, visitorFn, data ) {
         var len = this.namedArgs.length;
         for( var i = 0; i < len; ++i ) {
-            this.namedArgs[i].traverse( this, depth+1, visitorFn );
+            this.namedArgs[i].traverse( this, depth+1, visitorFn, data );
         }
-        visitorFn( this, parent, depth );
+        visitorFn( this, parent, depth, data );
     };
     
     method.getStaticNumberValue = function() {

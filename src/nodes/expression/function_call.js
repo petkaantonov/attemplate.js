@@ -13,16 +13,36 @@ var FunctionCall = TemplateExpressionParser.yy.FunctionCall = (function() {
         FunctionCall.calls.push( this );
     }
     
-    method.traverse = function( parent, depth, visitorFn ) {
-        this.lhs.traverse( this, depth + 1, visitorFn );
+    method.traverse = function( parent, depth, visitorFn, data ) {
+        this.lhs.traverse( this, depth + 1, visitorFn, data );
         var args = this.args,
             len = args.length;
             
         for( var i = 0; i < len; ++i ) {
-            args[i].traverse( this, depth + 1, visitorFn );
+            args[i].traverse( this, depth + 1, visitorFn, data );
         }
-        visitorFn( this, parent, depth );
+        visitorFn( this, parent, depth, data );
     };
+    
+    method.replaceChild = function( oldChild, newChild ) {
+        if( this.lhs === oldChild ) {
+            this.lhs = newChild;
+            return true;
+        }
+        else {
+            var args = this.args,
+                len = args.length;
+
+            for( var i = 0; i < len; ++i ) {
+                if( args[i] === oldChild ) {
+                    args[i] = newChild;
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    
     
     method.children = function() {
         return [this.lhs].concat(this.args);
